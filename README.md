@@ -180,7 +180,11 @@ scripts/serve.sh preflight   # checks both nodes; fix what it reports
 scripts/serve.sh start       # first start: 8+ min (compiles kernels, loads, writes prepared weights); later ~25-40 s
 ```
 
-`serve.sh` reads `config/prod.env` by default; no `CONFIG=` needed.
+`serve.sh` reads `config/prod.env` by default; no `CONFIG=` needed. To run under Podman (rootful) instead of Docker,
+set `CONTAINER_RT=podman` either in `config/prod.env` or on the command line: `CONTAINER_RT=podman scripts/serve.sh build`.
+The serving pod always needs host networking (NCCL/RoCE own the CX7 NIC), so this is never the rootless/pasta path.
+Podman exposes the GPU via CDI (`--device nvidia.com/gpu=all`): generate the spec once with the NVIDIA Container
+Toolkit, `sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml` (see AGENTS.md Docker + NVIDIA runtime row).
 
 **Verify:**
 
@@ -422,7 +426,9 @@ ones together wait for pages or spill idle sessions to the store.
 
 - Two DGX Sparks (GB10, 128 GB unified memory each) connected by a QSFP cable between their ConnectX-7 ports, with
   the link configured (an IP address on one CX7 netdev per node; the RDMA device visible in `ibv_devices`).
-- Docker with the NVIDIA Container Toolkit on both nodes (stock DGX OS has both).
+- Docker with the NVIDIA Container Toolkit on both nodes (stock DGX OS has both). Or Podman (rootful) with the
+  NVIDIA CDI / container-toolkit wrapper: set `CONTAINER_RT=podman` in the config (see below). Not rootless: the
+  serving pod needs `--network host` so NCCL / the RoCE proxy own the CX7 NIC.
 - Passwordless `ssh` from the head node to the worker, as a user that can run `docker` there. The production
   config's memory gate also drops page caches with `sudo -n` on both nodes.
 - The weights in each node's Hugging Face cache, same revision on both (the repo is gated: request access on its
