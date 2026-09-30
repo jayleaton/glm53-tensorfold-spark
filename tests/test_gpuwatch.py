@@ -82,6 +82,51 @@ def kinds(conds) -> set[str]:
     return {c.key for c in conds}
 
 
+def test_control_path_length_math():
+    # the path ssh refused on a node whose home is /home/<19-char user> (2026-09-30): 112 bytes, over sun_path
+    real = "/home/ryanneely1000/.local/state/glm53-tf/gpuwatch"
+    assert len(real) + gw.CTL_SUFFIX_LEN > gw.SUN_PATH_MAX
+    # the fallback always fits, whatever the uid's digit count
+    assert len(str(gw.CTL_FALLBACK_BASE / "glm53-gw-4294967294")) + gw.CTL_SUFFIX_LEN <= gw.SUN_PATH_MAX
+
+
+def test_control_dir_short_state_dir_is_kept(tmp_path, monkeypatch):
+    monkeypatch.setattr(gw, "SUN_PATH_MAX", 10_000)
+    ctl = gw.control_dir_for(tmp_path / "state")
+    assert ctl == tmp_path / "state" / "gpuwatch" and ctl.is_dir()
+
+
+def test_control_dir_long_state_dir_falls_back(tmp_path, monkeypatch):
+    base = tmp_path / "t"
+    base.mkdir()
+    monkeypatch.setattr(gw, "CTL_FALLBACK_BASE", base)
+    monkeypatch.setattr(gw, "SUN_PATH_MAX", len(str(base)) + 20 + gw.CTL_SUFFIX_LEN)
+    long_state = tmp_path / ("s" * 120)
+    ctl = gw.control_dir_for(long_state)
+    assert ctl == base / f"glm53-gw-{os.getuid()}"
+    assert ctl.stat().st_mode & 0o777 == 0o700
+    assert not (long_state / "gpuwatch").exists()
+    assert gw.Node("worker", "user@host", str(ctl)).command(["true"])[:8] == [
+        "ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=5", "-o", "ControlMaster=auto", "-o"]
+
+
+def test_control_dir_refuses_an_unsafe_fallback(tmp_path, monkeypatch):
+    base = tmp_path / "t"
+    base.mkdir()
+    monkeypatch.setattr(gw, "CTL_FALLBACK_BASE", base)
+    monkeypatch.setattr(gw, "SUN_PATH_MAX", len(str(base)) + 20 + gw.CTL_SUFFIX_LEN)
+    long_state = tmp_path / ("s" * 120)
+    fallback = base / f"glm53-gw-{os.getuid()}"
+    fallback.mkdir()
+    fallback.chmod(0o777)                      # writable by others: someone could plant the socket
+    assert gw.control_dir_for(long_state) is None
+    fallback.rmdir()
+    target = tmp_path / "elsewhere"
+    target.mkdir(mode=0o700)
+    fallback.symlink_to(target)                # a symlink planted in a shared /tmp
+    assert gw.control_dir_for(long_state) is None
+
+
 def test_healthy_pair_is_quiet():
     th = gw.Thresholds()
     assert gw.evaluate({"head": sample(), "worker": sample(sm=2236, power=10.9)}, None, th) == []
