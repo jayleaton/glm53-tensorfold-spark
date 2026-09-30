@@ -384,8 +384,9 @@ def test_knobs(monkeypatch):
               "GLM53_TF_DEC_QMM_CFG", "GLM53_TF_DEC_CTAS"):
         monkeypatch.delenv(k, raising=False)
     cfg = ds.parse()
+    extra = {"qmm_max_bytes": 0, "qmm_table": True, "qmm_exclude": frozenset()} if "qmm_max_bytes" in cfg else {}
     assert cfg == {"experts": False, "qmm": False, "pdl": False, "experts_cfg": (4, 4, 4, 4), "qmm_cfg": (1, 4),
-                   "ctas": 0, "qmm_serial": "auto"}
+                   "ctas": 0, "qmm_serial": "auto", **extra}          # extra: patches/0570's size switch, off
     assert ds.serial_for(12576, 4) and ds.serial_for(160, 1) and not ds.serial_for(160, 8)
     assert not ds.serial_for(2048, 4) and ds.serial_for(2048, 4, "1") and not ds.serial_for(77440, 2, "0")
     monkeypatch.setenv("GLM53_TF_DEC_EXPERTS", "1")

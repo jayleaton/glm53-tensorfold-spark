@@ -1,0 +1,647 @@
+diff --git a/src/tensorfold/families/glm5_next/cuda/exl3_ld.cpp b/src/tensorfold/families/glm5_next/cuda/exl3_ld.cpp
+new file mode 100644
+index 0000000..e1600b2
+--- /dev/null
++++ b/src/tensorfold/families/glm5_next/cuda/exl3_ld.cpp
+@@ -0,0 +1,40 @@
++// patches/0580: bindings of exl3_ld.cu (exl3.cu's grouped kernel with a deeper load path, the same bits;
++// GLM53_TF_DEC_EXPERT_LOADS=1).
++#include <torch/extension.h>
++#include <c10/cuda/CUDAGuard.h>
++
++void exl3_ld_grouped_cuda(const at::Tensor&, const at::Tensor&, const at::Tensor&, const at::Tensor&,
++                          const at::Tensor&, const at::Tensor&, const at::Tensor&, at::Tensor&, int64_t, int64_t,
++                          int64_t, int64_t, int64_t, int64_t, int64_t, int64_t, int64_t, int64_t, int64_t, bool);
++
++static void check(const at::Tensor& x, at::ScalarType t, const char* name) {
++    TORCH_CHECK(x.is_cuda() && x.scalar_type() == t && x.is_contiguous(), name,
++                ": expected a contiguous CUDA tensor of the right dtype");
++}
++
++// exl3.cpp's ``grouped`` (the same arguments, the same Z) plus the load path: ld 0 = ld.global.nc.v4 + staging,
++// 1 = 32-bit ld.global.nc, 2 = cp.async ring; pd = k steps in flight a warp; probe 0 (real) / 1-3 (timing only);
++// pdl: launch as a programmatic dependent (the prologue overlaps the previous kernel; sm_90+).
++void grouped(const at::Tensor& X0, const at::Tensor& X1, const at::Tensor& T0, const at::Tensor& T1,
++             const at::Tensor& uids, const at::Tensor& ucount, const at::Tensor& members, at::Tensor Z, int64_t mats,
++             int64_t K, int64_t N, int64_t P, int64_t SK, int64_t slots, int64_t nt, int64_t ld, int64_t pd,
++             int64_t probe, bool pdl) {
++    const int64_t E = T0.size(0);
++    check(X0, at::kHalf, "X0");
++    check(X1, at::kHalf, "X1");
++    check(T0, at::kInt, "T0");
++    check(T1, at::kInt, "T1");
++    check(uids, at::kInt, "uids");
++    check(ucount, at::kInt, "ucount");
++    check(members, at::kInt, "members");
++    check(Z, at::kFloat, "Z");
++    TORCH_CHECK(Z.numel() >= mats * SK * P * N, "Z too small");
++    TORCH_CHECK(T0.data_ptr() != nullptr && reinterpret_cast<uintptr_t>(T0.data_ptr()) % 16 == 0 &&
++                reinterpret_cast<uintptr_t>(T1.data_ptr()) % 16 == 0, "trellis words must be 16-byte aligned");
++    c10::cuda::CUDAGuard guard(X0.device());
++    exl3_ld_grouped_cuda(X0, X1, T0, T1, uids, ucount, members, Z, mats, K, N, P, SK, slots, nt, ld, pd, probe, E, pdl);
++}
++
++PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
++    m.def("grouped", &grouped);
++}
+diff --git a/src/tensorfold/families/glm5_next/cuda/exl3_ld.cu b/src/tensorfold/families/glm5_next/cuda/exl3_ld.cu
+new file mode 100644
+index 0000000..ece2b18
+--- /dev/null
++++ b/src/tensorfold/families/glm5_next/cuda/exl3_ld.cu
+@@ -0,0 +1,356 @@
++// patches/0580 (GLM53_TF_DEC_EXPERT_LOADS=1): exl3.cu's grouped_kernel -- the decode / verify / MTP windows' EXL3
++// routed-expert GEMV -- with a new load path and exl3.cu's bits.
++//
++// Why (docs/DECODE-KERNELS-2.md): grouped_kernel<8, 4> streams the trellis at 203-214 GB/s in situ (W11) against a
++// 233-237 GB/s plain read of the same bytes. Each warp loads one k step (8 tiles x 128 B = 1 KB) at the top of an
++// iteration and then waits for it, decodes and runs 16 mma with nothing in flight; each CTA's first load waits behind
++// three dependent round trips (ucount -> uids -> members -> __syncthreads). W16's littles.cu probe on the same
++// gathered EXL3 layout: ld.global.nc.v4 with the data consumed straight from registers reaches 232.7 GB/s with only
++// 4 KB an SM in flight (8 warps x one 16-byte load a lane), 229-237 GB/s at 4-8 KB, where cp.async rings need 6 KB and
++// TMA bulk copies 8-16 KB. (0440's E1 ring reached ~158 GB/s with ~18 KB an SM nominal: its persistent walk, per-item
++// fences / tickets / fused epilogues stopped every CTA at item boundaries, all CTAs at once; littles' copy of the same
++// ring alone reached 234 GB/s. This kernel keeps grouped_kernel's grid and CTA shape and changes only the loads.)
++//
++// What is kept, per output element (so the bits are exl3.cu's for every row count and every setting below):
++//   - the work item and the grid: program (u, n block, (mat * SK + split) * MT + member tile), 16 member rows of
++//     distinct expert u times W_q of matrix mat over K split `split` for NT column tiles; W = 4 warps;
++//   - warp w runs k tiles [split * KT/SK + w * PW, + PW) in ascending order, one mma.m16n8k16 (f16 -> f32) per
++//     (k tile, column tile, n8 half) into accumulators that start at +0.0, on the same decoded B fragments
++//     (decode_tile, verbatim) and the same A fragments (load_pair's values: X[row][k + 2t ...], 0 for a dead row);
++//   - the warps' partial sums through shared memory, added in warp order (s = red[0]; s += red[1]; ...), stored to
++//     Z[mat][split][row][n] for live member rows only -- member_tiles<NT, 4, 1>'s code, verbatim;
++//   - the early exits: u >= ucount, uids[u] >= E (the shared expert), an empty member tile.
++//   NT (column tiles a program) places work only, as in exl3.cu (every accumulator is its own chain).
++//
++// What changes (data movement only):
++//   - the prologue: ucount, uids[u], the member codes and the tile's first code are read in ONE round trip (they
++//     do not depend on each other), and the first PD k steps of each warp's trellis words are issued before the
++//     member rows reach shared memory, so a CTA streams from its first microsecond;
++//   - a PD-deep register ring a warp: while k step s is decoded and multiplied, steps s + 1 .. s + PD are in flight
++//     (PD x NT x 128 B a warp: NT 8, PD 2 = 2 KB a warp, 24 KB an SM at 3 CTAs, 6x littles' 4 KB knee), and so are
++//     the A fragments of those steps (4 x 4 B a lane a step, L1 / L2 hits);
++//   - the load instruction (LD):
++//       LD_NC   ld.global.nc.L1::no_allocate.v4 (littles' winner): lane l loads bytes 16 l .. 16 l + 15 of each 512 B
++//               of the step (NT / 4 loads a lane), i.e. words 4 (l % 8) .. + 3 of tile 4 v + l / 8; the warp stores
++//               them to a 1-KB staging area and reads word `lane` of each tile back (decode_tile's layout), two
++//               __syncwarp a step, conflict-free (16-B stores of a contiguous 512 B; 4-B reads at stride 128 B);
++//       LD_W32  32-bit ld.global.nc (grouped_kernel's own instruction: word `lane` of each tile), PD steps ahead in
++//               registers, no staging;
++//       LD_CPA  16-byte cp.async.cg into a warp-private ring of PD + 1 steps (PD commit groups in flight), read as
++//               LD_NC reads its staging area (littles' cp.async row: 234 GB/s at 6 KB an SM).
++//     The staging area / ring lives in the warp's own slice of `red`, which the warp writes only after its last k
++//     step, so shared memory (and so the 3 CTAs an SM at NT 8) is grouped_kernel's.
++//
++// PDL (optional, the launch attribute; GLM53_TF_DEC_EXPERT_LOADS_PDL=1): the prologue -- the grouping reads and the
++// first PD k steps of trellis words -- runs before griddepcontrol.wait, overlapping the previous kernel's tail; X / Xd
++// are read and Z written only after it. Safe because the grouping (ucount / uids / members) is written before
++// exl3_mm.routed starts and the launch right before this one (rot_in for gate/up, gateup_epilogue for down) is a plain
++// launch, so every kernel before it has completed when this one starts; the trellis is constant. The grouping is read
++// with ld.global.cg (L2). Without the attribute griddepcontrol.wait returns at once. Nothing triggers dependents (the
++// kernels after this one are plain launches).
++//
++// PROBE (timing only; wrong results): 1 = no trellis decode (the raw words go to the mma), 2 = no mma (decode, then a
++// dependent xor), 3 = neither (the load path alone: words and A fragments xor-ed into the accumulators).
++
++#include <cuda_fp16.h>
++#include <cuda_bf16.h>
++#include <ATen/ATen.h>
++#include <ATen/cuda/CUDAContext.h>
++#include <c10/cuda/CUDAGuard.h>
++
++namespace {
++
++constexpr int W = 4;                                 // warps a CTA == exl3_mm's warps (they define the K ranges)
++enum { LD_NC = 0, LD_W32 = 1, LD_CPA = 2 };
++
++// ---- exl3.cu, verbatim -------------------------------------------------------------------------------------------
++__device__ __forceinline__ uint32_t mcg2(uint32_t s0, uint32_t s1) {
++    uint32_t x0 = s0 * 0xCBAC1FEDu;
++    uint32_t x1 = s1 * 0xCBAC1FEDu;
++    x0 = (x0 & 0x8FFF8FFFu) ^ 0x3B603B60u;
++    x1 = (x1 & 0x8FFF8FFFu) ^ 0x3B603B60u;
++    uint32_t lo = __byte_perm(x0, x1, 0x5410);
++    uint32_t hi = __byte_perm(x0, x1, 0x7632);
++    half2 r = __hadd2(*reinterpret_cast<half2*>(&lo), *reinterpret_cast<half2*>(&hi));
++    return *reinterpret_cast<uint32_t*>(&r);
++}
++
++__device__ __forceinline__ void decode_tile(uint32_t w, int lane, uint32_t (&b0)[2], uint32_t (&b1)[2]) {
++    uint32_t p = __shfl_sync(0xffffffffu, w, (lane + 31) & 31);
++    uint32_t s = __funnelshift_r(w, p, 20);
++    b0[0] = mcg2((s >> 8) & 0xffffu, (s >> 4) & 0xffffu);
++    b0[1] = mcg2(s & 0xffffu, w >> 16);
++    b1[0] = mcg2((w >> 12) & 0xffffu, (w >> 8) & 0xffffu);
++    b1[1] = mcg2((w >> 4) & 0xffffu, w & 0xffffu);
++}
++
++__device__ __forceinline__ void mma16816(float (&d)[4], const uint32_t (&a)[4], const uint32_t (&b)[2]) {
++    asm volatile("mma.sync.aligned.m16n8k16.row.col.f32.f16.f16.f32 {%0,%1,%2,%3}, {%4,%5,%6,%7}, {%8,%9}, "
++                 "{%0,%1,%2,%3};\n"
++                 : "+f"(d[0]), "+f"(d[1]), "+f"(d[2]), "+f"(d[3])
++                 : "r"(a[0]), "r"(a[1]), "r"(a[2]), "r"(a[3]), "r"(b[0]), "r"(b[1]));
++}
++
++// ---- loads -------------------------------------------------------------------------------------------------------
++// asm volatile: issued exactly where they stand relative to the (volatile) mma, so the ring depth is what the code
++// says. The trellis is read once a window (L1::no_allocate); X / Xd rows are shared by the CTAs of an expert (L1 ok).
++__device__ __forceinline__ uint4 ldg_v4(const uint32_t* p) {
++    uint4 v;
++    asm volatile("ld.global.nc.L1::no_allocate.v4.u32 {%0,%1,%2,%3}, [%4];"
++                 : "=r"(v.x), "=r"(v.y), "=r"(v.z), "=r"(v.w)
++                 : "l"(p));
++    return v;
++}
++__device__ __forceinline__ uint32_t ldg_w(const uint32_t* p) {
++    uint32_t v;
++    asm volatile("ld.global.nc.L1::no_allocate.u32 %0, [%1];" : "=r"(v) : "l"(p));
++    return v;
++}
++// load_pair's value (exl3.cu: ok ? *(const uint32_t*)x : 0) with the load pinned in place
++__device__ __forceinline__ uint32_t ldg_pair(const half* x, bool ok) {
++    uint32_t v = 0u;
++    if (ok) asm volatile("ld.global.nc.u32 %0, [%1];" : "=r"(v) : "l"(x));
++    return v;
++}
++__device__ __forceinline__ void cp_async16(void* smem, const void* gmem) {
++    const uint32_t s = static_cast<uint32_t>(__cvta_generic_to_shared(smem));
++    asm volatile("cp.async.cg.shared.global [%0], [%1], 16;\n" ::"r"(s), "l"(gmem) : "memory");
++}
++__device__ __forceinline__ void cp_commit() { asm volatile("cp.async.commit_group;\n" ::: "memory"); }
++template <int N>
++__device__ __forceinline__ void cp_wait() { asm volatile("cp.async.wait_group %0;\n" ::"n"(N) : "memory"); }
++__device__ __forceinline__ void pdl_wait() {
++#if defined(__CUDA_ARCH__) && (__CUDA_ARCH__ >= 900)
++    asm volatile("griddepcontrol.wait;" ::: "memory");
++#endif
++}
++
++template <int NT, int PD, int LD>
++struct Ring {
++    static constexpr int NV = NT / 4;                            // 16-byte loads a lane a step (512 B a warp each)
++    uint4 v[LD == LD_NC ? PD : 1][NV];                           // LD_NC: the steps in flight
++    uint32_t w[LD == LD_W32 ? PD : 1][NT];                       // LD_W32
++    uint32_t a[PD][4];                                           // the A fragments of the steps in flight
++};
++
++// Program (u, n block, (mat * SK + split) * MT + member tile): grouped_kernel's work item (member_tiles<NT, W, 1>).
++template <int NT, int PD, int LD, int PROBE>
++__global__ void __launch_bounds__(W * 32, NT == 8 ? 3 : 4) ld_kernel(
++    const half* __restrict__ X0, const half* __restrict__ X1, const uint32_t* __restrict__ T0,
++    const uint32_t* __restrict__ T1, const int* __restrict__ uids, const int* __restrict__ ucount,
++    const int* __restrict__ members, float* __restrict__ Z, int K, int N, int P, int SK, int maxm, int slots, int E) {
++    static_assert(NT % 4 == 0 && PD >= 1 && PD <= 4, "NT a multiple of 4, PD 1-4");
++    static_assert(LD != LD_CPA || PD + 1 <= 8, "the cp.async ring fits the warp's slice of red");
++    const int u = blockIdx.x;
++    const int MT = (maxm + 15) / 16;
++    const int mtile = blockIdx.z % MT;
++    const int split = (blockIdx.z / MT) % SK;
++    const int mat = blockIdx.z / MT / SK;
++    const half* X = mat ? X1 : X0;
++    const uint32_t* T = mat ? T1 : T0;
++    const int warp = threadIdx.x >> 5, lane = threadIdx.x & 31;
++    const int g = lane >> 2, t = lane & 3;
++
++    // One round trip for the whole prologue (grouped_kernel: ucount, then uids, then members, then the weights).
++    // uids[u] / members[u] are in bounds for every u < gridDim.x (the host sizes the grid by uids / members).
++    const int cnt = __ldcg(ucount);
++    const int e = __ldcg(uids + u);
++    const int m = mtile * 16 + threadIdx.x;
++    const int code = threadIdx.x < 16 && m < maxm ? __ldcg(members + u * maxm + m) : -1;
++    const int first = __ldcg(members + u * maxm + mtile * 16);     // mtile * 16 < maxm always (MT = ceil(maxm / 16))
++    if (u >= cnt || e >= E || first < 0) return;                    // grouped_kernel's three exits, the same CTAs
++
++    __shared__ int rows_sh[16];
++    __shared__ __align__(16) float red[W][16][NT * 16];
++
++    const int KT = K >> 4, NTILES = N >> 4;
++    const int per_split = KT / SK, per_warp = per_split / W;
++    const int kt0 = split * per_split + warp * per_warp;
++    const size_t kstep = (size_t)NTILES * 32;                      // words from one k tile to the next
++    const uint32_t* tile = T + (((size_t)e * KT + kt0) * NTILES + (size_t)blockIdx.y * NT) * 32;
++    uint32_t* stage = reinterpret_cast<uint32_t*>(&red[warp][0][0]);   // this warp's staging area / ring
++
++    Ring<NT, PD, LD> ring;
++    auto issue_w = [&](int d, int s) {                             // k step s (of this warp) into ring slot d
++        const uint32_t* src = tile + (size_t)s * kstep;
++        if constexpr (LD == LD_NC) {
++#pragma unroll
++            for (int v = 0; v < Ring<NT, PD, LD>::NV; ++v) ring.v[d][v] = ldg_v4(src + 128 * v + 4 * lane);
++        } else if constexpr (LD == LD_W32) {
++#pragma unroll
++            for (int i = 0; i < NT; ++i) ring.w[d][i] = ldg_w(src + i * 32 + lane);
++        } else {
++            uint32_t* dst = stage + (s % (PD + 1)) * (NT * 32);
++#pragma unroll
++            for (int v = 0; v < Ring<NT, PD, LD>::NV; ++v) cp_async16(dst + 128 * v + 4 * lane, src + 128 * v + 4 * lane);
++        }
++    };
++#pragma unroll
++    for (int d = 0; d < PD; ++d) {                                  // PD <= per_warp (host)
++        issue_w(d, d);
++        if constexpr (LD == LD_CPA) cp_commit();
++    }
++
++    if (threadIdx.x < 16) rows_sh[threadIdx.x] = code >= 0 ? (code >> 5) * slots + (code & 31) : -1;
++    pdl_wait();                                                     // X / Xd (and Z) belong to the kernels before
++    __syncthreads();
++
++    const int r0 = rows_sh[g], r1 = rows_sh[g + 8];
++    const half* x0 = X + (size_t)(r0 < 0 ? 0 : r0) * K + 2 * t;
++    const half* x1 = X + (size_t)(r1 < 0 ? 0 : r1) * K + 2 * t;
++    auto issue_a = [&](int d, int s) {
++        const int k = (kt0 + s) * 16;
++        ring.a[d][0] = ldg_pair(x0 + k, r0 >= 0);
++        ring.a[d][1] = ldg_pair(x1 + k, r1 >= 0);
++        ring.a[d][2] = ldg_pair(x0 + k + 8, r0 >= 0);
++        ring.a[d][3] = ldg_pair(x1 + k + 8, r1 >= 0);
++    };
++#pragma unroll
++    for (int d = 0; d < PD; ++d) issue_a(d, d);
++
++    float acc[NT][2][4];
++#pragma unroll
++    for (int i = 0; i < NT; ++i)
++#pragma unroll
++        for (int h = 0; h < 2; ++h)
++#pragma unroll
++            for (int c = 0; c < 4; ++c) acc[i][h][c] = 0.f;
++
++    for (int kb = 0; kb < per_warp; kb += PD) {                    // per_warp % PD == 0 (host)
++#pragma unroll
++        for (int d = 0; d < PD; ++d) {
++            const int s = kb + d;
++            const bool more = s + PD < per_warp;
++            uint32_t words[NT];
++            uint32_t a[4];
++#pragma unroll
++            for (int j = 0; j < 4; ++j) a[j] = ring.a[d][j];
++            if constexpr (LD == LD_NC) {
++                __syncwarp();                                     // every lane has read the previous step back
++#pragma unroll
++                for (int v = 0; v < Ring<NT, PD, LD>::NV; ++v)
++                    *reinterpret_cast<uint4*>(stage + 128 * v + 4 * lane) = ring.v[d][v];
++                if (more) issue_w(d, s + PD);                     // the slot's registers are free again
++                __syncwarp();
++#pragma unroll
++                for (int i = 0; i < NT; ++i) words[i] = stage[i * 32 + lane];
++            } else if constexpr (LD == LD_W32) {
++#pragma unroll
++                for (int i = 0; i < NT; ++i) words[i] = ring.w[d][i];
++                if (more) issue_w(d, s + PD);
++            } else {
++                cp_wait<PD - 1>();                                // step s's group has landed (this lane's copies)
++                __syncwarp();                                     // ... every lane's; step s - 1's slot is consumed
++                if (more) issue_w(d, s + PD);                     // into slot (s + PD) % (PD + 1) == (s - 1)'s
++                cp_commit();                                      // (an empty group past the end: counts stay uniform)
++                const uint32_t* slot = stage + (s % (PD + 1)) * (NT * 32);
++#pragma unroll
++                for (int i = 0; i < NT; ++i) words[i] = slot[i * 32 + lane];
++            }
++            if (more) issue_a(d, s + PD);
++#pragma unroll
++            for (int i = 0; i < NT; ++i) {
++                uint32_t b0[2], b1[2];
++                if (PROBE == 1 || PROBE == 3) {
++                    b0[0] = words[i]; b0[1] = words[i] ^ 1u; b1[0] = words[i] ^ 2u; b1[1] = words[i] ^ 3u;
++                } else {
++                    decode_tile(words[i], lane, b0, b1);
++                }
++                if (PROBE == 2 || PROBE == 3) {
++                    acc[i][0][0] = __uint_as_float(__float_as_uint(acc[i][0][0]) ^ b0[0] ^ b0[1] ^ a[0] ^ a[2]);
++                    acc[i][1][0] = __uint_as_float(__float_as_uint(acc[i][1][0]) ^ b1[0] ^ b1[1] ^ a[1] ^ a[3]);
++                } else {
++                    mma16816(acc[i][0], a, b0);
++                    mma16816(acc[i][1], a, b1);
++                }
++            }
++        }
++    }
++    if constexpr (LD == LD_CPA) cp_wait<0>();
++    __syncwarp();                                                 // the staging area / ring becomes red[warp]
++
++    // exl3.cu member_tiles<NT, W, 1>: the warps' partial sums through shared memory, added in warp order
++#pragma unroll
++    for (int i = 0; i < NT; ++i)
++#pragma unroll
++        for (int h = 0; h < 2; ++h) {
++            const int col = i * 16 + h * 8 + 2 * t;
++            red[warp][g][col] = acc[i][h][0];
++            red[warp][g][col + 1] = acc[i][h][1];
++            red[warp][g + 8][col] = acc[i][h][2];
++            red[warp][g + 8][col + 1] = acc[i][h][3];
++        }
++    __syncthreads();
++    for (int idx = threadIdx.x; idx < 16 * NT * 16; idx += W * 32) {
++        const int row = idx / (NT * 16), col = idx % (NT * 16);
++        const int r = rows_sh[row];
++        if (r < 0) continue;
++        float s = red[0][row][col];
++#pragma unroll
++        for (int w = 1; w < W; ++w) s += red[w][row][col];
++        Z[(((size_t)mat * SK + split) * P + r) * N + blockIdx.y * NT * 16 + col] = s;
++    }
++}
++
++template <int NT, int PD, int LD, int PR>
++void launch(dim3 grid, cudaStream_t stream, bool pdl, const half* x0, const half* x1, const uint32_t* t0,
++            const uint32_t* t1, const int* uids, const int* ucount, const int* members, float* z, int K, int N, int P,
++            int SK, int maxm, int slots, int E) {
++    cudaLaunchConfig_t cfg = {};
++    cfg.gridDim = grid;
++    cfg.blockDim = dim3(W * 32);
++    cfg.dynamicSmemBytes = 0;
++    cfg.stream = stream;
++    cudaLaunchAttribute attr[1];
++    attr[0].id = cudaLaunchAttributeProgrammaticStreamSerialization;
++    attr[0].val.programmaticStreamSerializationAllowed = 1;
++    cfg.attrs = attr;
++    cfg.numAttrs = pdl ? 1 : 0;
++    C10_CUDA_CHECK(cudaLaunchKernelEx(&cfg, ld_kernel<NT, PD, LD, PR>, x0, x1, t0, t1, uids, ucount, members, z, K, N,
++                                      P, SK, maxm, slots, E));
++}
++
++}  // namespace
++
++// Z [mats, SK, P, N] fp32: exl3_grouped_cuda's result (exl3.cu), through ld_kernel<nt, pd, ld, probe>.
++void exl3_ld_grouped_cuda(const at::Tensor& X0, const at::Tensor& X1, const at::Tensor& T0, const at::Tensor& T1,
++                          const at::Tensor& uids, const at::Tensor& ucount, const at::Tensor& members, at::Tensor& Z,
++                          int64_t mats, int64_t K, int64_t N, int64_t P, int64_t SK, int64_t slots, int64_t nt,
++                          int64_t ld, int64_t pd, int64_t probe, int64_t E, bool pdl) {
++    const int maxm = (int)members.size(1);
++    const int64_t MT = (maxm + 15) / 16;
++    TORCH_CHECK(K % (16 * SK * W) == 0 && N % (16 * nt) == 0, "K and N must split evenly");
++    TORCH_CHECK((K / (16 * SK * W)) % pd == 0, "the k steps a warp must be a multiple of the ring depth");
++    TORCH_CHECK(members.size(0) == uids.size(0), "one member row a distinct-expert slot");
++    dim3 grid((unsigned)uids.size(0), (unsigned)(N / (16 * nt)), (unsigned)(mats * SK * MT));
++    auto stream = at::cuda::getCurrentCUDAStream();
++    auto x0 = reinterpret_cast<const half*>(X0.data_ptr());
++    auto x1 = reinterpret_cast<const half*>(X1.data_ptr());
++    auto t0 = reinterpret_cast<const uint32_t*>(T0.data_ptr());
++    auto t1 = reinterpret_cast<const uint32_t*>(T1.data_ptr());
++#define LAUNCH(NT_, PD_, LD_, PR_)                                                                                \
++    launch<NT_, PD_, LD_, PR_>(grid, stream, pdl, x0, x1, t0, t1, uids.data_ptr<int>(), ucount.data_ptr<int>(),     \
++                               members.data_ptr<int>(), Z.data_ptr<float>(), (int)K, (int)N, (int)P, (int)SK, maxm, \
++                               (int)slots, (int)E)
++    if (probe == 0) {
++        if (ld == LD_NC && nt == 8 && pd == 2) LAUNCH(8, 2, LD_NC, 0);
++        else if (ld == LD_NC && nt == 8 && pd == 1) LAUNCH(8, 1, LD_NC, 0);
++        else if (ld == LD_NC && nt == 8 && pd == 4) LAUNCH(8, 4, LD_NC, 0);
++        else if (ld == LD_NC && nt == 4 && pd == 2) LAUNCH(4, 2, LD_NC, 0);
++        else if (ld == LD_NC && nt == 4 && pd == 4) LAUNCH(4, 4, LD_NC, 0);
++        else if (ld == LD_W32 && nt == 8 && pd == 2) LAUNCH(8, 2, LD_W32, 0);
++        else if (ld == LD_W32 && nt == 4 && pd == 4) LAUNCH(4, 4, LD_W32, 0);
++        else if (ld == LD_CPA && nt == 8 && pd == 2) LAUNCH(8, 2, LD_CPA, 0);
++        else if (ld == LD_CPA && nt == 4 && pd == 4) LAUNCH(4, 4, LD_CPA, 0);
++        else TORCH_CHECK(false, "exl3_ld: unsupported (ld, nt, pd) = (", ld, ", ", nt, ", ", pd, ")");
++    } else {
++        TORCH_CHECK(nt == 8 && pd == 2, "exl3_ld: probes run at nt 8, pd 2");
++        if (ld == LD_NC && probe == 1) LAUNCH(8, 2, LD_NC, 1);
++        else if (ld == LD_NC && probe == 2) LAUNCH(8, 2, LD_NC, 2);
++        else if (ld == LD_NC && probe == 3) LAUNCH(8, 2, LD_NC, 3);
++        else if (ld == LD_W32 && probe == 3) LAUNCH(8, 2, LD_W32, 3);
++        else if (ld == LD_CPA && probe == 3) LAUNCH(8, 2, LD_CPA, 3);
++        else TORCH_CHECK(false, "exl3_ld: probes: nc 1-3, w32 / cpa 3");
++    }
++#undef LAUNCH
++}
+diff --git a/src/tensorfold/families/glm5_next/cuda/exl3_mm.py b/src/tensorfold/families/glm5_next/cuda/exl3_mm.py
+index 9e0576d..8484cd1 100644
+--- a/src/tensorfold/families/glm5_next/cuda/exl3_mm.py
++++ b/src/tensorfold/families/glm5_next/cuda/exl3_mm.py
+@@ -133,6 +133,10 @@ def shared_suh(ex: "Exl3Experts") -> bool:
+ # exl3_stream.cu's persistent kernels, the same bits); None otherwise
+ STREAM = None
+ 
++# patches/0580: ``expert_loads`` while GLM53_TF_DEC_EXPERT_LOADS=1 (the two grouped launches of windows of <= 16 rows
++# through exl3_ld.cu's ld_kernel: grouped_kernel's work items with a deeper load path, the same bits); None otherwise
++LOADS = None
++
+ # patches/0130: ``decode_v2`` while GLM53_TF_DECODE_KERNELS=v2 has ``exl3`` (windows of <= 16 rows through exl3_dec.cu:
+ # three kernels, the same bits); None otherwise
+ V2 = None
+@@ -279,7 +283,7 @@ def routed(x: torch.Tensor, pick: torch.Tensor, group, ex: Exl3Experts, s: Scrat
+         if loop:
+             ext.grouped_loop(x0, x1, t0, t1, group.ids, group.count, group.members, s.z, mats, K, N, P, sk, slots,
+                              LOOP_CFG[0], w, LOOP_CFG[1])
+-        else:
++        elif LOADS is None or not LOADS.grouped(x0, x1, t0, t1, group, s.z, mats, K, N, P, sk, slots, w):  # patches/0580
+             ext.grouped(x0, x1, t0, t1, group.ids, group.count, group.members, s.z, mats, K, N, P, sk, slots, nt, w)
+ 
+     ext.rot_in(x, x.stride(0), pick, ex.suh_g, ex.suh_u, s.xg, s.xu, R, D, slots)
+diff --git a/src/tensorfold/families/glm5_next/cuda/expert_loads.py b/src/tensorfold/families/glm5_next/cuda/expert_loads.py
+new file mode 100644
+index 0000000..32e8005
+--- /dev/null
++++ b/src/tensorfold/families/glm5_next/cuda/expert_loads.py
+@@ -0,0 +1,183 @@
++"""Decode-window routed experts with a deeper load path (patches/0580): ``exl3_ld.cu``'s ``ld_kernel`` in place of
++exl3.cu's ``grouped_kernel`` for the gate/up and down GEMVs of ``exl3_mm.routed`` (windows of <= 16 rows: decode,
++verify, MTP, DFlash2 and 4-slot windows; longer windows keep ``grouped_loop``), with the bits of exl3.cu.
++
++Knobs (off by default; each rank reads its own, and ranks may differ without changing a bit):
++
++``GLM53_TF_DEC_EXPERT_LOADS=1``      the two grouped launches of a routed layer run ``ld_kernel`` (rot_in and the two
++                                     epilogues are exl3.cu's, unchanged).
++``GLM53_TF_DEC_EXPERT_LOADS_CFG``    "ld,nt,pd" for both matrices, or "ld,nt,pd/ld,nt,pd" (gate/up, down); default
++                                     "nc,8,2". ld: ``nc`` = 16-byte ld.global.nc into registers + a warp staging area
++                                     (W16 littles.cu's winner: 232.7 GB/s at 4 KB an SM in flight), ``w32`` =
++                                     grouped_kernel's 32-bit loads, ``cpa`` = a cp.async ring; nt: column tiles a
++                                     program (8 = grouped_kernel's; 4 = twice the programs, 4 CTAs an SM); pd: k steps in
++                                     flight a warp (1, 2, 4). Every setting places work only.
++``GLM53_TF_DEC_EXPERT_LOADS_PDL=1``  launch ld_kernel as a programmatic dependent (sm_90+; default 0): its prologue (the
++                                     grouping reads and the first k steps of trellis words) overlaps the previous
++                                     kernel's tail; X / Xd are read and Z written after griddepcontrol.wait. Safe
++                                     because the launch before it (rot_in / gateup_epilogue) is a plain launch and the
++                                     grouping is written before routed starts (exl3_ld.cu's header).
++
++Exactness (docs/DECODE-KERNELS-2.md §3): the program grid, each warp's K range (exl3_mm's W = 4 warps and K splits),
++the mma chain per accumulator (k ascending from +0.0, decode_tile's B fragments, load_pair's A values), the warp sum
++order and the Z rows stored are grouped_kernel's; only when and how the bytes arrive changes. So a row's Z, and so Xd
++and Y, are the bits of today's kernel for every row count, and drafted == serial, batched == alone, resumed == fresh
++hold as before. Not used by fast-prefill chunks, windows past 16 rows (grouped_loop) or while 0440's
++GLM53_TF_DEC_EXPERTS / 0130's decode_v2 take the whole routed path.
++"""
++
++from __future__ import annotations
++
++import os
++from functools import lru_cache
++from pathlib import Path
++
++from . import exl3_mm
++
++ENV = "GLM53_TF_DEC_EXPERT_LOADS"
++ENV_CFG = "GLM53_TF_DEC_EXPERT_LOADS_CFG"
++LDS = {"nc": 0, "w32": 1, "cpa": 2}
++CFGS = (("nc", 8, 2), ("nc", 8, 1), ("nc", 8, 4), ("nc", 4, 2), ("nc", 4, 4), ("w32", 8, 2), ("w32", 4, 4),
++        ("cpa", 8, 2), ("cpa", 4, 4))
++PROBES = {("nc", 1), ("nc", 2), ("nc", 3), ("w32", 3), ("cpa", 3)}      # at nt 8, pd 2
++DEFAULT = ("nc", 8, 2)
++
++
++def _env(name: str, default: str) -> str:
++    return os.environ.get(name, default).strip().lower()
++
++
++def _cfg(text: str) -> tuple:
++    parts = [p.strip() for p in text.split(",")]
++    try:
++        c = (parts[0], int(parts[1]), int(parts[2]))
++    except (IndexError, ValueError):
++        c = None
++    if c not in CFGS or len(parts) != 3:
++        raise ValueError(f"{ENV_CFG}={os.environ.get(ENV_CFG)!r}: each of gate/up, down must be one of "
++                         f"{', '.join(','.join(map(str, x)) for x in CFGS)}")
++    return c
++
++
++def parse() -> dict:
++    """The knobs, validated (a bad value refuses to start rather than silently running something else)."""
++
++    raw = _env(ENV_CFG, "")
++    if raw:
++        halves = raw.split("/")
++        if len(halves) > 2:
++            raise ValueError(f"{ENV_CFG}={os.environ.get(ENV_CFG)!r}: expected ld,nt,pd or ld,nt,pd/ld,nt,pd")
++        gu = _cfg(halves[0])
++        dn = _cfg(halves[1]) if len(halves) == 2 else gu
++    else:
++        gu = dn = DEFAULT
++    off = ("", "0", "false", "no", "off")
++    return {"on": _env(ENV, "0") not in off, "gu": gu, "dn": dn,
++            "pdl": _env("GLM53_TF_DEC_EXPERT_LOADS_PDL", "0") not in off}
++
++
++CFG = parse()
++
++
++@lru_cache(maxsize=1)
++def _ext():
++    """Built for this GPU's architecture only (as decode_stream's kernels: one arch, one cubin)."""
++
++    import torch
++    from torch.utils.cpp_extension import load
++
++    here = Path(__file__).parent
++    major, minor = torch.cuda.get_device_capability()
++    saved = os.environ.get("TORCH_CUDA_ARCH_LIST")
++    os.environ["TORCH_CUDA_ARCH_LIST"] = f"{major}.{minor}"
++    try:
++        return load(name="tensorfold_glm_exl3_ld_v1", sources=[str(here / "exl3_ld.cpp"), str(here / "exl3_ld.cu")],
++                    extra_cuda_cflags=["-O3"], verbose=False)
++    finally:
++        if saved is None:
++            os.environ.pop("TORCH_CUDA_ARCH_LIST", None)
++        else:
++            os.environ["TORCH_CUDA_ARCH_LIST"] = saved
++
++
++def fits(K: int, N: int, sk: int, w: int, cfg: tuple) -> bool:
++    """Whether (ld, nt, pd) can run a (K, N, K splits, warps) matrix with grouped_kernel's work items."""
++
++    _, nt, pd = cfg
++    if w != 4 or K % (16 * sk * w) or N % (16 * nt):
++        return False
++    per_warp = K // (16 * sk * w)
++    return per_warp >= pd and per_warp % pd == 0
++
++
++@lru_cache(maxsize=None)
++def _pdl_ok(device: int) -> bool:
++    import torch
++
++    return torch.cuda.get_device_capability(device)[0] >= 9
++
++
++def run(x0, x1, t0, t1, group, z, mats: int, K: int, N: int, P: int, sk: int, slots: int, cfg: tuple,
++        probe: int = 0, pdl: bool | None = None) -> None:
++    """One grouped launch through ld_kernel (tests / benches call this directly; probe > 0: timing only)."""
++
++    ld, nt, pd = cfg
++    if probe and (ld, probe) not in PROBES:
++        raise ValueError(f"no probe {probe} for {ld}")
++    pdl = CFG["pdl"] if pdl is None else bool(pdl)
++    pdl = pdl and _pdl_ok(x0.device.index or 0)
++    _ext().grouped(x0, x1, t0, t1, group.ids, group.count, group.members, z, mats, K, N, P, sk, slots, nt, LDS[ld],
++                   pd, probe, pdl)
++
++
++def grouped(x0, x1, t0, t1, group, z, mats: int, K: int, N: int, P: int, sk: int, slots: int, w: int) -> bool:
++    """``exl3_mm.routed``'s ``ext.grouped`` call (not grouped_loop) through ld_kernel, the same Z. False: not
++    taken (the caller runs exl3.cu)."""
++
++    if not CFG["on"]:
++        return False
++    cfg = CFG["dn" if mats == 1 else "gu"]
++    if not fits(K, N, sk, w, cfg) or t0.data_ptr() % 16 or t1.data_ptr() % 16:
++        return False
++    run(x0, x1, t0, t1, group, z, mats, K, N, P, sk, slots, cfg)
++    return True
++
++
++def configure(on: bool | None = None, *, gu: tuple | None = None, dn: tuple | None = None,
++              pdl: bool | None = None) -> dict:
++    """Install the hook as the knobs (or the arguments) say. CUDA graphs keep the kernels they captured."""
++
++    import sys
++
++    if on is not None:
++        CFG["on"] = bool(on)
++    if pdl is not None:
++        CFG["pdl"] = bool(pdl)
++    for k, v in (("gu", gu), ("dn", dn)):
++        if v is not None:
++            v = tuple(v)
++            if v not in CFGS:
++                raise ValueError(f"{k}={v}: one of {CFGS}")
++            CFG[k] = v
++    exl3_mm.LOADS = sys.modules[__name__] if CFG["on"] else None
++    return dict(CFG)
++
++
++class using:
++    """Tests / benches: run with these settings (eager kernels; captured graphs keep theirs), then restore."""
++
++    def __init__(self, **kw) -> None:
++        self.kw, self.saved = kw, None
++
++    def __enter__(self):
++        self.saved = dict(CFG)
++        return configure(**self.kw)
++
++    def __exit__(self, *exc):
++        CFG.clear()
++        CFG.update(self.saved)
++        configure()
++        return False
++
++
++configure()
+diff --git a/src/tensorfold/families/glm5_next/cuda/forward.py b/src/tensorfold/families/glm5_next/cuda/forward.py
+index ac5bc53..123d1da 100644
+--- a/src/tensorfold/families/glm5_next/cuda/forward.py
++++ b/src/tensorfold/families/glm5_next/cuda/forward.py
+@@ -29,6 +29,7 @@ import triton.language as tl
+ 
+ from . import decode_v2 as dv2, fastpf, glue, kda as kda_mod, latent, profile, qmm, sparse
+ from . import decode_stream  # noqa: F401  (patches/0440: installs its hooks in exl3_mm / qmm when its knobs are on)
++from . import expert_loads  # noqa: F401  (patches/0580: installs its hook in exl3_mm when its knob is on)
+ from . import l2pf                                                            # patches/0460
+ from .attention import AttnScratch, attention, kv_write
+ from .comm import fast_gather
+diff --git a/src/tensorfold/families/glm5_next/cuda/sessdisk.py b/src/tensorfold/families/glm5_next/cuda/sessdisk.py
+index 13e1afa..5e7a2da 100644
+--- a/src/tensorfold/families/glm5_next/cuda/sessdisk.py
++++ b/src/tensorfold/families/glm5_next/cuda/sessdisk.py
+@@ -206,6 +206,9 @@ KNOB_SKIP_PREFIX = KNOB_SKIP_PREFIX + ("GLM53_TF_SPARSE_V2",)
+ # only; GLM53_TF_DEC_QMM=force, measurements only, is the exception it documents)
+ KNOB_SKIP_PREFIX = KNOB_SKIP_PREFIX + ("GLM53_TF_DEC_EXPERTS", "GLM53_TF_DEC_QMM", "GLM53_TF_DEC_PDL", "GLM53_TF_DEC_CTAS")
+ 
++# patches/0580: the expert load path computes exl3.cu's bits (speed settings only; 0570's GLM53_TF_DEC_QMM_* are above)
++KNOB_SKIP_PREFIX = KNOB_SKIP_PREFIX + ("GLM53_TF_DEC_EXPERT_LOADS",)
++
+ 
+ def layout_sig(comps) -> list:
+     """The cache tensors a page / tail holds: rows a page, MTP or not, dtype, a row's shape."""

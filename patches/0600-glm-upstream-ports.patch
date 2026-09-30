@@ -1,0 +1,1389 @@
+diff --git a/src/tensorfold/cli.py b/src/tensorfold/cli.py
+index a6e3ec1..968e83f 100644
+--- a/src/tensorfold/cli.py
++++ b/src/tensorfold/cli.py
+@@ -378,15 +378,17 @@ def cmd_serve(args: argparse.Namespace) -> int:
+     model_dir = hub.resolve(args.model, required_files=required_files)
+     if needs_full_snapshot and check is not None:
+         check(model_dir)                         # checks that need the complete index, such as an MTP head
++
++    # `kill -USR1 <pid>` prints every thread's Python stack: the way to see where a silent server waits.
++    # patches/0600 (upstream a586f3d): registered before the CUDA branch, so both CUDA ranks have it too
++    # (`docker exec glm53-tf-rN kill -USR1 1`, then `scripts/serve.sh logs N`)
++    import faulthandler
++
++    faulthandler.register(signal.SIGUSR1, all_threads=True)
+     if backend == "cuda":
+         return _serve_cuda(args, family, model_dir)
+     for key, value in getattr(family.package, "MLX_ENV", {}).items():
+         os.environ.setdefault(key, value)       # before MLX starts: it reads them once
+-
+-    # `kill -USR1 <pid>` prints every thread's Python stack: the way to see where a silent server waits
+-    import faulthandler
+-
+-    faulthandler.register(signal.SIGUSR1, all_threads=True)
+     import mlx.core as mx
+ 
+     # MLX keeps freed buffers up to its memory limit: long contexts, whose attention buffers change size every
+diff --git a/src/tensorfold/cuda/health.py b/src/tensorfold/cuda/health.py
+index 2f2bb84..19df891 100644
+--- a/src/tensorfold/cuda/health.py
++++ b/src/tensorfold/cuda/health.py
+@@ -22,6 +22,16 @@ keeps, per server:
+   503 right away once ``fatal`` is set (instead of queueing behind a hung collective). ``scripts/serve.sh watch``
+   restarts both ranks on it.
+ 
++patches/0600 (upstream 51b098d / c4bf25f, MIT, by MiaAI Lab and ashhart): ``/health`` also carries upstream's
++live totals under upstream's names, so pollers written for upstream (dashboards reading tok/s) work here too:
++``backend``, ``busy``, ``requests_running``, ``requests_total``, ``prompt_tokens_total``, ``completion_tokens_total``
++(finished replies plus the running replies' tokens so far: it moves as tokens are emitted), ``prefill_seconds_total``,
++``decode_seconds_total``, ``cached_tokens_total``, ``rounds_total``, ``drafted_total``, ``accepted_total``, and with the
++batch engine ``streams`` (decoding / prefilling / max slots) and ``context_length``. As upstream, a request that
++failed still counts its prompt and the tokens it emitted; the engine's own stats (seconds, rounds, drafts) come when a
++request ends. 0150's fields (``ok``, ``mode``, ``inflight``, ``requests``, ``errors``, ...) are unchanged, and
++``/metrics`` is unchanged.
++
+ A request is stalled when its last token (or its start, before the first token) is older than ``GLM53_TF_STALL_S``
+ (default 0: never) plus, before the first token, its prompt at ``GLM53_TF_STALL_PREFILL_TPS`` tokens a second
+ (default 200, well under the slowest measured prefill, so a 1M prompt gets ~83 min before it counts).
+@@ -74,6 +84,8 @@ class Health:
+         self.counters: dict[str, float] = {k: 0 for k in (
+             "requests", "errors", "rejected", "prompt_tokens", "completion_tokens", "cached_tokens",
+             "decode_rounds", "decode_seconds", "prefill_seconds")}
++        # patches/0600: upstream's /health totals (every ended request, failed ones included)
++        self.totals: dict[str, float] = dict.fromkeys(TOTALS, 0)
+ 
+     # -- request lifecycle -------------------------------------------------------------------------------------
+ 
+@@ -97,6 +109,7 @@ class Health:
+         with self.lock:
+             entry = self.inflight.pop(rid, None)
+             self.last_done = self.clock()
++            self._fold(entry, stats if error is None else None)          # patches/0600
+             c = self.counters
+             c["requests"] += 1
+             if error is not None:
+@@ -112,6 +125,30 @@ class Health:
+             c["decode_seconds"] += float(stats.get("decode_s", 0) or 0)
+             c["prefill_seconds"] += float(stats.get("prefill_s", 0) or 0)
+ 
++    def _fold(self, entry: dict[str, float] | None, stats: dict[str, Any] | None) -> None:
++        """patches/0600: an ended request into upstream's totals (its prompt, the tokens it emitted, its stats)."""
++
++        t = self.totals
++        t["requests_total"] += 1
++        if entry is not None:
++            t["prompt_tokens_total"] += entry["prompt"]
++            t["completion_tokens_total"] += entry["tokens"]
++        for key, name in STATS.items():
++            value = (stats or {}).get(key)
++            if isinstance(value, (int, float)) and not isinstance(value, bool):
++                t[name] += value
++
++    def totals_now(self) -> dict[str, Any]:
++        """patches/0600: upstream's /health totals now: ended requests plus the running replies' tokens so far."""
++
++        with self.lock:
++            body: dict[str, Any] = dict(self.totals)
++            body["completion_tokens_total"] += sum(e["tokens"] for e in self.inflight.values())
++            running = len(self.inflight)
++        body = {k: (round(v, 6) if isinstance(v, float) and not float(v).is_integer() else int(v))
++                for k, v in body.items()}
++        return {"backend": "tensorfold", "busy": running > 0, "requests_running": running, **body}
++
+     def reject(self) -> str | None:
+         """Why a new completion must not start (strict mode after a fatal error), or None."""
+ 
+@@ -139,8 +176,9 @@ class Health:
+                 out.append({"prompt": entry["prompt"], "quiet_s": round(quiet, 1), "allowed_s": round(allow, 1)})
+         return out
+ 
+-    def status(self) -> tuple[int, dict[str, Any]]:
+-        """(HTTP code, body) for ``GET /health``."""
++    def status(self, app=None) -> tuple[int, dict[str, Any]]:
++        """(HTTP code, body) for ``GET /health``. patches/0600: upstream's live totals too, and with ``app`` its
++        engine's slots (``streams``) and context (``context_length``)."""
+ 
+         with self.lock:
+             now = self.clock()
+@@ -160,6 +198,9 @@ class Health:
+                 body["fatal"] = self.fatal
+             if stalled:
+                 body["stalled"] = stalled
++        body.update(self.totals_now())             # patches/0600: after the lock (it takes it again)
++        if app is not None:
++            body.update(engine_view(app))
+         code = 503 if self.mode == "strict" and not body["ok"] else 200
+         return code, body
+ 
+@@ -200,6 +241,31 @@ class Health:
+         return "\n".join(out) + "\n"
+ 
+ 
++# patches/0600: an engine's stats key -> upstream's /health total
++STATS = {"prefill_s": "prefill_seconds_total", "decode_s": "decode_seconds_total", "cached": "cached_tokens_total",
++         "rounds": "rounds_total", "drafted": "drafted_total", "accepted": "accepted_total"}
++TOTALS = ("requests_total", "prompt_tokens_total", "completion_tokens_total", *STATS.values())
++
++
++def engine_view(app) -> dict[str, Any]:
++    """patches/0600: upstream's ``streams`` for a batch engine (GLM53_TF_BATCH: slots decoding / prefilling / all,
++    read without a lock: sizes only) and ``context_length`` (the engine's limit)."""
++
++    out: dict[str, Any] = {}
++    engine = getattr(app, "engine", None)
++    batch = getattr(engine, "batch", None)
++    seqs = getattr(batch, "seqs", None)
++    if seqs is not None:
++        live = [s for s in list(seqs) if s is not None]
++        out["streams"] = {"decoding": sum(1 for s in live if getattr(s, "stepper", None) is not None),
++                          "prefilling": sum(1 for s in live if getattr(s, "stepper", None) is None),
++                          "max": int(getattr(batch, "n", len(seqs)) or len(seqs))}
++    limit = getattr(engine, "limit", None)
++    if isinstance(limit, int) and not isinstance(limit, bool) and limit > 0:
++        out["context_length"] = limit
++    return out
++
++
+ class TrackedEngine:
+     """``engine`` with ``generate`` going through ``Health`` (begin, a progress mark per token callback, end with
+     the stats or the exception). Every other attribute is the engine's own (read and written through)."""
+@@ -219,6 +285,9 @@ class TrackedEngine:
+                 health.progress(rid, len(new))
+                 return on_tokens(new)
+ 
++            if getattr(on_tokens, "cancelled", None) is not None:
++                tracked.cancelled = on_tokens.cancelled     # patches/0600: the client check reaches the engine
++
+             try:
+                 stats = inner(prompt, max_tokens, sampling, tracked, *args, **kwargs)
+             except BaseException as exc:
+diff --git a/src/tensorfold/cuda/server.py b/src/tensorfold/cuda/server.py
+index c1c729b..70a0e80 100644
+--- a/src/tensorfold/cuda/server.py
++++ b/src/tensorfold/cuda/server.py
+@@ -16,16 +16,20 @@ A family's CUDA engine (``cuda_engine`` in its package) provides:
+ from __future__ import annotations
+ 
+ import json
++import math
+ import os
+ import re
+ import threading
+ import time
++import traceback
+ import uuid
+ from datetime import datetime
+ from http.server import BaseHTTPRequestHandler
+ from pathlib import Path
+ from typing import Any, Callable
+ 
++from tensorfold.server.cancellation import RequestCancelled, socket_cancellation     # patches/0600 (upstream 24afe5e)
++
+ _THINK_END = "</think>"
+ _CALL_OPEN, _CALL_CLOSE = "<tool_call>", "</tool_call>"
+ _TOOL_CALL_BLOCK_RE = re.compile(r"<tool_call>\s*(.*?)\s*</tool_call>", re.IGNORECASE | re.DOTALL)
+@@ -208,10 +212,44 @@ def _glm_call(block: str, tools: list[dict[str, Any]]) -> tuple[str | None, dict
+         try:
+             args[key] = json.loads(raw)
+         except (json.JSONDecodeError, ValueError):
+-            args[key] = raw
++            args[key] = _closed_value(raw, kind)
+     return name, args
+ 
+ 
++def closed_json(text: str) -> str | None:
++    """patches/0600, from upstream TensorFold (c30a1a9, ``tool_parameters.closed_json``, MIT; issue #87):
++    ``text`` with the arrays and objects it left open closed, or None if it doesn't only stop short of them."""
++
++    closers, in_string, escaped = [], False, False
++    for ch in text:
++        if in_string:
++            escaped, in_string = (False, True) if escaped else (ch == "\\", ch != '"')
++        elif ch == '"':
++            in_string = True
++        elif ch in "[{":
++            closers.append("]" if ch == "[" else "}")
++        elif ch in "]}" and (not closers or closers.pop() != ch):
++            return None
++    return text.rstrip() + "".join(reversed(closers)) if closers and not in_string else None
++
++
++def _closed_value(raw: str, kind: Any) -> Any:
++    """patches/0600: a value that is not JSON as written. When the tool's schema types it as an array / object and it
++    only stops short of its closing brackets (#87: GLM ends a nested argument one ``]`` / ``}`` short), the closed
++    value if it then parses to that type; otherwise the text, as before."""
++
++    if kind in ("array", "object"):
++        fixed = closed_json(raw)
++        if fixed is not None:
++            try:
++                value = json.loads(fixed)
++            except (json.JSONDecodeError, ValueError):
++                return raw
++            if isinstance(value, list if kind == "array" else dict):
++                return value
++    return raw
++
++
+ def parse_tool_calls(text: str, tools: list[dict[str, Any]]) -> tuple[str, list[dict[str, Any]] | None]:
+     """Qwen ``<tool_call><function=name><parameter=k>v</parameter></function></tool_call>``, GLM
+     ``<tool_call>name<arg_key>k</arg_key><arg_value>v</arg_value></tool_call>``, or JSON bodies."""
+@@ -260,10 +298,12 @@ class Problem(str):
+ 
+     code: str | None = None
+     param: str | None = None
++    status: int = 400                       # patches/0600: 503 for a transient capacity refusal (retry shortly)
+ 
+-    def __new__(cls, message: str, code: str | None = None, param: str | None = None) -> "Problem":
++    def __new__(cls, message: str, code: str | None = None, param: str | None = None,
++                status: int = 400) -> "Problem":
+         self = super().__new__(cls, message)
+-        self.code, self.param = code, param
++        self.code, self.param, self.status = code, param, int(status)
+         return self
+ 
+ 
+@@ -314,6 +354,105 @@ def token_ids_problem(prompt: Any, vocab: int | None) -> str | None:
+     return None
+ 
+ 
++# -- patches/0600: request hardening (from upstream TensorFold 2bc35c4, MIT) -------------------------------------
++
++_NUMBER_FIELDS = ("temperature", "top_p", "top_k", "seed", "max_tokens", "max_completion_tokens")
++_INTEGER_FIELDS = frozenset({"top_k", "seed", "max_tokens", "max_completion_tokens"})
++
++
++def parse_numbers(body: dict[str, Any]) -> dict[str, Any]:
++    """patches/0600: a request's sampling and length fields, read strictly (upstream's ``parse_numbers`` rules): no
++    booleans, a finite number (temperature, top_p) or an integral one (top_k, seed, max_tokens; ``20.0`` and ``"20"``
++    are fine, ``20.5`` is not). Null or absent: not in the result. Raises ValueError (HTTP 400, before a stream's
++    headers). Values are not clamped: the engine sees what it saw before for every valid request."""
++
++    parsed: dict[str, Any] = {}
++    for name in _NUMBER_FIELDS:
++        value = body.get(name)
++        if value is None:
++            continue
++        integer = name in _INTEGER_FIELDS
++        try:
++            if isinstance(value, bool) or not isinstance(value, (str, int, float)):
++                raise ValueError
++            number = int(value) if integer else float(value)
++            if integer and isinstance(value, float) and value != number:
++                raise ValueError
++            if not integer and not math.isfinite(number):
++                raise ValueError
++        except (ValueError, TypeError, OverflowError):
++            kind = "an integer" if integer else "a finite number"
++            raise ValueError(f"{name} must be {kind} or null") from None
++        parsed[name] = number
++    return parsed
++
++
++def template_kwargs(body: dict[str, Any]) -> dict[str, Any]:
++    """patches/0600: ``chat_template_kwargs`` as a new dict: absent or null is ``{}``; anything but a JSON object
++    ([], "", false and 0 included, as upstream) raises ValueError."""
++
++    kwargs = body.get("chat_template_kwargs")
++    if kwargs is None:
++        return {}
++    if not isinstance(kwargs, dict):
++        raise ValueError("chat_template_kwargs must be a JSON object or null")
++    return dict(kwargs)
++
++
++def template_refusal(exc: BaseException) -> str | None:
++    """patches/0600: the 400 message for a chat template's own refusal (jinja2 ``TemplateError``, e.g. the template's
++    ``raise_exception``), or None for any other exception."""
++
++    try:
++        from jinja2.exceptions import TemplateError
++    except ImportError:                     # pragma: no cover - the server needs jinja2
++        return None
++    return f"the chat template rejected the request: {exc}" if isinstance(exc, TemplateError) else None
++
++
++_URL_USERINFO = re.compile(r"(?i)\b([a-z][a-z0-9+.\-]*://)[^\s/@\"'<>]*@")
++_URL_QUERY = re.compile(r"(?i)\b([a-z][a-z0-9+.\-]*://[^\s?#\"'<>]*)[?#][^\s\"'<>]*")
++_DATA_URL = re.compile(r"(?i)\bdata:[^,\s\"'<>]*,[^\s\"'<>]*")
++
++
++def redact(text: str) -> str:
++    """patches/0600: ``text`` for a server log: URL credentials, query strings / fragments (tokens, signatures) and
++    ``data:`` payloads replaced by ``<redacted>``."""
++
++    text = _DATA_URL.sub("data:<redacted>", str(text))
++    text = _URL_QUERY.sub(r"\1?<redacted>", text)
++    return _URL_USERINFO.sub(r"\1<redacted>@", text)
++
++
++def log_error(exc: BaseException, what: str) -> None:
++    """patches/0600: one line and the traceback for a refused (400) or failed (500) request, redacted."""
++
++    lines = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
++    print(redact(f"[tensorfold] {what}: {type(exc).__name__}: {exc}\n{lines}"), end="", flush=True)
++
++
++def _takes_cancelled(run: Callable) -> bool:
++    """patches/0600: whether an app's ``run`` takes ``cancelled=``."""
++
++    import inspect
++
++    try:
++        params = inspect.signature(run).parameters
++    except (TypeError, ValueError):
++        return False
++    return "cancelled" in params or any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values())
++
++
++def disconnect_on() -> bool:
++    """patches/0600: GLM53_TF_DISCONNECT (default 1): stop a request whose client has gone (a socket check while it
++    waits, prefills and decodes, streamed or not). 0: only a failed streamed write stops one (before 0600)."""
++
++    raw = os.environ.get("GLM53_TF_DISCONNECT", "1").strip() or "1"
++    if raw not in ("0", "1"):
++        raise ValueError(f"GLM53_TF_DISCONNECT={raw!r}: expected 0 or 1")
++    return raw == "1"
++
++
+ # -- chat template -------------------------------------------------------------------------
+ 
+ class ChatTemplate:
+@@ -381,6 +520,7 @@ class App:
+         self.max_tokens = int(max_tokens)
+         self.lock = threading.Lock()
+         self.created = int(time.time())             # patches/0490: /v1/models' ``created``
++        self.disconnect = disconnect_on()           # patches/0600: GLM53_TF_DISCONNECT, checked at load
+ 
+     def check(self, body: dict[str, Any]) -> str | None:
+         """Why the request cannot run, or None. Checked before a stream's headers are sent."""
+@@ -395,6 +535,11 @@ class App:
+             parse_stop(body.get("stop"))
+         except ValueError as exc:
+             return str(exc)
++        try:                                        # patches/0600: refused before a stream's headers
++            template_kwargs(body)
++            parse_numbers(body)
++        except ValueError as exc:
++            return str(exc)
+         if isinstance(body.get("prompt"), list):    # patches/0490: a token-ID prompt (/v1/completions)
+             problem = token_ids_problem(body["prompt"], self.vocab_size())
+             if problem:
+@@ -456,20 +601,34 @@ class App:
+ 
+         from tensorfold.engine.exact_sampling import Sampling, seed_for
+ 
+-        temp = float(body["temperature"] if body.get("temperature") is not None else self.sampling["temperature"])
++        fields = parse_numbers(body)                # patches/0600: the values ``check`` accepted (same numbers)
++        temp = float(fields.get("temperature", self.sampling["temperature"]))
+         if temp <= 0:
+             return None
+-        seed = body.get("seed")
+-        top_k = body["top_k"] if body.get("top_k") is not None else self.sampling["top_k"]
+-        top_p = body["top_p"] if body.get("top_p") is not None else self.sampling["top_p"]
++        seed = fields.get("seed")
++        top_k = fields.get("top_k", self.sampling["top_k"])
++        top_p = fields.get("top_p", self.sampling["top_p"])
+         return Sampling(int(seed) if seed is not None else seed_for(prompt), temp, int(top_k), float(top_p))
+ 
+-    def run(self, body: dict[str, Any], chat: bool, emit: Callable[[dict[str, Any]], bool]) -> dict[str, Any]:
++    def run(self, body: dict[str, Any], chat: bool, emit: Callable[[dict[str, Any]], bool], *,
++            cancelled: Callable[[], bool] | None = None) -> dict[str, Any]:
++        """One reply. patches/0600 (upstream 24afe5e): ``cancelled()`` is true once the client has gone. A request that
++        has not started raises ``RequestCancelled`` without an engine call; a running one stops at its next round (the
++        batch engine also polls it while the request waits and prefills) and raises ``RequestCancelled`` once
++        ``generate`` returns, so no truncated reply is written. The per-token callback never raises into the engine:
++        a failure stops the request and is raised after ``generate`` returns."""
++
+         tools = body.get("tools") or []
+         kwargs = dict(body.get("chat_template_kwargs") or {})
+         thinking = bool(kwargs.pop("enable_thinking", self.default_thinking))
+         if chat:
+-            text = self.template.render(body["messages"], tools=tools, enable_thinking=thinking, extra=kwargs)
++            try:
++                text = self.template.render(body["messages"], tools=tools, enable_thinking=thinking, extra=kwargs)
++            except Exception as exc:            # patches/0600: a template refusal is the client's error (a 400)
++                message = template_refusal(exc)
++                if message is None:
++                    raise
++                raise ValueError(message) from exc
+         else:
+             text = body["prompt"]
+         if not chat and isinstance(text, list):    # patches/0490: token ids, used as they are
+@@ -481,6 +640,7 @@ class App:
+         out: list[int] = []
+         sent = {"reasoning": 0, "content": 0}
+         stopped = {"client": False}
++        failed: list[BaseException] = []            # patches/0600: the callback's failure, raised after generate
+         # patches/0160: OpenAI ``stop`` strings end the visible answer (not the reasoning, not a tool call's text):
+         # the reply is cut before the first one and nothing after it is sent. ``at``: the tokens received when it
+         # was seen (the reply's reported length)
+@@ -488,8 +648,9 @@ class App:
+         hit = {"stop": False, "at": 0}
+         stream = StreamDecoder(self.tok, tuple(self.engine.eos))
+ 
+-        def visible(finished: bool) -> tuple[str, str]:
+-            raw = stream.final() if finished else stream.text
++        def visible(finished: bool, raw: str | None = None) -> tuple[str, str]:
++            if raw is None:
++                raw = stream.final() if finished else stream.text
+             if chat and thinking:
+                 reasoning, answer = split_thinking(raw, finished=finished)
+             else:
+@@ -498,36 +659,73 @@ class App:
+                 answer = hide_tool_calls(answer, finished=finished)
+             return reasoning, answer
+ 
++        eos = frozenset(self.engine.eos)
++
++        def stop_at(k: int) -> int:
++            """patches/0600 (upstream 88407d1's per-token rule, on our 0160 scope: the visible answer): the reply's
++            length at the token that completes the first stop string, among the ``k`` tokens this call brought (a
++            drafted round brings several), so ``completion_tokens`` is the same however the tokens arrived."""
++
++            base = len(out) - k
++            for j in range(1, k):
++                ids = [t for t in out[:base + j] if t not in eos]
++                _, answer = visible(False, self.tok.decode(ids, skip_special_tokens=False))
++                if find_stop(answer, stops) >= 0:
++                    return base + j
++            return len(out)
++
+         def on_tokens(new: list[int]) -> bool:
+-            out.extend(new)
+-            if hit["stop"]:                         # patches/0160: past a stop string: nothing more is sent
++            # patches/0600: True stops the request after this round; once stopped (client gone, a stop string, a
++            # failure) every later call returns True at once and nothing more is decoded into text or sent
++            if stopped["client"] or failed:
++                out.extend(new)
++                return True
++            try:
++                out.extend(new)
++                if hit["stop"]:                     # patches/0160: past a stop string: nothing more is sent
++                    return True
++                stream.add(new)
++                reasoning, answer = visible(False)
++                if stops:                           # patches/0160
++                    cut = find_stop(answer, stops, max(0, sent["content"] - max(map(len, stops)) + 1))
++                    if cut >= 0:
++                        answer = answer[:cut]
++                        hit.update(stop=True, at=stop_at(len(new)))
++                    else:
++                        answer = answer[: len(answer) - stop_holdback(answer, stops)]
++                delta: dict[str, Any] = {}
++                if len(reasoning) > sent["reasoning"]:
++                    delta.update(reasoning_fields(reasoning[sent["reasoning"]:]))
++                    sent["reasoning"] = len(reasoning)
++                if len(answer) > sent["content"]:
++                    delta["content"] = answer[sent["content"]:]
++                    sent["content"] = len(answer)
++                if delta and not emit(delta):
++                    stopped["client"] = True
++                elif cancelled is not None and cancelled():     # patches/0600: every round, text or not
++                    stopped["client"] = True
++            except Exception as exc:        # noqa: BLE001  patches/0600: raised after generate, never into the engine
++                failed.append(exc)
+                 return True
+-            stream.add(new)
+-            reasoning, answer = visible(False)
+-            if stops:                               # patches/0160
+-                cut = find_stop(answer, stops, max(0, sent["content"] - max(map(len, stops)) + 1))
+-                if cut >= 0:
+-                    answer = answer[:cut]
+-                    hit.update(stop=True, at=len(out))
+-                else:
+-                    answer = answer[: len(answer) - stop_holdback(answer, stops)]
+-            delta: dict[str, Any] = {}
+-            if len(reasoning) > sent["reasoning"]:
+-                delta.update(reasoning_fields(reasoning[sent["reasoning"]:]))
+-                sent["reasoning"] = len(reasoning)
+-            if len(answer) > sent["content"]:
+-                delta["content"] = answer[sent["content"]:]
+-                sent["content"] = len(answer)
+-            if delta and not emit(delta):
+-                stopped["client"] = True
+             # patches/0160: True after a stop string too; the batch engine (GLM53_TF_BATCH) then ends the request
+             # in its next round (a cancel both ranks share), a single-request engine decodes on unheard
+             return stopped["client"] or hit["stop"]
+ 
++        if cancelled is not None:
++            on_tokens.cancelled = cancelled         # patches/0600: the batch engine polls it while nothing arrives
++
+         draft = body.get("draft", True) is not False
+         with self.lock:
++            if cancelled is not None and cancelled():       # patches/0600: the client left while this one waited
++                raise RequestCancelled("the client left before the request started")
+             stats = self.engine.generate(prompt, max_tokens, sampling, on_tokens,
+                                          **({} if draft else {"draft": False}))
++        if failed:                                  # patches/0600: the callback's failure (a 500 / stream error)
++            raise failed[0]
++        if stopped["client"]:                       # patches/0600: as upstream, nothing more is written
++            raise RequestCancelled("the client left during the reply", result={
++                "prompt_tokens": len(prompt), "completion_tokens": len(out), "finish": "cancelled",
++                "stats": dict(stats or {}, cancelled=True)})
+         reasoning, answer = visible(True)
+         final: dict[str, Any] = {}
+         if len(reasoning) > sent["reasoning"]:
+@@ -555,6 +753,8 @@ class App:
+         else:
+             finish = "length"
+         used = hit["at"] if stopped_at >= 0 and hit["stop"] else len(out)
++        if body.get("return_token_ids"):            # patches/0600 (upstream e6be5ff): the reply's ids (the counted ones)
++            stats = dict(stats or {}, token_ids=[int(t) for t in out[:used]])
+         return {"final": final, "calls": calls, "finish": finish, "content": content, "reasoning": reasoning,
+                 "prompt_tokens": len(prompt), "completion_tokens": used, "stats": stats}
+ 
+@@ -568,11 +768,26 @@ def make_handler(app: App):
+ 
+         def _json(self, code: int, payload: dict[str, Any]) -> None:
+             data = json.dumps(payload).encode()
+-            self.send_response(code)
+-            self.send_header("Content-Type", "application/json")
+-            self.send_header("Content-Length", str(len(data)))
+-            self.end_headers()
+-            self.wfile.write(data)
++            try:
++                self.send_response(code)
++                self.send_header("Content-Type", "application/json")
++                self.send_header("Content-Length", str(len(data)))
++                self.end_headers()
++                self.wfile.write(data)
++            except (BrokenPipeError, ConnectionResetError):          # patches/0600: the client has gone
++                self.close_connection = True
++
++        def _refuse(self, exc: BaseException) -> None:
++            """patches/0600 (upstream 2bc35c4): a request ``check`` / ``tokenize`` could not read is a 400, never a
++            dropped connection: a template refusal says so, a ValueError is the client's, anything else is logged
++            with its traceback (redacted) and answered with its message."""
++
++            message = template_refusal(exc)
++            if message is None:
++                if not isinstance(exc, ValueError):
++                    log_error(exc, "request refused (400)")
++                message = str(exc) or type(exc).__name__
++            self._json(400, error_body(message[:2000]))
+ 
+         def do_GET(self):
+             if self.path.rstrip("/") in ("/v1/models", "/models"):
+@@ -582,7 +797,7 @@ def make_handler(app: App):
+                     entry.update(created=getattr(app, "created", 0), root=app.served, max_model_len=limit, context_length=limit)
+                 self._json(200, {"object": "list", "data": [entry]})
+             elif self.path.rstrip("/") in ("/health", "/v1/health"):
+-                self._json(*app.health.status())            # patches/0150
++                self._json(*app.health.status(app))         # patches/0150; 0600: upstream's live totals too
+             elif self.path.rstrip("/") == "/metrics":       # patches/0150: Prometheus text
+                 data = app.health.metrics(app.served).encode()
+                 self.send_response(200)
+@@ -601,20 +816,25 @@ def make_handler(app: App):
+                 return self._json(404, {"error": "not found"})
+             try:
+                 body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
+-            except json.JSONDecodeError:
++            except (json.JSONDecodeError, UnicodeDecodeError, ValueError):   # patches/0600: non-UTF-8, bad length
+                 return self._json(400, error_body("the request body is not JSON"))
+             if not isinstance(body, dict):
+                 return self._json(400, error_body("the request body must be a JSON object"))
+             if tokenize:                        # patches/0490: host only (no engine, no lock, nothing to rank 1)
+                 try:
+                     ids = app.tokenize(body)
+-                except ValueError as exc:
+-                    return self._json(400, error_body(str(exc)))
++                except Exception as exc:                # patches/0600: template refusals and the rest too
++                    return self._refuse(exc)
+                 return self._json(200, {"count": len(ids), "max_model_len": app.context_limit(), "tokens": ids,
+                                         "token_strs": None})
+-            problem = app.check(body)
+-            if problem:
+-                return self._json(400, error_body(problem))     # patches/0490: with a Problem's code / param
++            try:
++                problem = app.check(body)
++            except Exception as exc:                    # patches/0600: a 400, not a dropped connection
++                return self._refuse(exc)
++            if problem:                                 # patches/0490: with a Problem's code / param
++                status = getattr(problem, "status", 400)        # patches/0600: 503 = retry shortly
++                return self._json(status, error_body(problem, "invalid_request_error" if status == 400
++                                                      else "server_error"))
+             refused = app.health.reject()           # patches/0150: GLM53_TF_HEALTH=strict after a fatal error
+             if refused:
+                 return self._json(503, {"error": {"message": refused, "type": "server_error"}})
+@@ -622,6 +842,13 @@ def make_handler(app: App):
+             created = int(time.time())
+             stream = bool(body.get("stream"))
+             kind = "chat.completion.chunk" if chat else "text_completion"
++            # patches/0600 (upstream 24afe5e): the client's socket, checked while the request waits, prefills and
++            # decodes (GLM53_TF_DISCONNECT=0: off)
++            gone = socket_cancellation(self.connection) if getattr(app, "disconnect", True) else None
++            cancelled = (lambda: gone.cancelled) if gone is not None else None     # noqa: E731
++            if not _takes_cancelled(app.run):                   # an app whose ``run`` predates 0600
++                cancelled = None
++            extra = {} if cancelled is None else {"cancelled": cancelled}
+ 
+             def chunk(delta: dict[str, Any], finish: str | None = None) -> dict[str, Any]:
+                 if chat:
+@@ -642,14 +869,19 @@ def make_handler(app: App):
+                         self.wfile.write(f"data: {json.dumps(chunk(delta))}\n\n".encode())
+                         self.wfile.flush()
+                         return True
+-                    except (BrokenPipeError, ConnectionResetError):
++                    except OSError:             # patches/0600: reset, pipe, timed out, unreachable: the client has gone
+                         return False
+ 
+                 if chat:
+                     emit({"role": "assistant"})
+                 try:
+-                    result = app.run(body, chat, emit)
++                    result = app.run(body, chat, emit, **extra)
++                except RequestCancelled:        # patches/0600: the client has gone; nothing more is written
++                    self.close_connection = True
++                    return
+                 except Exception as exc:        # patches/0150: an error event, not a dropped connection
++                    if not isinstance(exc, ValueError):
++                        log_error(exc, "request failed (stream error event)")      # patches/0600
+                     try:
+                         # patches/0490: a request the engine refused (ValueError) is the client's error, as in the
+                         # non-streamed response
+@@ -657,7 +889,7 @@ def make_handler(app: App):
+                             {"error": {"message": f"{type(exc).__name__}: {exc}"[:500], "type": "server_error"}}
+                         self.wfile.write(f"data: {json.dumps(err)}\n\ndata: [DONE]\n\n".encode())
+                         self.wfile.flush()
+-                    except (BrokenPipeError, ConnectionResetError):
++                    except OSError:
+                         pass
+                     self.close_connection = True
+                     return
+@@ -678,15 +910,19 @@ def make_handler(app: App):
+                 try:
+                     self.wfile.write(f"data: {json.dumps(end)}\n\ndata: [DONE]\n\n".encode())
+                     self.wfile.flush()
+-                except (BrokenPipeError, ConnectionResetError):
++                except OSError:
+                     pass
+                 self.close_connection = True
+                 return
+             try:
+-                result = app.run(body, chat, lambda delta: True)
++                result = app.run(body, chat, lambda delta: True, **extra)
++            except RequestCancelled:            # patches/0600: the client has gone; no reply
++                self.close_connection = True
++                return
+             except ValueError as exc:           # patches/0150: a request the engine refused
+                 return self._json(400, {"error": {"message": str(exc), "type": "invalid_request_error"}})
+             except Exception as exc:            # patches/0150: a JSON 500, not a dropped connection
++                log_error(exc, "request failed (500)")                  # patches/0600
+                 return self._json(500, {"error": {"message": f"{type(exc).__name__}: {exc}"[:500],
+                                                   "type": "server_error"}})
+             usage = {"prompt_tokens": result["prompt_tokens"], "completion_tokens": result["completion_tokens"],
+diff --git a/src/tensorfold/families/glm5_next/cuda/app.py b/src/tensorfold/families/glm5_next/cuda/app.py
+index 8cf6eab..3b4122e 100644
+--- a/src/tensorfold/families/glm5_next/cuda/app.py
++++ b/src/tensorfold/families/glm5_next/cuda/app.py
+@@ -40,6 +40,12 @@ patches/0490: a request past the context gets HTTP 400 with OpenAI's ``context_l
+ answer by compacting; ``/v1/models`` reports the limit as ``max_model_len`` / ``context_length``; the load prints one
+ ``[tensorfold] context:`` line (the limit, the KV cache, the slots, the pool). ``/v1/completions`` also takes one list
+ of token ids as ``prompt`` (``/tokenize`` makes them), as vLLM does.
++
++patches/0600 (upstream TensorFold ports, docs/UPSTREAM-050-AUDIT.md): a request whose client has gone is stopped
++while it waits, prefills or decodes, streamed or not (GLM53_TF_DISCONNECT, ``batch.Batcher._collect``), and logged
++``cancelled``; malformed requests are 400s before a stream's headers (sampling fields, ``chat_template_kwargs``, a
++template refusal, any other ``check`` failure) and too many image preparations at once a 503; image URLs are HTTPS
++on 443 to public addresses only (``image_fetch.py``).
+ """
+ 
+ from __future__ import annotations
+@@ -48,6 +54,7 @@ import os
+ from typing import Any, Callable
+ 
+ from tensorfold.cuda.server import App, context_problem
++from tensorfold.server.cancellation import RequestCancelled                 # patches/0600
+ 
+ from .prompt_tokens import Memo, PromptTokens
+ from . import reqlog as reqlog_mod
+@@ -210,7 +217,9 @@ class GlmApp(App):
+             except (vision_prep.VisionError, ValueError) as exc:
+                 from tensorfold.cuda.server import Problem
+ 
+-                return Problem(str(exc), param="messages")
++                # patches/0600: too many image preparations at once is a 503 (retry shortly), as upstream
++                status = 503 if isinstance(exc, vision_prep.VisionBusy) else 400
++                return Problem(str(exc), param="messages", status=status)
+             ids = self._vis.ready[3]
+             self.prompt_memo.put(text, ids)             # patches/0210: ``run`` reuses them
+             if limit is None:
+@@ -308,7 +317,8 @@ class GlmApp(App):
+             ids = vision_prep.expand(ids, req.images, self.vision.s, virtual=False)
+         return ids
+ 
+-    def run(self, body: dict[str, Any], chat: bool, emit: Callable[[dict[str, Any]], bool]) -> dict[str, Any]:
++    def run(self, body: dict[str, Any], chat: bool, emit: Callable[[dict[str, Any]], bool], *,
++            cancelled: Callable[[], bool] | None = None) -> dict[str, Any]:
+         from . import cpupin
+ 
+         cpupin.http_thread()                    # patches/0370 (GLM53_TF_CPU_PIN): a name for ps, ``nice`` when set
+@@ -329,9 +339,10 @@ class GlmApp(App):
+ 
+         self.engine.request.background = body.get("priority") == "background" or (
+             chat and is_title_request(body.get("messages"), body.get("tools")))
++        extra = {} if cancelled is None else {"cancelled": cancelled}      # patches/0600
+         log = self.reqlog
+         if log is None:
+-            return super().run(body, chat, emit)
++            return super().run(body, chat, emit, **extra)
+         # patches/0300: one line for this request once it ends (host only, on this HTTP thread)
+         self._rl.ticket = None
+ 
+@@ -341,8 +352,11 @@ class GlmApp(App):
+ 
+         result, error = None, None
+         try:
+-            result = super().run(body, chat, logged_emit)
++            result = super().run(body, chat, logged_emit, **extra)
+             return result
++        except RequestCancelled as exc:     # patches/0600: logged as ``cancelled`` with what it did, not an error
++            result = exc.result
++            raise
+         except BaseException as exc:
+             error = exc
+             raise
+diff --git a/src/tensorfold/families/glm5_next/cuda/batch.py b/src/tensorfold/families/glm5_next/cuda/batch.py
+index dc15b34..b4b1d4b 100644
+--- a/src/tensorfold/families/glm5_next/cuda/batch.py
++++ b/src/tensorfold/families/glm5_next/cuda/batch.py
+@@ -157,6 +157,16 @@ def _env_int(name: str, default: int) -> int:
+     return int(os.environ.get(name, "") or default)
+ 
+ 
++def _poll_s() -> float:
++    """patches/0600: GLM53_TF_DISCONNECT_POLL_MS (default 250, 10..10000): how often an HTTP thread waiting on its
++    request checks whether the client is still there."""
++
++    ms = _env_int("GLM53_TF_DISCONNECT_POLL_MS", 250)
++    if not 10 <= ms <= 10000:
++        raise ValueError(f"GLM53_TF_DISCONNECT_POLL_MS={ms}: expected 10..10000")
++    return ms / 1000.0
++
++
+ from . import gpuround, gpusample                                          # noqa: E402  (patches/0450)
+ from .kda import SlotTables as _SlotTables                                 # noqa: E402  (patches/0450)
+ 
+@@ -1009,6 +1019,7 @@ class Batcher:
+     admit_policy = "free"                         # patches/0550 (``__init__``: GLM53_TF_ADMIT_MEM)
+     admit_log = None                              # patches/0550: memsafe.AdmitLog (rank 0)
+     trimmer = None                                # patches/0550: memsafe.Trimmer (GLM53_TF_ALLOC_TRIM_GB)
++    poll_s = 0.25                                 # patches/0600: GLM53_TF_DISCONNECT_POLL_MS (``__init__``)
+ 
+     def __init__(self, g, n: int) -> None:
+         from .engine import GRAPH_ROWS, MAX_ROWS
+@@ -1016,6 +1027,7 @@ class Batcher:
+         self.g = g
+         e, w = g.e, g.w
+         self.max_rows = MAX_ROWS
++        self.poll_s = _poll_s()                 # patches/0600 (rank 0's HTTP threads; checked at load on both ranks)
+         if n * MAX_ROWS > e.rows:
+             raise ValueError(f"GLM53_TF_BATCH={n}: {n} windows of up to {MAX_ROWS} rows need {n * MAX_ROWS} buffer "
+                              f"rows, the engine has {e.rows} (raise GLM53_TF_PREFILL_ROWS)")
+@@ -1524,23 +1536,67 @@ class Batcher:
+             self.queue.extend(jobs)
+             self.cv.notify()
+ 
++    def _cancel(self, job: Job) -> None:
++        """Rank 0, an HTTP thread: end ``job`` at the next plan (a queued job is dropped, an admitted one, prefilling
++        or decoding, is cancelled through the plan rank 1 receives: the same path as every cancel)."""
++
++        job.cancel = True
++        with self.cv:
++            self.cv.notify()
++
+     def _collect(self, job: Job, on_tokens: Callable | None) -> list[int]:
++        """The job's tokens as they come, handed to ``on_tokens`` (True: stop the request). patches/0600 (upstream
++        24afe5e, adapted to the batcher): ``on_tokens.cancelled`` (the client's socket check, when the server set it)
++        is polled every GLM53_TF_DISCONNECT_POLL_MS (default 250) also while nothing arrives, so a request whose client
++        left is dropped while queued and cancelled while prefilling or decoding silently (non-streamed replies, a tool
++        call held back); an exception in ``on_tokens`` cancels the job too and is raised once its end marker came (the
++        slot does not decode on unheard)."""
++
+         got: list[int] = []
+         listening = on_tokens is not None
++        gone = getattr(on_tokens, "cancelled", None) if listening else None
++        poll = self.poll_s
++        checked = time.monotonic()
++        failure: BaseException | None = None
++
++        def left() -> bool:
++            try:
++                return bool(gone())
++            except Exception:                   # noqa: BLE001 - a broken check never ends a request
++                return False
++
+         while True:
+-            item = job.out.get()
++            if gone is not None and listening:
++                try:
++                    item = job.out.get(timeout=poll)
++                except queue.Empty:
++                    checked = time.monotonic()
++                    if left():
++                        self._cancel(job)       # the client went away: the next plan ends the request
++                        listening = False
++                    continue
++            else:
++                item = job.out.get()
+             if item is None:
++                if failure is not None:
++                    raise failure
+                 return got
+             if isinstance(item, ValueError):
+                 raise item
+             if isinstance(item, BaseException):
+                 raise RuntimeError("the batch loop failed") from item
+             got.extend(item)
+-            if listening and on_tokens(item):
+-                job.cancel = True               # the client went away: the next round ends the request
+-                listening = False
+-                with self.cv:
+-                    self.cv.notify()
++            if listening:
++                try:
++                    stop = on_tokens(item)
++                except Exception as exc:        # noqa: BLE001 - patches/0600: cancel the slot, raise at the end
++                    failure, stop = exc, True
++                if not stop and gone is not None and time.monotonic() - checked >= poll:
++                    checked = time.monotonic()
++                    stop = left()
++                if stop:
++                    self._cancel(job)           # the client went away: the next round ends the request
++                    listening = False
+ 
+     def generate(self, prompt, max_tokens, sampling, on_tokens, draft: bool = True, vis=None) -> dict[str, Any]:
+         """``GlmEngine.generate`` in batch mode (the calling thread's policy, stop-at-EOS, knobs and priority;
+@@ -2356,6 +2412,7 @@ class Batcher:
+                              batched_rounds=st.shared, min_rows=1 + min(st.depths, default=0),
+                              tokens_per_round=round((len(tokens) - 1) / max(st.rounds, 1), 3), sha256=sha,
+                              keeps=st.keeps, drafters="".join(st.arms), depths=st.depths,     # 0380: drafts a round
++                             drafted=getattr(st, "drafted", 0), accepted=getattr(st, "accepted", 0),    # 0600: /health
+                              round_kinds={k: round(v, 1) for k, v in q.kinds.items()})
+             if getattr(st, "adapt", None) is not None:  # patches/0340
+                 job.stats["adapt"] = dict(serial=st.adapt.serial, probes=st.adapt.probes)
+diff --git a/src/tensorfold/families/glm5_next/cuda/engine.py b/src/tensorfold/families/glm5_next/cuda/engine.py
+index c941662..4f1b1a3 100644
+--- a/src/tensorfold/families/glm5_next/cuda/engine.py
++++ b/src/tensorfold/families/glm5_next/cuda/engine.py
+@@ -1090,6 +1090,7 @@ class GlmEngine:
+         elif policy is None:
+             self.cache = [c for c in self.cache if len(c.ids) <= len(prompt)]   # the reply's rows are not kept
+         stats.update(decode_s=res.seconds, rounds=res.rounds, min_rows=1 + min(res.depths, default=0),
++                     drafted=res.drafted, accepted=res.accepted,        # patches/0600: /health totals
+                      tokens_per_round=round((len(res.tokens) - 1) / max(res.rounds, 1), 3),
+                      sha256=hashlib.sha256(json.dumps(res.tokens).encode()).hexdigest()[:16])
+         if res.arms:
+diff --git a/src/tensorfold/families/glm5_next/cuda/image_fetch.py b/src/tensorfold/families/glm5_next/cuda/image_fetch.py
+new file mode 100644
+index 0000000..d4319ad
+--- /dev/null
++++ b/src/tensorfold/families/glm5_next/cuda/image_fetch.py
+@@ -0,0 +1,239 @@
++"""patches/0600: bounded image URL retrieval with validated, pinned public addresses, for 0500's ``image_url`` parts.
++
++Ported from upstream TensorFold 391713e (+ 05cbb54, b4042e8): ``tensorfold/vision/images_http.py`` (MIT License,
++Copyright (c) 2026 TensorFold contributors), with these changes for our GLM vision (``vision_prep.load_bytes``):
++
++- ``Policy.http`` (GLM53_TF_VISION_FETCH_HTTP=1, default 0) also takes ``http://`` URLs and any port, and
++  ``Policy.private`` (GLM53_TF_VISION_FETCH_PRIVATE=1, default 0) any resolved address: both for local testing only.
++  Defaults: HTTPS on port 443 to public addresses, exactly upstream's rule.
++- ``image/gif`` is accepted beside JPEG / PNG / WebP (0500 decodes a GIF's first frame, as vLLM does).
++- NAT64 (``64:ff9b::/96``, ``64:ff9b:1::/48``) and IPv4-compatible IPv6 addresses are refused too (they can carry a
++  private IPv4 address).
++- A DNS lookup waits for one of the bounded resolver slots until the deadline instead of failing at once.
++- A reply that closes the connection (``Connection: close``, HTTP/1.0) is read to its end: upstream's per-read
++  ``settimeout`` fails there once ``http.client`` has closed the socket (the watchdog still bounds the read).
++- Messages never contain the URL (the caller's 400 goes to the client, logs are redacted by the server).
++
++What it does (upstream's design): the URL must be ``https`` on 443 with a host, no credentials, fragment, backslash or
++control characters, at most ``max_url_chars``; the host is resolved on a small bounded pool of threads and **every**
++address must be public (``is_global``, not multicast / reserved / 6to4 / Teredo / IPv4-mapped, not 192.0.0.0/24, not
++Azure's 168.63.129.16; this excludes private, loopback, link-local incl. 169.254.169.254, CGNAT 100.64/10 incl.
++100.100.100.200 and fd00:ec2::254); the socket connects to the checked address (no second lookup a rebinding DNS
++could answer differently), TLS verified for the host name; ``identity`` encoding only, a declared image type, at most
++``max_bytes``; each redirect (301/302/303/307/308, at most ``max_redirects``) is checked the same way from the start;
++one deadline covers every step (a watchdog closes the socket if a handshake or header read stalls).
++"""
++
++from __future__ import annotations
++
++import http.client
++import ipaddress
++import queue
++import socket
++import ssl
++import threading
++import time
++from dataclasses import dataclass
++from urllib.parse import quote, urljoin, urlsplit
++
++MEDIA_TYPES = {"image/jpeg": "JPEG", "image/png": "PNG", "image/webp": "WEBP", "image/gif": "GIF"}
++_DNS_SLOTS = threading.BoundedSemaphore(4)
++_REDIRECTS = {301, 302, 303, 307, 308}
++_SPECIAL_V4 = (ipaddress.ip_network("192.0.0.0/24"), ipaddress.ip_network("168.63.129.16/32"))
++_SPECIAL_V6 = (ipaddress.ip_network("64:ff9b::/96"), ipaddress.ip_network("64:ff9b:1::/48"),
++               ipaddress.ip_network("::/96"))
++_BLOCKED_HOSTS = {"localhost", "metadata.google.internal", "instance-data", "metadata"}
++USER_AGENT = "tensorfold-glm53-vision/2"
++
++
++class ImageFetchError(ValueError):
++    """An invalid, inaccessible, or oversized image URL (HTTP 400; ``vision_prep`` re-raises it as VisionError)."""
++
++
++@dataclass(frozen=True)
++class Policy:
++    http: bool = False              # GLM53_TF_VISION_FETCH_HTTP: http:// and any port (local testing)
++    private: bool = False           # GLM53_TF_VISION_FETCH_PRIVATE: any address (local testing)
++    max_redirects: int = 3
++    max_url_chars: int = 4096
++
++
++def _remaining(deadline: float) -> float:
++    remaining = deadline - time.monotonic()
++    if remaining <= 0:
++        raise ImageFetchError("image download timed out")
++    return remaining
++
++
++def public_ip(value: str) -> bool:
++    """Whether ``value`` is an address a public image host may have (upstream's rule plus NAT64 / IPv4-compatible)."""
++
++    try:
++        address = ipaddress.ip_address(value.split("%", 1)[0])
++    except ValueError:
++        return False
++    if not address.is_global or address.is_multicast or address.is_reserved:
++        return False
++    if isinstance(address, ipaddress.IPv4Address):
++        return not any(address in block for block in _SPECIAL_V4)
++    if address.ipv4_mapped or address.sixtofour or address.teredo:
++        return False
++    return not any(address in block for block in _SPECIAL_V6)
++
++
++def _resolve(host: str, port: int, deadline: float, policy: Policy) -> list[tuple]:
++    """``host``'s addresses, every one checked; a stalled lookup holds one of four resolver threads at most."""
++
++    slots = _DNS_SLOTS
++    if not slots.acquire(timeout=_remaining(deadline)):
++        raise ImageFetchError("image DNS resolver is busy; retry the request")
++    result: queue.Queue = queue.Queue(maxsize=1)
++
++    def resolve() -> None:
++        try:
++            result.put(socket.getaddrinfo(host, port, type=socket.SOCK_STREAM))
++        except Exception as exc:        # noqa: BLE001
++            result.put(exc)
++        finally:
++            slots.release()
++
++    try:
++        threading.Thread(target=resolve, daemon=True, name="tf-image-dns").start()
++    except RuntimeError:
++        slots.release()
++        raise ImageFetchError("image DNS resolver is unavailable") from None
++    try:
++        addresses = result.get(timeout=_remaining(deadline))
++    except queue.Empty:
++        raise ImageFetchError("image DNS lookup timed out") from None
++    if isinstance(addresses, Exception):
++        raise ImageFetchError("image host could not be resolved") from None
++    if not addresses:
++        raise ImageFetchError("image host could not be resolved")
++    if not policy.private and any(not public_ip(item[4][0]) for item in addresses):
++        raise ImageFetchError("image URLs must resolve only to public internet addresses")
++    return addresses
++
++
++def check_url(value: str, policy: Policy = Policy()) -> tuple[str, str, int, str]:
++    """(scheme, host, port, request target) of an acceptable image URL; ImageFetchError otherwise."""
++
++    if not isinstance(value, str) or len(value) > policy.max_url_chars or any(
++            ord(char) <= 32 or ord(char) == 127 for char in value):
++        raise ImageFetchError("image URL is too long or contains whitespace/control characters")
++    try:
++        parsed = urlsplit(value)
++        scheme = parsed.scheme.lower()
++        if scheme not in (("https", "http") if policy.http else ("https",)):
++            raise ValueError
++        if not parsed.hostname or parsed.fragment:
++            raise ValueError
++        if parsed.username is not None or parsed.password is not None or "\\" in value:
++            raise ValueError
++        host = parsed.hostname.encode("idna").decode("ascii")
++        default = 443 if scheme == "https" else 80
++        port = parsed.port if parsed.port is not None else default
++        if "%" in host or (not policy.http and port != 443):
++            raise ValueError
++    except (ValueError, UnicodeError):
++        rule = "HTTP(S)" if policy.http else "HTTPS on port 443"
++        raise ImageFetchError(f"image URL must be {rule}, without credentials or a fragment") from None
++    if not policy.private and host.rstrip(".").lower() in _BLOCKED_HOSTS:
++        raise ImageFetchError("image URLs must use public internet hosts")
++    target = quote(parsed.path or "/", safe="/%:@!$&'()*+,;=-._~")
++    if parsed.query:
++        target += "?" + quote(parsed.query, safe="/%?:@!$&'()*+,;=-._~")
++    return scheme, host, port, target
++
++
++def _close_socket(sock: socket.socket) -> None:
++    try:
++        sock.shutdown(socket.SHUT_RDWR)
++    except OSError:
++        pass
++    sock.close()
++
++
++def _request(scheme: str, host: str, port: int, target: str, addresses: list[tuple], max_bytes: int,
++             deadline: float) -> tuple[bytes | None, str | None, str | None]:
++    """One GET on the first checked address: (bytes, None, type) or (None, redirect location, None)."""
++
++    timeout = _remaining(deadline)
++    family, kind, protocol, _, address = addresses[0]
++    sock = socket.socket(family, kind, protocol)
++    live_socket = [sock]
++    timer = threading.Timer(timeout, lambda: _close_socket(live_socket[0]))
++    timer.daemon = True
++    connection = http.client.HTTPConnection(host, port, timeout=timeout)
++    try:
++        timer.start()
++        sock.settimeout(_remaining(deadline))
++        sock.connect(address)
++        if scheme == "https":
++            context = ssl.create_default_context()        # TLS verified for the host, on the address checked for it
++            sock = context.wrap_socket(sock, server_hostname=host, do_handshake_on_connect=False)
++            live_socket[0] = sock
++            sock.settimeout(_remaining(deadline))
++            sock.do_handshake()
++        connection.sock = sock
++        connection.request("GET", target, headers={"Accept": ", ".join(MEDIA_TYPES), "Accept-Encoding": "identity",
++                                                   "User-Agent": USER_AGENT})
++        response = connection.getresponse()
++        _remaining(deadline)
++        if response.status in _REDIRECTS:
++            location = response.getheader("Location")
++            if not location:
++                raise ImageFetchError("image redirect has no destination")
++            return None, location, None
++        if response.status != 200:
++            raise ImageFetchError(f"image download returned HTTP {response.status}")
++        if response.getheader("Content-Encoding", "identity").lower() != "identity":
++            raise ImageFetchError("compressed HTTP image responses are unsupported")
++        media = response.getheader("Content-Type", "").split(";", 1)[0].strip().lower()
++        if media not in MEDIA_TYPES:
++            raise ImageFetchError("image URL content type must be JPEG, PNG, WebP or GIF")
++        length = response.getheader("Content-Length")
++        if length is not None:
++            if not length.isascii() or not length.isdecimal() or int(length) > max_bytes:
++                raise ImageFetchError(f"image larger than {max_bytes} bytes (GLM53_TF_VISION_MAX_BYTES)")
++        data = bytearray()
++        while len(data) <= max_bytes:
++            try:
++                sock.settimeout(_remaining(deadline))
++            except OSError:
++                # (ours) http.client closed the connection's socket for a ``Connection: close`` / HTTP/1.0 reply; the
++                # body still reads through the response's file, bounded by the watchdog and the deadline
++                pass
++            chunk = response.read1(min(64 * 1024, max_bytes + 1 - len(data)))
++            if not chunk:
++                break
++            data.extend(chunk)
++        if len(data) > max_bytes:
++            raise ImageFetchError(f"image larger than {max_bytes} bytes (GLM53_TF_VISION_MAX_BYTES)")
++        _remaining(deadline)
++        return bytes(data), None, media
++    finally:
++        timer.cancel()
++        connection.close()
++        _close_socket(sock)
++
++
++def fetch_image(url: str, *, max_bytes: int, deadline: float, policy: Policy = Policy()) -> tuple[bytes, str]:
++    """(bytes, declared type) of an image URL: each hop (the URL, then every redirect) checked, resolved, its
++    addresses checked, then fetched from the checked address; everything before ``deadline`` (``time.monotonic``)."""
++
++    try:
++        for redirect in range(policy.max_redirects + 1):
++            scheme, host, port, target = check_url(url, policy)
++            addresses = _resolve(host, port, deadline, policy)
++            data, location, media = _request(scheme, host, port, target, addresses, max_bytes, deadline)
++            if location is None:
++                return data, media
++            if redirect == policy.max_redirects:
++                raise ImageFetchError("image download has too many redirects")
++            url = urljoin(url, location)
++    except ImageFetchError:
++        raise
++    except (OSError, ValueError, http.client.HTTPException):
++        raise ImageFetchError("image download failed or timed out") from None
++    raise ImageFetchError("image download failed")
+diff --git a/src/tensorfold/families/glm5_next/cuda/vision_prep.py b/src/tensorfold/families/glm5_next/cuda/vision_prep.py
+index f3af0bf..9cfe72c 100644
+--- a/src/tensorfold/families/glm5_next/cuda/vision_prep.py
++++ b/src/tensorfold/families/glm5_next/cuda/vision_prep.py
+@@ -5,7 +5,14 @@
+   GLM53_TF_VISION_FETCH=1 (the default), ``http(s)`` URLs; nothing else (no ``file:``).
+ - **Fetch and decode** (``load_bytes``, ``decode``): at most GLM53_TF_VISION_MAX_BYTES a download (default 20 MB),
+   GLM53_TF_VISION_FETCH_TIMEOUT seconds (default 10), at most GLM53_TF_VISION_MAX_PIXELS decoded pixels (default
+-  64 M: decompression bombs are refused before decoding). Converted to RGB as vLLM's media loader does it: RGBA / LA
++  64 M: decompression bombs are refused before decoding). patches/0600 (upstream 391713e, ``image_fetch.py``): a URL
++  must be HTTPS on port 443 and resolve only to public addresses (checked for the URL and every redirect, the
++  connection pinned to the checked address), the reply a declared JPEG / PNG / WebP / GIF, identity-encoded;
++  GLM53_TF_VISION_FETCH_TOTAL_S (default 30) bounds a request's downloads together; GLM53_TF_VISION_FETCH_HTTP=1 /
++  GLM53_TF_VISION_FETCH_PRIVATE=1 (default 0) allow ``http://`` / non-public addresses for local testing only. At most
++  GLM53_TF_VISION_PREP_SLOTS requests (default 16) fetch / decode / preprocess images at once, at most
++  GLM53_TF_VISION_PREP_WAITERS (default 128) wait up to GLM53_TF_VISION_PREP_WAIT_S (default 60) for a slot; past
++  that a request gets HTTP 503 (``VisionBusy``). Converted to RGB as vLLM's media loader does it: RGBA / LA
+   / transparent palettes composited on white, anything else ``convert("RGB")``.
+ - **Preprocessing** (``preprocess``): transformers' ``Glm5NextImageProcessor`` (the torchvision backend, which HF's
+   ``AutoProcessor`` and vLLM load) step for step: ``smart_resize`` to the processor's token budget (``min_image_tokens``
+@@ -38,8 +45,8 @@ import math
+ import os
+ import secrets
+ import threading
++import time
+ import urllib.parse
+-import urllib.request
+ from collections import OrderedDict
+ from dataclasses import dataclass, field
+ from pathlib import Path
+@@ -56,6 +63,10 @@ class VisionError(ValueError):
+     """A request's image problem (HTTP 400)."""
+ 
+ 
++class VisionBusy(VisionError):
++    """patches/0600: too many image preparations at once (HTTP 503: retry shortly)."""
++
++
+ def is_vid(t: int) -> bool:
+     return VBASE <= int(t) <= VLIMIT
+ 
+@@ -75,6 +86,15 @@ def _env_int(name: str, default: int) -> int:
+         raise ValueError(f"{name}={raw!r}: expected a number") from None
+ 
+ 
++def _env_flag(name: str) -> bool:
++    """patches/0600: a 0 / 1 knob, default 0."""
++
++    raw = os.environ.get(name, "0").strip() or "0"
++    if raw not in ("0", "1"):
++        raise ValueError(f"{name}={raw!r}: expected 0 or 1")
++    return raw == "1"
++
++
+ def enabled() -> bool:
+     raw = os.environ.get("GLM53_TF_VISION", "0").strip() or "0"
+     if raw not in ("0", "1"):
+@@ -106,6 +126,13 @@ class Settings:
+     fetch_timeout: float = 10.0
+     max_bytes: int = 20 * 1024 * 1024
+     max_pixels: int = 64 * 1024 * 1024
++    # patches/0600: image URL hardening (``image_fetch.py``) and the bound on concurrent preparations
++    fetch_http: bool = False           # GLM53_TF_VISION_FETCH_HTTP: http:// and any port (local testing)
++    fetch_private: bool = False        # GLM53_TF_VISION_FETCH_PRIVATE: non-public addresses (local testing)
++    fetch_total: float = 30.0          # GLM53_TF_VISION_FETCH_TOTAL_S: every download of one request
++    prep_slots: int = 16
++    prep_waiters: int = 128
++    prep_wait: float = 60.0
+ 
+     @classmethod
+     def read(cls, model_dir: Path | None = None) -> "Settings":
+@@ -140,6 +167,16 @@ class Settings:
+         s.fetch_timeout = float(os.environ.get("GLM53_TF_VISION_FETCH_TIMEOUT", "10") or 10)
+         s.max_bytes = _env_int("GLM53_TF_VISION_MAX_BYTES", s.max_bytes)
+         s.max_pixels = _env_int("GLM53_TF_VISION_MAX_PIXELS", s.max_pixels)
++        s.fetch_http = _env_flag("GLM53_TF_VISION_FETCH_HTTP")          # patches/0600
++        s.fetch_private = _env_flag("GLM53_TF_VISION_FETCH_PRIVATE")
++        s.fetch_total = float(os.environ.get("GLM53_TF_VISION_FETCH_TOTAL_S", "30") or 30)
++        s.prep_slots = _env_int("GLM53_TF_VISION_PREP_SLOTS", s.prep_slots)
++        s.prep_waiters = _env_int("GLM53_TF_VISION_PREP_WAITERS", s.prep_waiters)
++        s.prep_wait = float(os.environ.get("GLM53_TF_VISION_PREP_WAIT_S", "60") or 60)
++        if not (s.fetch_timeout > 0 and s.fetch_total > 0 and s.prep_wait > 0 and s.prep_slots >= 1
++                and s.prep_waiters >= 0):
++            raise ValueError("GLM53_TF_VISION_FETCH_TIMEOUT / _FETCH_TOTAL_S / _PREP_WAIT_S must be > 0, "
++                             "_PREP_SLOTS >= 1, _PREP_WAITERS >= 0")
+         if s.cap_tokens < 0 or s.low_tokens < 0 or s.max_images < 1:
+             raise ValueError("GLM53_TF_VISION_MAX_TOKENS / _LOW_TOKENS must be >= 0, _MAX_IMAGES >= 1")
+         return s
+@@ -294,8 +331,9 @@ def preprocess(image, s: Settings, max_tokens: int | None = None) -> Prepared:
+ 
+ 
+ # -- fetching and decoding -------------------------------------------------------------------------------------------
+-def load_bytes(url: str, s: Settings) -> bytes:
+-    """A part's image bytes: a ``data:`` URL, or (GLM53_TF_VISION_FETCH=1) an ``http(s)`` download."""
++def load_bytes(url: str, s: Settings, deadline: float | None = None) -> bytes:
++    """A part's image bytes: a ``data:`` URL, or (GLM53_TF_VISION_FETCH=1) an ``https`` download (patches/0600:
++    ``image_fetch``; ``deadline``, ``time.monotonic``: the request's downloads together)."""
+ 
+     if not isinstance(url, str) or not url:
+         raise VisionError("an image part needs a URL (image_url.url)")
+@@ -315,24 +353,26 @@ def load_bytes(url: str, s: Settings) -> bytes:
+         if len(raw) > s.max_bytes:
+             raise VisionError(f"image larger than {s.max_bytes} bytes (GLM53_TF_VISION_MAX_BYTES)")
+         return raw
+-    scheme = urllib.parse.urlsplit(url).scheme.lower()
++    try:
++        scheme = urllib.parse.urlsplit(url).scheme.lower()
++    except ValueError:
++        scheme = ""
+     if scheme not in ("http", "https"):
+         raise VisionError(f"image URL scheme {scheme or '(none)'!r}: only data:, http and https are accepted")
+     if not s.fetch:
+         raise VisionError("this server does not fetch image URLs (GLM53_TF_VISION_FETCH=0): send a data: URL")
+-    req = urllib.request.Request(url, headers={"User-Agent": "tensorfold-glm53-vision/1"})
++    from . import image_fetch               # patches/0600 (upstream 391713e): no URL in any message
++
++    policy = image_fetch.Policy(http=s.fetch_http, private=s.fetch_private)
++    now = time.monotonic()
++    until = now + s.fetch_timeout if deadline is None else min(deadline, now + s.fetch_timeout)
+     try:
+-        with urllib.request.urlopen(req, timeout=s.fetch_timeout) as r:
+-            size = r.headers.get("Content-Length")
+-            if size is not None and size.isdigit() and int(size) > s.max_bytes:
+-                raise VisionError(f"image larger than {s.max_bytes} bytes (GLM53_TF_VISION_MAX_BYTES)")
+-            raw = r.read(s.max_bytes + 1)
+-    except VisionError:
+-        raise
+-    except Exception as exc:                        # URLError, HTTPError, timeouts, ...
+-        raise VisionError(f"could not fetch the image URL: {exc}") from None
+-    if len(raw) > s.max_bytes:
+-        raise VisionError(f"image larger than {s.max_bytes} bytes (GLM53_TF_VISION_MAX_BYTES)")
++        raw, _ = image_fetch.fetch_image(url, max_bytes=s.max_bytes, deadline=until, policy=policy)
++    except image_fetch.ImageFetchError as exc:
++        text = str(exc)
++        if "GLM53_TF_VISION_MAX_BYTES" in text:
++            raise VisionError(text) from None
++        raise VisionError(f"could not fetch the image URL: {text}") from None
+     return raw
+ 
+ 
+@@ -549,8 +589,24 @@ class Host:
+         self.cache_bytes = 0
+         self.cache_cap = _env_int("GLM53_TF_VISION_PREP_MB", 256) * 1024 * 1024
+         self.lock = threading.Lock()
++        # patches/0600 (upstream 391713e's ``image_slot``): preparations at once, and requests waiting for one
++        self.slots = threading.BoundedSemaphore(self.s.prep_slots)
++        self.waiters = threading.BoundedSemaphore(self.s.prep_waiters) if self.s.prep_waiters > 0 else None
+ 
+-    def prepare_ref(self, ref: Ref) -> Prepared:
++    def _slot(self) -> None:
++        """patches/0600: hold one preparation slot (release: ``self.slots.release()``), or VisionBusy (HTTP 503)."""
++
++        if self.waiters is None or not self.waiters.acquire(blocking=False):
++            if self.slots.acquire(blocking=False):
++                return
++            raise VisionBusy("image request queue is full; retry shortly")
++        try:
++            if not self.slots.acquire(timeout=self.s.prep_wait):
++                raise VisionBusy("image processing capacity is busy; retry shortly")
++        finally:
++            self.waiters.release()
++
++    def prepare_ref(self, ref: Ref, deadline: float | None = None) -> Prepared:
+         most = self.s.budget(ref.detail)
+         key = (hashlib.sha256(ref.url.encode()).hexdigest(), most) if ref.url.startswith("data:") else None
+         if key is not None:
+@@ -559,7 +615,7 @@ class Host:
+                 if hit is not None:
+                     self.cache.move_to_end(key)
+                     return hit
+-        img = decode(load_bytes(ref.url, self.s), self.s)
++        img = decode(load_bytes(ref.url, self.s, deadline), self.s)
+         prep = preprocess(img, self.s, most)
+         prep.vids = self.registry.vids(prep.digest, prep.tokens)
+         if key is not None:
+@@ -584,4 +640,11 @@ class Host:
+         return text, [refs[i] for i in order]
+ 
+     def request(self, refs: list[Ref]) -> Request:
+-        return Request([self.prepare_ref(r) for r in refs])
++        if not refs:
++            return Request([])
++        self._slot()                        # patches/0600: bounded preparations (503 past the queue)
++        try:
++            deadline = time.monotonic() + self.s.fetch_total
++            return Request([self.prepare_ref(r, deadline) for r in refs])
++        finally:
++            self.slots.release()
+diff --git a/src/tensorfold/server/cancellation.py b/src/tensorfold/server/cancellation.py
+new file mode 100644
+index 0000000..c38c05d
+--- /dev/null
++++ b/src/tensorfold/server/cancellation.py
+@@ -0,0 +1,72 @@
++"""patches/0600: a request's "the client has gone" check, from upstream TensorFold (24afe5e, 0.3.6.2's
++``tensorfold/server/cancellation.py`` by nood-co1; MIT License, Copyright (c) 2026 TensorFold contributors), with
++``PrefillGuard`` left out (the Mac lane's) and ``poll`` instead of ``select`` where available.
++
++``socket_cancellation(connection)`` is true once the client closed its end of the socket (a zero-byte ``MSG_PEEK``
++read) or the socket failed. A pipelined next request on a kept-alive connection reads as data, not as a close.
++"""
++
++from __future__ import annotations
++
++import select
++import socket
++import threading
++from typing import Any, Callable
++
++
++class RequestCancelled(Exception):
++    """The client left: nothing more is written for this request. ``result``: what ``App.run`` had so far (for the
++    request log), or None."""
++
++    def __init__(self, message: str = "request cancelled", result: dict[str, Any] | None = None) -> None:
++        super().__init__(message)
++        self.result = result
++
++
++class Cancellation:
++    def __init__(self, disconnected: Callable[[], bool] | None = None):
++        self._event = threading.Event()
++        self._disconnected = disconnected
++
++    def cancel(self) -> None:
++        self._event.set()
++
++    @property
++    def cancelled(self) -> bool:
++        if not self._event.is_set() and self._disconnected is not None and self._disconnected():
++            self.cancel()
++        return self._event.is_set()
++
++    def check(self) -> None:
++        if self.cancelled:
++            raise RequestCancelled("request cancelled")
++
++
++def _readable(connection: socket.socket) -> bool:
++    """Whether a read would not block (data, a close or an error). ``poll`` where the platform has it (ours: select()
++    refuses descriptors past 1023, which a long-running threaded server can reach), else upstream's ``select``."""
++
++    if hasattr(select, "poll"):
++        p = select.poll()
++        p.register(connection, select.POLLIN | select.POLLPRI)
++        return bool(p.poll(0))
++    ready, _, _ = select.select([connection], [], [], 0)
++    return bool(ready)
++
++
++def socket_cancellation(connection: socket.socket) -> Cancellation:
++    def disconnected() -> bool:
++        try:
++            if connection.fileno() < 0:
++                return True
++            if not _readable(connection):
++                return False
++            return connection.recv(1, socket.MSG_PEEK | socket.MSG_DONTWAIT) == b""
++        except BlockingIOError:
++            return False
++        except OSError:
++            return True
++        except ValueError:
++            return False
++
++    return Cancellation(disconnected)

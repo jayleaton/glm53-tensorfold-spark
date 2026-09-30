@@ -1,0 +1,255 @@
+{
+ "disconnect_one": {
+  "freed_s": 0.179,
+  "health": {
+   "ok": true,
+   "mode": "basic",
+   "uptime_s": 1013.8,
+   "inflight": 0,
+   "oldest_s": 0.0,
+   "idle_s": 0.0,
+   "requests": 351,
+   "errors": 0,
+   "backend": "tensorfold",
+   "busy": false,
+   "requests_running": 0,
+   "requests_total": 351,
+   "prompt_tokens_total": 362531,
+   "completion_tokens_total": 52622,
+   "prefill_seconds_total": 296.9669,
+   "decode_seconds_total": 1528.3849,
+   "cached_tokens_total": 172864,
+   "rounds_total": 18257,
+   "drafted_total": 46039,
+   "accepted_total": 34252,
+   "streams": {
+    "decoding": 0,
+    "prefilling": 0,
+    "max": 4
+   },
+   "context_length": 1048576
+  },
+  "reqlog_last": [
+   {
+    "ts": 1790743846.815,
+    "start": 1790743841.641,
+    "n": 351,
+    "kind": "chat",
+    "prompt": 25,
+    "cached": 0,
+    "cache_src": "none",
+    "prefill_s": 0.1907,
+    "prefill_tps": 131.1,
+    "queue_s": 0.012,
+    "first_s": 0.203,
+    "decode_tokens": 431,
+    "decode_s": 4.9703,
+    "decode_tps": 86.72,
+    "tokens_per_round": 6.357,
+    "rounds": 70,
+    "pieces": 1,
+    "slot": 0,
+    "kv_pages": 129,
+    "kv_free": 3962,
+    "marks": 0,
+    "multi": null,
+    "thinking": false,
+    "effort": null,
+    "effort_asked": null,
+    "max_tokens": 32768,
+    "max_tokens_eff": 32768,
+    "finish": "cancelled",
+    "error": null,
+    "tools": 0,
+    "messages": 1,
+    "policy": "auto",
+    "fast_prefill": 64,
+    "head_hash": "7cef0da9796c1ba9",
+    "head_len": 25,
+    "sys_len": 2,
+    "sys_hash": "e9ba51dc8d251d5a",
+    "conv": "9e55f99e2d49caa4",
+    "lcp": 9,
+    "lcp_same": 0,
+    "lcp_other": 9
+   }
+  ]
+ },
+ "disconnect_four": {
+  "freed_s": 0.261,
+  "finish": [
+   [
+    "cancelled",
+    269
+   ],
+   [
+    "cancelled",
+    269
+   ],
+   [
+    "cancelled",
+    269
+   ],
+   [
+    "cancelled",
+    269
+   ]
+  ],
+  "normal_queue_s": [
+   null,
+   null,
+   null,
+   null
+  ],
+  "normal_status": [
+   200,
+   200,
+   200,
+   200
+  ]
+ },
+ "queued": {
+  "alone": [
+   "2887a4514073436d",
+   "94fc09b274af9d4c",
+   "bdce518b9ef03c0b",
+   "b8286d575cda9c72"
+  ],
+  "with_5th": [
+   "2887a4514073436d",
+   "94fc09b274af9d4c",
+   "bdce518b9ef03c0b",
+   "b8286d575cda9c72"
+  ],
+  "same": true,
+  "health_after": {
+   "ok": true,
+   "mode": "basic",
+   "uptime_s": 1051.7,
+   "inflight": 0,
+   "oldest_s": 0.0,
+   "idle_s": 1.0,
+   "requests": 368,
+   "errors": 0,
+   "backend": "tensorfold",
+   "busy": false,
+   "requests_running": 0,
+   "requests_total": 368,
+   "prompt_tokens_total": 462911,
+   "completion_tokens_total": 55999,
+   "prefill_seconds_total": 302.2996,
+   "decode_seconds_total": 1664.0845,
+   "cached_tokens_total": 172864,
+   "rounds_total": 19443,
+   "drafted_total": 49035,
+   "accepted_total": 36492,
+   "streams": {
+    "decoding": 0,
+    "prefilling": 0,
+    "max": 4
+   },
+   "context_length": 1048576
+  }
+ },
+ "errors": {
+  "temperature_true_stream": [
+   400,
+   {
+    "error": {
+     "message": "temperature must be a finite number or null",
+     "type": "invalid_request_error"
+    }
+   }
+  ],
+  "template_kwargs_str": [
+   400,
+   {
+    "error": {
+     "message": "chat_template_kwargs must be a JSON object or null",
+     "type": "invalid_request_error"
+    }
+   }
+  ],
+  "non_utf8": [
+   400,
+   {
+    "error": {
+     "message": "the request body is not JSON",
+     "type": "invalid_request_error"
+    }
+   }
+  ]
+ },
+ "usr1": {
+  "r0_thread_lines": 0,
+  "r1_thread_lines": 0,
+  "after": [
+   200,
+   "391"
+  ]
+ },
+ "image": {
+  "https": [
+   200,
+   653,
+   "7e7d8d2bde3ae2c8"
+  ],
+  "data": [
+   200,
+   653,
+   "7e7d8d2bde3ae2c8"
+  ],
+  "equal": true,
+  "refusals": {
+   "http://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png": [
+    400,
+    "no url"
+   ],
+   "https://127.0.0.1/x.png": [
+    400,
+    "no url"
+   ],
+   "https://169.254.169.254/latest/meta-data/": [
+    400,
+    "no url"
+   ]
+  },
+  "bytes": 224566
+ },
+ "health": {
+  "before": {
+   "completion_tokens_total": 56070,
+   "rounds_total": 19470,
+   "drafted_total": 49108,
+   "accepted_total": 36533,
+   "requests_total": 371
+  },
+  "during1": {
+   "completion_tokens_total": 56228,
+   "rounds_total": 19470,
+   "drafted_total": 49108,
+   "accepted_total": 36533,
+   "requests_total": 371
+  },
+  "during2": {
+   "completion_tokens_total": 56333,
+   "rounds_total": 19470,
+   "drafted_total": 49108,
+   "accepted_total": 36533,
+   "requests_total": 371
+  },
+  "after": {
+   "completion_tokens_total": 56582,
+   "rounds_total": 19650,
+   "drafted_total": 49605,
+   "accepted_total": 36865,
+   "requests_total": 372
+  },
+  "streams": {
+   "decoding": 1,
+   "prefilling": 0,
+   "max": 4
+  },
+  "has_0150": true
+ }
+}

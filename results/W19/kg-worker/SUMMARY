@@ -1,0 +1,7 @@
+11:13:45 start worker
+11:22:51 worker fat2-bits rc=0 546s :: 22 passed, 5 deselected in 544.00s (0:09:04)
+11:25:55 worker fat2-gate rc=0 184s :: GATE 0590 floor: FAIL -- 2048: fat2 contended 17.11 ms = 1.762x floor(235) 9.71 ms; makespan fat2/fat 1.074 (bar 1.00); isolated fat2/fat 1.162; contended fat2/fat 1.121; 4096: fat2 contended 22.03 ms = 1.882x floor(235) 11.71 ms (bar 1.12)
+ALL BITS SAME
+GATE 0590: FAIL (<= 0.75x fat, same bits) -- 2048: contended 1.121x fat (makespan 1.074x, isolated 1.162x; DRAM floor at 235 GB/s 0.755x); 4096: contended 1.203x fat (makespan 1.093x, isolated 1.186x; DRAM floor at 235 GB/s 0.726x)
+GATE 0590 floor: FAIL -- 2048: fat2 contended 17.11 ms = 1.762x floor(235) 9.71 ms; makespan fat2/fat 1.074 (bar 1.00); isolated fat2/fat 1.162; contended fat2/fat 1.121; 4096: fat2 contended 22.03 ms = 1.882x floor(235) 11.71 ms (bar 1.12); makespan fat2/fat 1.093 (bar 1.00); isolated fat2/fat 1.186; contended fat2/fat 1.203
+11:25:55 done worker

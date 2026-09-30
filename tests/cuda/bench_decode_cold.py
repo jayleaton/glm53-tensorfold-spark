@@ -67,10 +67,13 @@ FLUSH_MB = 64
 FLUSH_COPIES = 3
 ROWS = (1, 2, 4, 8, 16)
 EXTRA_SHAPES = [(4096, 1536), (160, 4096)]          # indexer q_b / [wk | weights_proj]: q4, not in bdk.SHAPES
+# patches/0570: W11's (1, 16, 8) grid (n 1,024; 8.5 calls a 1-stream round, 16.2 us in situ; likely DFlash2's context
+# k|v projection), 2.36 MB: under the 3.5 MiB size switch but not measured cold in W16
+EXTRA_SHAPES = EXTRA_SHAPES + [(1024, 4096)]
 NAMES = {"12576x4096": "KDA in_proj", "4096x4096": "KDA o", "4096x128": "KDA f_b/g_b", "2048x4096": "shared gate/up",
          "8192x1536": "DSA q_b", "8192x512": "DSA kv_b", "4096x8192": "DSA o", "12288x4096": "MLP gate/up",
          "4096x6144": "MLP down", "4096x1024": "shared down", "77440x4096": "LM head", "4096x1536": "index q_b",
-         "160x4096": "index k"}
+         "160x4096": "index k", "1024x4096": "(1,16,8) grid"}
 GATE_SHAPES = ("4096x4096", "2048x4096", "4096x1024", "8192x1536", "8192x512", "4096x1536", "160x4096")
 
 

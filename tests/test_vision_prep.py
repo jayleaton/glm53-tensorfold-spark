@@ -189,6 +189,7 @@ def image_server():
                 self.end_headers()
                 return
             self.send_response(200)
+            self.send_header("Content-Type", "image/png")          # patches/0600: a declared image type
             self.send_header("Content-Length", str(len(blobs[self.path])))
             self.end_headers()
             self.wfile.write(blobs[self.path])
@@ -201,12 +202,18 @@ def image_server():
 
 
 def test_http_fetch(settings, image_server):
-    img = vp.decode(vp.load_bytes(image_server + "/ok.png", settings), settings)
+    # patches/0600: a local http:// server needs the local-testing knobs (HTTPS / public addresses only by default)
+    with pytest.raises(vp.VisionError, match="HTTPS on port 443"):
+        vp.load_bytes(image_server + "/ok.png", settings)
+    local = vp.Settings(fetch_http=True, fetch_private=True)
+    with pytest.raises(vp.VisionError, match="public internet addresses"):
+        vp.load_bytes(image_server + "/ok.png", vp.Settings(fetch_http=True))
+    img = vp.decode(vp.load_bytes(image_server + "/ok.png", local), local)
     assert img.size == (50, 40) and img.mode == "RGB"
     with pytest.raises(vp.VisionError, match="could not fetch"):
-        vp.load_bytes(image_server + "/missing.png", settings)
+        vp.load_bytes(image_server + "/missing.png", local)
     with pytest.raises(vp.VisionError, match="MAX_BYTES"):
-        vp.load_bytes(image_server + "/big.png", vp.Settings(max_bytes=1000))
+        vp.load_bytes(image_server + "/big.png", vp.Settings(max_bytes=1000, fetch_http=True, fetch_private=True))
     with pytest.raises(vp.VisionError, match="FETCH=0"):
         vp.load_bytes(image_server + "/ok.png", vp.Settings(fetch=False))
 

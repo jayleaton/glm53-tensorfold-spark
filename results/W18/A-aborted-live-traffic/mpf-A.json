@@ -1,0 +1,2754 @@
+{
+ "rows": [
+  {
+   "kind": "short",
+   "variant": "greedy-off",
+   "round": 0,
+   "prompts": [
+    "[W18a-greedy-off-0-0] You are writing for a general audience. Explain the printing press in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-off-0-1] You are writing for a general audience. Explain a heat pump in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-off-0-2] You are writing for a general audience. Explain the life cycle of a star in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-off-0-3] You are writing for a general audience. Explain bridge expansion joints in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings."
+   ],
+   "grouped": [
+    "ad773263c704552a",
+    "bda7b713a8959ff6",
+    "3bd6266a46124dfa",
+    "aab038b3f7b02834"
+   ],
+   "alone": [
+    "ad773263c704552a",
+    "bda7b713a8959ff6",
+    "3bd6266a46124dfa",
+    "aab038b3f7b02834"
+   ],
+   "same": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "log_grouped": [
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": 2,
+     "queue_s": 0.52,
+     "prefill_s": 0.3963,
+     "first_s": 0.917,
+     "pieces": 1,
+     "slot": 3
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": 2,
+     "queue_s": 0.519,
+     "prefill_s": 0.3919,
+     "first_s": 0.911,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 79,
+     "cached": 0,
+     "multi": 2,
+     "queue_s": 0.016,
+     "prefill_s": 0.4085,
+     "first_s": 0.424,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": 2,
+     "queue_s": 0.015,
+     "prefill_s": 0.4048,
+     "first_s": 0.42,
+     "pieces": 1,
+     "slot": 2
+    }
+   ],
+   "log_alone": [
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.015,
+     "prefill_s": 0.3242,
+     "first_s": 0.339,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.014,
+     "prefill_s": 0.3155,
+     "first_s": 0.33,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 79,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3175,
+     "first_s": 0.33,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3141,
+     "first_s": 0.327,
+     "pieces": 1,
+     "slot": 3
+    }
+   ]
+  },
+  {
+   "kind": "short",
+   "variant": "greedy-off",
+   "round": 1,
+   "prompts": [
+    "[W18a-greedy-off-1-0] You are writing for a general audience. Explain the printing press in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-off-1-1] You are writing for a general audience. Explain a heat pump in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-off-1-2] You are writing for a general audience. Explain the life cycle of a star in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-off-1-3] You are writing for a general audience. Explain bridge expansion joints in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings."
+   ],
+   "grouped": [
+    "5f796fe36f50ce2d",
+    "0bdc9adf6d9f5477",
+    "31a48dadf21d0607",
+    "8be61feec22b6a40"
+   ],
+   "alone": [
+    "5f796fe36f50ce2d",
+    "0bdc9adf6d9f5477",
+    "31a48dadf21d0607",
+    "8be61feec22b6a40"
+   ],
+   "same": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "log_grouped": [
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.016,
+     "prefill_s": 0.5661,
+     "first_s": 0.582,
+     "pieces": 1,
+     "slot": 3
+    },
+    {
+     "prompt": 79,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.016,
+     "prefill_s": 0.5704,
+     "first_s": 0.587,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.017,
+     "prefill_s": 0.5627,
+     "first_s": 0.58,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.018,
+     "prefill_s": 0.5589,
+     "first_s": 0.577,
+     "pieces": 1,
+     "slot": 1
+    }
+   ],
+   "log_alone": [
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.015,
+     "prefill_s": 0.325,
+     "first_s": 0.34,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.014,
+     "prefill_s": 0.3119,
+     "first_s": 0.327,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 79,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.013,
+     "prefill_s": 0.3251,
+     "first_s": 0.339,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3246,
+     "first_s": 0.338,
+     "pieces": 1,
+     "slot": 3
+    }
+   ]
+  },
+  {
+   "kind": "short",
+   "variant": "greedy-off",
+   "round": 2,
+   "prompts": [
+    "[W18a-greedy-off-2-0] You are writing for a general audience. Explain the printing press in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-off-2-1] You are writing for a general audience. Explain a heat pump in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-off-2-2] You are writing for a general audience. Explain the life cycle of a star in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-off-2-3] You are writing for a general audience. Explain bridge expansion joints in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings."
+   ],
+   "grouped": [
+    "5f796fe36f50ce2d",
+    "bda7b713a8959ff6",
+    "61121bd47bc4e4c8",
+    "bad1e42b89c20975"
+   ],
+   "alone": [
+    "5f796fe36f50ce2d",
+    "bda7b713a8959ff6",
+    "61121bd47bc4e4c8",
+    "bad1e42b89c20975"
+   ],
+   "same": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "log_grouped": [
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.012,
+     "prefill_s": 0.549,
+     "first_s": 0.561,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.01,
+     "prefill_s": 0.5567,
+     "first_s": 0.567,
+     "pieces": 1,
+     "slot": 3
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.012,
+     "prefill_s": 0.5527,
+     "first_s": 0.565,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 79,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.011,
+     "prefill_s": 0.5601,
+     "first_s": 0.571,
+     "pieces": 1,
+     "slot": 2
+    }
+   ],
+   "log_alone": [
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.015,
+     "prefill_s": 0.3245,
+     "first_s": 0.34,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3186,
+     "first_s": 0.331,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 79,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.013,
+     "prefill_s": 0.3148,
+     "first_s": 0.328,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3166,
+     "first_s": 0.329,
+     "pieces": 1,
+     "slot": 3
+    }
+   ]
+  },
+  {
+   "kind": "short",
+   "variant": "greedy-off",
+   "round": 3,
+   "prompts": [
+    "[W18a-greedy-off-3-0] You are writing for a general audience. Explain the printing press in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-off-3-1] You are writing for a general audience. Explain a heat pump in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-off-3-2] You are writing for a general audience. Explain the life cycle of a star in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-off-3-3] You are writing for a general audience. Explain bridge expansion joints in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings."
+   ],
+   "grouped": [
+    "d0882533d6412700",
+    "64772642302aa83d",
+    "83639742ab382b7e",
+    "93316947dd4a60b6"
+   ],
+   "alone": [
+    "d0882533d6412700",
+    "64772642302aa83d",
+    "83639742ab382b7e",
+    "93316947dd4a60b6"
+   ],
+   "same": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "log_grouped": [
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.009,
+     "prefill_s": 0.5483,
+     "first_s": 0.558,
+     "pieces": 1,
+     "slot": 3
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.011,
+     "prefill_s": 0.5414,
+     "first_s": 0.553,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 79,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.013,
+     "prefill_s": 0.5517,
+     "first_s": 0.565,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.01,
+     "prefill_s": 0.5449,
+     "first_s": 0.556,
+     "pieces": 1,
+     "slot": 2
+    }
+   ],
+   "log_alone": [
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.013,
+     "prefill_s": 0.3181,
+     "first_s": 0.331,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.011,
+     "prefill_s": 0.3103,
+     "first_s": 0.322,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 79,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3262,
+     "first_s": 0.339,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3188,
+     "first_s": 0.331,
+     "pieces": 1,
+     "slot": 3
+    }
+   ]
+  },
+  {
+   "kind": "short",
+   "variant": "greedy-off",
+   "round": 4,
+   "prompts": [
+    "[W18a-greedy-off-4-0] You are writing for a general audience. Explain the printing press in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-off-4-1] You are writing for a general audience. Explain a heat pump in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-off-4-2] You are writing for a general audience. Explain the life cycle of a star in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-off-4-3] You are writing for a general audience. Explain bridge expansion joints in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings."
+   ],
+   "grouped": [
+    "d3cf867072b36079",
+    "bda7b713a8959ff6",
+    "dd4d012a371a39be",
+    "8be61feec22b6a40"
+   ],
+   "alone": [
+    "d3cf867072b36079",
+    "bda7b713a8959ff6",
+    "dd4d012a371a39be",
+    "8be61feec22b6a40"
+   ],
+   "same": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "log_grouped": [
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.006,
+     "prefill_s": 0.5594,
+     "first_s": 0.566,
+     "pieces": 1,
+     "slot": 3
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.007,
+     "prefill_s": 0.5523,
+     "first_s": 0.56,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.006,
+     "prefill_s": 0.5561,
+     "first_s": 0.564,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 79,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.007,
+     "prefill_s": 0.5631,
+     "first_s": 0.57,
+     "pieces": 1,
+     "slot": 1
+    }
+   ],
+   "log_alone": [
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.013,
+     "prefill_s": 0.3211,
+     "first_s": 0.334,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.013,
+     "prefill_s": 0.3242,
+     "first_s": 0.337,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 79,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3199,
+     "first_s": 0.332,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3148,
+     "first_s": 0.327,
+     "pieces": 1,
+     "slot": 3
+    }
+   ]
+  },
+  {
+   "kind": "short",
+   "variant": "greedy-off",
+   "round": 5,
+   "prompts": [
+    "[W18a-greedy-off-5-0] You are writing for a general audience. Explain the printing press in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-off-5-1] You are writing for a general audience. Explain a heat pump in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-off-5-2] You are writing for a general audience. Explain the life cycle of a star in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-off-5-3] You are writing for a general audience. Explain bridge expansion joints in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings."
+   ],
+   "grouped": [
+    "5f796fe36f50ce2d",
+    "a56b5c659f41eb8c",
+    "84a4d5702f7ddb82",
+    "f7d9ed8f92d987d8"
+   ],
+   "alone": [
+    "5f796fe36f50ce2d",
+    "a56b5c659f41eb8c",
+    "84a4d5702f7ddb82",
+    "f7d9ed8f92d987d8"
+   ],
+   "same": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "log_grouped": [
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.007,
+     "prefill_s": 0.5509,
+     "first_s": 0.558,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.006,
+     "prefill_s": 0.5545,
+     "first_s": 0.561,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.005,
+     "prefill_s": 0.5578,
+     "first_s": 0.564,
+     "pieces": 1,
+     "slot": 3
+    },
+    {
+     "prompt": 79,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.008,
+     "prefill_s": 0.5612,
+     "first_s": 0.57,
+     "pieces": 1,
+     "slot": 0
+    }
+   ],
+   "log_alone": [
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.013,
+     "prefill_s": 0.3223,
+     "first_s": 0.335,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.013,
+     "prefill_s": 0.3163,
+     "first_s": 0.33,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 79,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.013,
+     "prefill_s": 0.316,
+     "first_s": 0.329,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3151,
+     "first_s": 0.327,
+     "pieces": 1,
+     "slot": 3
+    }
+   ]
+  },
+  {
+   "kind": "short",
+   "variant": "greedy-off",
+   "round": 6,
+   "prompts": [
+    "[W18a-greedy-off-6-0] You are writing for a general audience. Explain the printing press in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-off-6-1] You are writing for a general audience. Explain a heat pump in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-off-6-2] You are writing for a general audience. Explain the life cycle of a star in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-off-6-3] You are writing for a general audience. Explain bridge expansion joints in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings."
+   ],
+   "grouped": [
+    "5f796fe36f50ce2d",
+    "f4a022a208fb5bad",
+    "a8f595cefb6c4998",
+    "66ed0939185a5eb6"
+   ],
+   "alone": [
+    "5f796fe36f50ce2d",
+    "f4a022a208fb5bad",
+    "a8f595cefb6c4998",
+    "66ed0939185a5eb6"
+   ],
+   "same": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "log_grouped": [
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.013,
+     "prefill_s": 0.5508,
+     "first_s": 0.564,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 79,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.012,
+     "prefill_s": 0.5541,
+     "first_s": 0.567,
+     "pieces": 1,
+     "slot": 3
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.015,
+     "prefill_s": 0.5438,
+     "first_s": 0.559,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.014,
+     "prefill_s": 0.5474,
+     "first_s": 0.562,
+     "pieces": 1,
+     "slot": 1
+    }
+   ],
+   "log_alone": [
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.013,
+     "prefill_s": 0.3151,
+     "first_s": 0.328,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3134,
+     "first_s": 0.326,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 79,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3178,
+     "first_s": 0.33,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3251,
+     "first_s": 0.338,
+     "pieces": 1,
+     "slot": 3
+    }
+   ]
+  },
+  {
+   "kind": "short",
+   "variant": "greedy-off",
+   "round": 7,
+   "prompts": [
+    "[W18a-greedy-off-7-0] You are writing for a general audience. Explain the printing press in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-off-7-1] You are writing for a general audience. Explain a heat pump in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-off-7-2] You are writing for a general audience. Explain the life cycle of a star in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-off-7-3] You are writing for a general audience. Explain bridge expansion joints in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings."
+   ],
+   "grouped": [
+    "d0882533d6412700",
+    "9f2a3ac4aed483a0",
+    "4ebf7a0c6df3f4f5",
+    "aab038b3f7b02834"
+   ],
+   "alone": [
+    "d0882533d6412700",
+    "9f2a3ac4aed483a0",
+    "4ebf7a0c6df3f4f5",
+    "aab038b3f7b02834"
+   ],
+   "same": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "log_grouped": [
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.009,
+     "prefill_s": 0.545,
+     "first_s": 0.554,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.008,
+     "prefill_s": 0.5487,
+     "first_s": 0.557,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 79,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.007,
+     "prefill_s": 0.5555,
+     "first_s": 0.563,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.006,
+     "prefill_s": 0.552,
+     "first_s": 0.558,
+     "pieces": 1,
+     "slot": 3
+    }
+   ],
+   "log_alone": [
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.013,
+     "prefill_s": 0.3186,
+     "first_s": 0.332,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.013,
+     "prefill_s": 0.3134,
+     "first_s": 0.326,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 79,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3269,
+     "first_s": 0.34,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.014,
+     "prefill_s": 0.3245,
+     "first_s": 0.339,
+     "pieces": 1,
+     "slot": 3
+    }
+   ]
+  },
+  {
+   "kind": "short",
+   "variant": "greedy-off",
+   "round": 8,
+   "prompts": [
+    "[W18a-greedy-off-8-0] You are writing for a general audience. Explain the printing press in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-off-8-1] You are writing for a general audience. Explain a heat pump in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-off-8-2] You are writing for a general audience. Explain the life cycle of a star in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-off-8-3] You are writing for a general audience. Explain bridge expansion joints in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings."
+   ],
+   "grouped": [
+    "2979b8683bc8fe95",
+    "03a5a90591a5b433",
+    "ef7b75abc4594e43",
+    "7588769ef57973eb"
+   ],
+   "alone": [
+    "2979b8683bc8fe95",
+    "03a5a90591a5b433",
+    "ef7b75abc4594e43",
+    "7588769ef57973eb"
+   ],
+   "same": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "log_grouped": [
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.009,
+     "prefill_s": 0.5607,
+     "first_s": 0.571,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.01,
+     "prefill_s": 0.557,
+     "first_s": 0.568,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 79,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.011,
+     "prefill_s": 0.5676,
+     "first_s": 0.579,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.009,
+     "prefill_s": 0.5641,
+     "first_s": 0.574,
+     "pieces": 1,
+     "slot": 3
+    }
+   ],
+   "log_alone": [
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.015,
+     "prefill_s": 0.3175,
+     "first_s": 0.333,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.015,
+     "prefill_s": 0.3165,
+     "first_s": 0.331,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 79,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3168,
+     "first_s": 0.329,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3192,
+     "first_s": 0.332,
+     "pieces": 1,
+     "slot": 3
+    }
+   ]
+  },
+  {
+   "kind": "short",
+   "variant": "greedy-off",
+   "round": 9,
+   "prompts": [
+    "[W18a-greedy-off-9-0] You are writing for a general audience. Explain the printing press in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-off-9-1] You are writing for a general audience. Explain a heat pump in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-off-9-2] You are writing for a general audience. Explain the life cycle of a star in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-off-9-3] You are writing for a general audience. Explain bridge expansion joints in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings."
+   ],
+   "grouped": [
+    "41cd4f0171b2fe43",
+    "fd48e9f1a120c101",
+    "4ebf7a0c6df3f4f5",
+    "4a204765dfc35e73"
+   ],
+   "alone": [
+    "41cd4f0171b2fe43",
+    "fd48e9f1a120c101",
+    "4ebf7a0c6df3f4f5",
+    "4a204765dfc35e73"
+   ],
+   "same": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "log_grouped": [
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.006,
+     "prefill_s": 0.5448,
+     "first_s": 0.551,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.005,
+     "prefill_s": 0.5489,
+     "first_s": 0.554,
+     "pieces": 1,
+     "slot": 3
+    },
+    {
+     "prompt": 79,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.006,
+     "prefill_s": 0.5526,
+     "first_s": 0.559,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.008,
+     "prefill_s": 0.541,
+     "first_s": 0.549,
+     "pieces": 1,
+     "slot": 0
+    }
+   ],
+   "log_alone": [
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3169,
+     "first_s": 0.329,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3125,
+     "first_s": 0.325,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 79,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3276,
+     "first_s": 0.34,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 76,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3274,
+     "first_s": 0.34,
+     "pieces": 1,
+     "slot": 3
+    }
+   ]
+  },
+  {
+   "kind": "short",
+   "variant": "greedy-low",
+   "round": 0,
+   "prompts": [
+    "[W18a-greedy-low-0-0] You are writing for a general audience. Explain the printing press in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-low-0-1] You are writing for a general audience. Explain a heat pump in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-low-0-2] You are writing for a general audience. Explain the life cycle of a star in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-low-0-3] You are writing for a general audience. Explain bridge expansion joints in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings."
+   ],
+   "grouped": [
+    "89564fb0513ebe84",
+    "3a45545f5e575cb0",
+    "de8cd5904661948a",
+    "fc06c999970644d8"
+   ],
+   "alone": [
+    "89564fb0513ebe84",
+    "3a45545f5e575cb0",
+    "de8cd5904661948a",
+    "fc06c999970644d8"
+   ],
+   "same": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "log_grouped": [
+    {
+     "prompt": 82,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.006,
+     "prefill_s": 0.5955,
+     "first_s": 0.803,
+     "pieces": 1,
+     "slot": 3
+    },
+    {
+     "prompt": 82,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.008,
+     "prefill_s": 0.5917,
+     "first_s": 0.805,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 85,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.007,
+     "prefill_s": 0.5989,
+     "first_s": 0.804,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 82,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.008,
+     "prefill_s": 0.588,
+     "first_s": 0.805,
+     "pieces": 1,
+     "slot": 0
+    }
+   ],
+   "log_alone": [
+    {
+     "prompt": 82,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.013,
+     "prefill_s": 0.334,
+     "first_s": 0.426,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 82,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3392,
+     "first_s": 0.413,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 85,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3444,
+     "first_s": 0.41,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 82,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3332,
+     "first_s": 0.393,
+     "pieces": 1,
+     "slot": 3
+    }
+   ]
+  },
+  {
+   "kind": "short",
+   "variant": "greedy-low",
+   "round": 1,
+   "prompts": [
+    "[W18a-greedy-low-1-0] You are writing for a general audience. Explain the printing press in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-low-1-1] You are writing for a general audience. Explain a heat pump in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-low-1-2] You are writing for a general audience. Explain the life cycle of a star in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-low-1-3] You are writing for a general audience. Explain bridge expansion joints in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings."
+   ],
+   "grouped": [
+    "604406d749e8ae9c",
+    "3a45545f5e575cb0",
+    "351b790ba26a26cd",
+    "d8612e293c435b5a"
+   ],
+   "alone": [
+    "604406d749e8ae9c",
+    "3a45545f5e575cb0",
+    "351b790ba26a26cd",
+    "d8612e293c435b5a"
+   ],
+   "same": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "log_grouped": [
+    {
+     "prompt": 85,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.007,
+     "prefill_s": 0.5891,
+     "first_s": 0.785,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 82,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.007,
+     "prefill_s": 0.5779,
+     "first_s": 0.784,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 82,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.006,
+     "prefill_s": 0.5816,
+     "first_s": 0.784,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 82,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.006,
+     "prefill_s": 0.5854,
+     "first_s": 0.783,
+     "pieces": 1,
+     "slot": 3
+    }
+   ],
+   "log_alone": [
+    {
+     "prompt": 82,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.33,
+     "first_s": 0.407,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 82,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3277,
+     "first_s": 0.402,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 85,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3433,
+     "first_s": 0.41,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 82,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3319,
+     "first_s": 0.397,
+     "pieces": 1,
+     "slot": 3
+    }
+   ]
+  },
+  {
+   "kind": "short",
+   "variant": "greedy-low",
+   "round": 2,
+   "prompts": [
+    "[W18a-greedy-low-2-0] You are writing for a general audience. Explain the printing press in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-low-2-1] You are writing for a general audience. Explain a heat pump in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-low-2-2] You are writing for a general audience. Explain the life cycle of a star in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-greedy-low-2-3] You are writing for a general audience. Explain bridge expansion joints in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings."
+   ],
+   "grouped": [
+    "ed0b8bcaea6745ca",
+    "3a45545f5e575cb0",
+    "e03eef3b5de0f1fb",
+    "a906535440320553"
+   ],
+   "alone": [
+    "ed0b8bcaea6745ca",
+    "3a45545f5e575cb0",
+    "e03eef3b5de0f1fb",
+    "a906535440320553"
+   ],
+   "same": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "log_grouped": [
+    {
+     "prompt": 82,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.006,
+     "prefill_s": 0.582,
+     "first_s": 0.769,
+     "pieces": 1,
+     "slot": 3
+    },
+    {
+     "prompt": 82,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.006,
+     "prefill_s": 0.5786,
+     "first_s": 0.77,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 82,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.008,
+     "prefill_s": 0.5749,
+     "first_s": 0.772,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 85,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.007,
+     "prefill_s": 0.5854,
+     "first_s": 0.771,
+     "pieces": 1,
+     "slot": 1
+    }
+   ],
+   "log_alone": [
+    {
+     "prompt": 82,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.015,
+     "prefill_s": 0.3315,
+     "first_s": 0.41,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 82,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3292,
+     "first_s": 0.404,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 85,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.014,
+     "prefill_s": 0.3455,
+     "first_s": 0.412,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 82,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.014,
+     "prefill_s": 0.3339,
+     "first_s": 0.391,
+     "pieces": 1,
+     "slot": 3
+    }
+   ]
+  },
+  {
+   "kind": "short",
+   "variant": "seed-off",
+   "round": 0,
+   "prompts": [
+    "[W18a-seed-off-0-0] You are writing for a general audience. Explain the printing press in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-seed-off-0-1] You are writing for a general audience. Explain a heat pump in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-seed-off-0-2] You are writing for a general audience. Explain the life cycle of a star in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-seed-off-0-3] You are writing for a general audience. Explain bridge expansion joints in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings."
+   ],
+   "grouped": [
+    "115fddb3a9aeaad9",
+    "71b7c430906dfdec",
+    "5d719d22d16dd37b",
+    "88a5760b58c51e04"
+   ],
+   "alone": [
+    "115fddb3a9aeaad9",
+    "71b7c430906dfdec",
+    "5d719d22d16dd37b",
+    "88a5760b58c51e04"
+   ],
+   "same": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "log_grouped": [
+    {
+     "prompt": 78,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.008,
+     "prefill_s": 0.5837,
+     "first_s": 0.591,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 75,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.006,
+     "prefill_s": 0.5721,
+     "first_s": 0.578,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 75,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.006,
+     "prefill_s": 0.565,
+     "first_s": 0.572,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 75,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.005,
+     "prefill_s": 0.5779,
+     "first_s": 0.583,
+     "pieces": 1,
+     "slot": 3
+    }
+   ],
+   "log_alone": [
+    {
+     "prompt": 75,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3229,
+     "first_s": 0.336,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 75,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3151,
+     "first_s": 0.327,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 78,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3176,
+     "first_s": 0.33,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 75,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3187,
+     "first_s": 0.331,
+     "pieces": 1,
+     "slot": 3
+    }
+   ]
+  },
+  {
+   "kind": "short",
+   "variant": "seed-off",
+   "round": 1,
+   "prompts": [
+    "[W18a-seed-off-1-0] You are writing for a general audience. Explain the printing press in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-seed-off-1-1] You are writing for a general audience. Explain a heat pump in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-seed-off-1-2] You are writing for a general audience. Explain the life cycle of a star in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-seed-off-1-3] You are writing for a general audience. Explain bridge expansion joints in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings."
+   ],
+   "grouped": [
+    "480e6b3474d5c3fa",
+    "a7d7a9d4f48bf958",
+    "b3969d7c12881075",
+    "1a188b108a2f724b"
+   ],
+   "alone": [
+    "480e6b3474d5c3fa",
+    "a7d7a9d4f48bf958",
+    "b3969d7c12881075",
+    "1a188b108a2f724b"
+   ],
+   "same": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "log_grouped": [
+    {
+     "prompt": 78,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.008,
+     "prefill_s": 0.5874,
+     "first_s": 0.596,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 75,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.006,
+     "prefill_s": 0.5816,
+     "first_s": 0.588,
+     "pieces": 1,
+     "slot": 3
+    },
+    {
+     "prompt": 75,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.007,
+     "prefill_s": 0.5665,
+     "first_s": 0.574,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 75,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.006,
+     "prefill_s": 0.576,
+     "first_s": 0.583,
+     "pieces": 1,
+     "slot": 2
+    }
+   ],
+   "log_alone": [
+    {
+     "prompt": 75,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3199,
+     "first_s": 0.333,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 75,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.014,
+     "prefill_s": 0.3214,
+     "first_s": 0.335,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 78,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.014,
+     "prefill_s": 0.3181,
+     "first_s": 0.332,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 75,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3232,
+     "first_s": 0.336,
+     "pieces": 1,
+     "slot": 3
+    }
+   ]
+  },
+  {
+   "kind": "short",
+   "variant": "seed-off",
+   "round": 2,
+   "prompts": [
+    "[W18a-seed-off-2-0] You are writing for a general audience. Explain the printing press in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-seed-off-2-1] You are writing for a general audience. Explain a heat pump in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-seed-off-2-2] You are writing for a general audience. Explain the life cycle of a star in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-seed-off-2-3] You are writing for a general audience. Explain bridge expansion joints in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings."
+   ],
+   "grouped": [
+    "de1bf6a5f80b7b37",
+    "8bbfa11bcc6a409c",
+    "b3969d7c12881075",
+    "18c910c2266e781f"
+   ],
+   "alone": [
+    "de1bf6a5f80b7b37",
+    "8bbfa11bcc6a409c",
+    "b3969d7c12881075",
+    "18c910c2266e781f"
+   ],
+   "same": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "log_grouped": [
+    {
+     "prompt": 75,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.012,
+     "prefill_s": 0.5629,
+     "first_s": 0.575,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 78,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.012,
+     "prefill_s": 0.5779,
+     "first_s": 0.59,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 75,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.01,
+     "prefill_s": 0.5685,
+     "first_s": 0.579,
+     "pieces": 1,
+     "slot": 3
+    },
+    {
+     "prompt": 75,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.013,
+     "prefill_s": 0.5528,
+     "first_s": 0.566,
+     "pieces": 1,
+     "slot": 0
+    }
+   ],
+   "log_alone": [
+    {
+     "prompt": 75,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.015,
+     "prefill_s": 0.3166,
+     "first_s": 0.333,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 75,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3123,
+     "first_s": 0.325,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 78,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3248,
+     "first_s": 0.337,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 75,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3245,
+     "first_s": 0.337,
+     "pieces": 1,
+     "slot": 3
+    }
+   ]
+  },
+  {
+   "kind": "short",
+   "variant": "seed-low",
+   "round": 0,
+   "prompts": [
+    "[W18a-seed-low-0-0] You are writing for a general audience. Explain the printing press in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-seed-low-0-1] You are writing for a general audience. Explain a heat pump in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-seed-low-0-2] You are writing for a general audience. Explain the life cycle of a star in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-seed-low-0-3] You are writing for a general audience. Explain bridge expansion joints in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings."
+   ],
+   "grouped": [
+    "bfc09619e6131b3f",
+    "8e9754a79e8b0dd1",
+    "63f730a8f27e17cf",
+    "1346803c2079f577"
+   ],
+   "alone": [
+    "bfc09619e6131b3f",
+    "8e9754a79e8b0dd1",
+    "63f730a8f27e17cf",
+    "1346803c2079f577"
+   ],
+   "same": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "log_grouped": [
+    {
+     "prompt": 81,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.007,
+     "prefill_s": 0.5714,
+     "first_s": 0.728,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 81,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.006,
+     "prefill_s": 0.5737,
+     "first_s": 0.728,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 81,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.006,
+     "prefill_s": 0.5776,
+     "first_s": 0.727,
+     "pieces": 1,
+     "slot": 3
+    },
+    {
+     "prompt": 84,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.007,
+     "prefill_s": 0.5835,
+     "first_s": 0.728,
+     "pieces": 1,
+     "slot": 1
+    }
+   ],
+   "log_alone": [
+    {
+     "prompt": 81,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.014,
+     "prefill_s": 0.3248,
+     "first_s": 0.4,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 81,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3346,
+     "first_s": 0.392,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 84,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.013,
+     "prefill_s": 0.3406,
+     "first_s": 0.408,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 81,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3298,
+     "first_s": 0.39,
+     "pieces": 1,
+     "slot": 3
+    }
+   ]
+  },
+  {
+   "kind": "short",
+   "variant": "seed-low",
+   "round": 1,
+   "prompts": [
+    "[W18a-seed-low-1-0] You are writing for a general audience. Explain the printing press in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-seed-low-1-1] You are writing for a general audience. Explain a heat pump in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-seed-low-1-2] You are writing for a general audience. Explain the life cycle of a star in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-seed-low-1-3] You are writing for a general audience. Explain bridge expansion joints in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings."
+   ],
+   "grouped": [
+    "c40a90886f8434f4",
+    "48b367ec30fd114e",
+    "0a52c314b75cbd3a",
+    "a1ee577fd15f31a7"
+   ],
+   "alone": [
+    "c40a90886f8434f4",
+    "48b367ec30fd114e",
+    "0a52c314b75cbd3a",
+    "a1ee577fd15f31a7"
+   ],
+   "same": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "log_grouped": [
+    {
+     "prompt": 81,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.007,
+     "prefill_s": 0.5736,
+     "first_s": 0.582,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 81,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.008,
+     "prefill_s": 0.5713,
+     "first_s": 0.581,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 81,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.006,
+     "prefill_s": 0.5757,
+     "first_s": 0.731,
+     "pieces": 1,
+     "slot": 3
+    },
+    {
+     "prompt": 84,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.007,
+     "prefill_s": 0.5796,
+     "first_s": 0.731,
+     "pieces": 1,
+     "slot": 2
+    }
+   ],
+   "log_alone": [
+    {
+     "prompt": 81,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.013,
+     "prefill_s": 0.332,
+     "first_s": 0.345,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 81,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3378,
+     "first_s": 0.351,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 84,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.013,
+     "prefill_s": 0.3422,
+     "first_s": 0.401,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 81,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.014,
+     "prefill_s": 0.3366,
+     "first_s": 0.396,
+     "pieces": 1,
+     "slot": 3
+    }
+   ]
+  },
+  {
+   "kind": "short",
+   "variant": "seed-low",
+   "round": 2,
+   "prompts": [
+    "[W18a-seed-low-2-0] You are writing for a general audience. Explain the printing press in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-seed-low-2-1] You are writing for a general audience. Explain a heat pump in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-seed-low-2-2] You are writing for a general audience. Explain the life cycle of a star in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings.",
+    "[W18a-seed-low-2-3] You are writing for a general audience. Explain bridge expansion joints in clear, plain prose. Cover the main idea first, then two or three supporting details, then one common misconception and why it is wrong. Keep the tone friendly and avoid lists; write connected paragraphs. Do not use headings."
+   ],
+   "grouped": [
+    "d1b587d4b68e800d",
+    "5698fedc2e9f379e",
+    "e392231ccabb3ecf",
+    "7057a851f4afe680"
+   ],
+   "alone": [
+    "d1b587d4b68e800d",
+    "5698fedc2e9f379e",
+    "e392231ccabb3ecf",
+    "7057a851f4afe680"
+   ],
+   "same": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "log_grouped": [
+    {
+     "prompt": 81,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.006,
+     "prefill_s": 0.5677,
+     "first_s": 0.574,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 81,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.008,
+     "prefill_s": 0.5654,
+     "first_s": 0.728,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 81,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.005,
+     "prefill_s": 0.5698,
+     "first_s": 0.725,
+     "pieces": 1,
+     "slot": 3
+    },
+    {
+     "prompt": 84,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.007,
+     "prefill_s": 0.5748,
+     "first_s": 0.727,
+     "pieces": 1,
+     "slot": 1
+    }
+   ],
+   "log_alone": [
+    {
+     "prompt": 81,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.013,
+     "prefill_s": 0.339,
+     "first_s": 0.353,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 81,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.013,
+     "prefill_s": 0.3364,
+     "first_s": 0.395,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 84,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3304,
+     "first_s": 0.388,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 81,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.3343,
+     "first_s": 0.392,
+     "pieces": 1,
+     "slot": 3
+    }
+   ]
+  },
+  {
+   "kind": "burst",
+   "variant": "greedy-off",
+   "prompts": [
+    "[W18a-greedy-off-L0] Here is a log.\nRecord 0: item 0 weighs 0 kg and ships to bay 0. Record 1: item 37 weighs 13 kg and ships to bay 5. Record 2: item 74 weighs 26 kg and ships to bay 10. Record 3: item 111 weighs 39 kg and ships to bay 15. Record 4: item 148 weighs 52 kg and ships to bay 20. Record 5: item 185 weighs 65 kg and ships to bay 2. Record 6: item 222 weighs 78 kg and ships to bay 7. Record 7: item 259 weighs 91 kg and ships to bay 12. Record 8: item 296 weighs 7 kg and ships to bay 17. Record 9: item 333 weighs 20 kg and ships to bay 22. Record 10: item 370 weighs 33 kg and ships to bay 4. Record 11: item 407 weighs 46 kg and ships to bay 9. Record 12: item 444 weighs 59 kg and ships to bay 14. Record 13: item 481 weighs 72 kg and ships to bay 19. Record 14: item 518 weighs 85 kg and ships to bay 1.\nWhich bay receives the heaviest item in the log? Explain briefly.",
+    "[W18a-greedy-off-L1] Here is a log.\nRecord 0: item 1 weighs 7 kg and ships to bay 1. Record 1: item 38 weighs 20 kg and ships to bay 6. Record 2: item 75 weighs 33 kg and ships to bay 11. Record 3: item 112 weighs 46 kg and ships to bay 16. Record 4: item 149 weighs 59 kg and ships to bay 21. Record 5: item 186 weighs 72 kg and ships to bay 3. Record 6: item 223 weighs 85 kg and ships to bay 8. Record 7: item 260 weighs 1 kg and ships to bay 13. Record 8: item 297 weighs 14 kg and ships to bay 18. Record 9: item 334 weighs 27 kg and ships to bay 0. Record 10: item 371 weighs 40 kg and ships to bay 5. Record 11: item 408 weighs 53 kg and ships to bay 10. Record 12: item 445 weighs 66 kg and ships to bay 15. Record 13: item 482 weighs 79 kg and ships to bay 20. Record 14: item 519 weighs 92 kg and ships to bay 2. Record 15: item 556 weighs 8 kg and ships to bay 7. Record 16: item 593 weighs 21 kg and ships to bay 12. Record 17: item 630 weighs 34 kg and ships to bay 17. Record 18: item 667 weighs 47 kg and ships to bay 22. Record 19: item 704 weighs 60 kg and ships to bay 4. Record 20: item 741 weighs 73 kg and ships to bay 9. Record 21: item 778 weighs 86 kg and ships to bay 14. Record 22: item 815 weighs 2 kg and ships to bay 19. Record 23: item 852 weighs 15 kg and ships to bay 1. Record 24: item 889 weighs 28 kg and ships to bay 6. Record 25: item 926 weighs 41 kg and ships to bay 11. Record 26: item 963 weighs 54 kg and ships to bay 16. Record 27: item 0 weighs 67 kg and ships to bay 21. Record 28: item 37 weighs 80 kg and ships to bay 3. Record 29: item 74 weighs 93 kg and ships to bay 8. Record 30: item 111 weighs 9 kg and ships to bay 13. Record 31: item 148 weighs 22 kg and ships to bay 18. Record 32: item 185 weighs 35 kg and ships to bay 0.\nWhich bay receives the heaviest item in the log? Explain briefly.",
+    "[W18a-greedy-off-L2] Here is a log.\nRecord 0: item 2 weighs 14 kg and ships to bay 2. Record 1: item 39 weighs 27 kg and ships to bay 7. Record 2: item 76 weighs 40 kg and ships to bay 12. Record 3: item 113 weighs 53 kg and ships to bay 17. Record 4: item 150 weighs 66 kg and ships to bay 22. Record 5: item 187 weighs 79 kg and ships to bay 4. Record 6: item 224 weighs 92 kg and ships to bay 9. Record 7: item 261 weighs 8 kg and ships to bay 14. Record 8: item 298 weighs 21 kg and ships to bay 19. Record 9: item 335 weighs 34 kg and ships to bay 1. Record 10: item 372 weighs 47 kg and ships to bay 6. Record 11: item 409 weighs 60 kg and ships to bay 11. Record 12: item 446 weighs 73 kg and ships to bay 16. Record 13: item 483 weighs 86 kg and ships to bay 21. Record 14: item 520 weighs 2 kg and ships to bay 3. Record 15: item 557 weighs 15 kg and ships to bay 8. Record 16: item 594 weighs 28 kg and ships to bay 13. Record 17: item 631 weighs 41 kg and ships to bay 18. Record 18: item 668 weighs 54 kg and ships to bay 0. Record 19: item 705 weighs 67 kg and ships to bay 5. Record 20: item 742 weighs 80 kg and ships to bay 10. Record 21: item 779 weighs 93 kg and ships to bay 15. Record 22: item 816 weighs 9 kg and ships to bay 20. Record 23: item 853 weighs 22 kg and ships to bay 2. Record 24: item 890 weighs 35 kg and ships to bay 7. Record 25: item 927 weighs 48 kg and ships to bay 12. Record 26: item 964 weighs 61 kg and ships to bay 17. Record 27: item 1 weighs 74 kg and ships to bay 22. Record 28: item 38 weighs 87 kg and ships to bay 4. Record 29: item 75 weighs 3 kg and ships to bay 9. Record 30: item 112 weighs 16 kg and ships to bay 14. Record 31: item 149 weighs 29 kg and ships to bay 19. Record 32: item 186 weighs 42 kg and ships to bay 1. Record 33: item 223 weighs 55 kg and ships to bay 6. Record 34: item 260 weighs 68 kg and ships to bay 11. Record 35: item 297 weighs 81 kg and ships to bay 16. Record 36: item 334 weighs 94 kg and ships to bay 21. Record 37: item 371 weighs 10 kg and ships to bay 3. Record 38: item 408 weighs 23 kg and ships to bay 8. Record 39: item 445 weighs 36 kg and ships to bay 13. Record 40: item 482 weighs 49 kg and ships to bay 18. Record 41: item 519 weighs 62 kg and ships to bay 0. Record 42: item 556 weighs 75 kg and ships to bay 5. Record 43: item 593 weighs 88 kg and ships to bay 10. Record 44: item 630 weighs 4 kg and ships to bay 15. Record 45: item 667 weighs 17 kg and ships to bay 20. Record 46: item 704 weighs 30 kg and ships to bay 2. Record 47: item 741 weighs 43 kg and ships to bay 7. Record 48: item 778 weighs 56 kg and ships to bay 12. Record 49: item 815 weighs 69 kg and ships to bay 17. Record 50: item 852 weighs 82 kg and ships to bay 22.\nWhich bay receives the heaviest item in the log? Explain briefly.",
+    "[W18a-greedy-off-L3] Here is a log.\nRecord 0: item 3 weighs 21 kg and ships to bay 3. Record 1: item 40 weighs 34 kg and ships to bay 8. Record 2: item 77 weighs 47 kg and ships to bay 13. Record 3: item 114 weighs 60 kg and ships to bay 18. Record 4: item 151 weighs 73 kg and ships to bay 0. Record 5: item 188 weighs 86 kg and ships to bay 5. Record 6: item 225 weighs 2 kg and ships to bay 10. Record 7: item 262 weighs 15 kg and ships to bay 15. Record 8: item 299 weighs 28 kg and ships to bay 20. Record 9: item 336 weighs 41 kg and ships to bay 2. Record 10: item 373 weighs 54 kg and ships to bay 7. Record 11: item 410 weighs 67 kg and ships to bay 12. Record 12: item 447 weighs 80 kg and ships to bay 17. Record 13: item 484 weighs 93 kg and ships to bay 22. Record 14: item 521 weighs 9 kg and ships to bay 4. Record 15: item 558 weighs 22 kg and ships to bay 9. Record 16: item 595 weighs 35 kg and ships to bay 14. Record 17: item 632 weighs 48 kg and ships to bay 19. Record 18: item 669 weighs 61 kg and ships to bay 1. Record 19: item 706 weighs 74 kg and ships to bay 6. Record 20: item 743 weighs 87 kg and ships to bay 11. Record 21: item 780 weighs 3 kg and ships to bay 16. Record 22: item 817 weighs 16 kg and ships to bay 21. Record 23: item 854 weighs 29 kg and ships to bay 3. Record 24: item 891 weighs 42 kg and ships to bay 8. Record 25: item 928 weighs 55 kg and ships to bay 13. Record 26: item 965 weighs 68 kg and ships to bay 18. Record 27: item 2 weighs 81 kg and ships to bay 0. Record 28: item 39 weighs 94 kg and ships to bay 5. Record 29: item 76 weighs 10 kg and ships to bay 10. Record 30: item 113 weighs 23 kg and ships to bay 15. Record 31: item 150 weighs 36 kg and ships to bay 20. Record 32: item 187 weighs 49 kg and ships to bay 2. Record 33: item 224 weighs 62 kg and ships to bay 7. Record 34: item 261 weighs 75 kg and ships to bay 12. Record 35: item 298 weighs 88 kg and ships to bay 17. Record 36: item 335 weighs 4 kg and ships to bay 22. Record 37: item 372 weighs 17 kg and ships to bay 4. Record 38: item 409 weighs 30 kg and ships to bay 9. Record 39: item 446 weighs 43 kg and ships to bay 14. Record 40: item 483 weighs 56 kg and ships to bay 19. Record 41: item 520 weighs 69 kg and ships to bay 1. Record 42: item 557 weighs 82 kg and ships to bay 6. Record 43: item 594 weighs 95 kg and ships to bay 11. Record 44: item 631 weighs 11 kg and ships to bay 16. Record 45: item 668 weighs 24 kg and ships to bay 21. Record 46: item 705 weighs 37 kg and ships to bay 3. Record 47: item 742 weighs 50 kg and ships to bay 8. Record 48: item 779 weighs 63 kg and ships to bay 13. Record 49: item 816 weighs 76 kg and ships to bay 18. Record 50: item 853 weighs 89 kg and ships to bay 0. Record 51: item 890 weighs 5 kg and ships to bay 5. Record 52: item 927 weighs 18 kg and ships to bay 10. Record 53: item 964 weighs 31 kg and ships to bay 15. Record 54: item 1 weighs 44 kg and ships to bay 20. Record 55: item 38 weighs 57 kg and ships to bay 2. Record 56: item 75 weighs 70 kg and ships to bay 7. Record 57: item 112 weighs 83 kg and ships to bay 12. Record 58: item 149 weighs 96 kg and ships to bay 17. Record 59: item 186 weighs 12 kg and ships to bay 22. Record 60: item 223 weighs 25 kg and ships to bay 4. Record 61: item 260 weighs 38 kg and ships to bay 9. Record 62: item 297 weighs 51 kg and ships to bay 14. Record 63: item 334 weighs 64 kg and ships to bay 19. Record 64: item 371 weighs 77 kg and ships to bay 1. Record 65: item 408 weighs 90 kg and ships to bay 6. Record 66: item 445 weighs 6 kg and ships to bay 11. Record 67: item 482 weighs 19 kg and ships to bay 16. Record 68: item 519 weighs 32 kg and ships to bay 21. Record 69: item 556 weighs 45 kg and ships to bay 3. Record 70: item 593 weighs 58 kg and ships to bay 8. Record 71: item 630 weighs 71 kg and ships to bay 13.\nWhich bay receives the heaviest item in the log? Explain briefly.",
+    "[W18a-greedy-off-L4] Here is a log.\nRecord 0: item 4 weighs 28 kg and ships to bay 4. Record 1: item 41 weighs 41 kg and ships to bay 9. Record 2: item 78 weighs 54 kg and ships to bay 14. Record 3: item 115 weighs 67 kg and ships to bay 19. Record 4: item 152 weighs 80 kg and ships to bay 1. Record 5: item 189 weighs 93 kg and ships to bay 6. Record 6: item 226 weighs 9 kg and ships to bay 11. Record 7: item 263 weighs 22 kg and ships to bay 16. Record 8: item 300 weighs 35 kg and ships to bay 21. Record 9: item 337 weighs 48 kg and ships to bay 3. Record 10: item 374 weighs 61 kg and ships to bay 8. Record 11: item 411 weighs 74 kg and ships to bay 13. Record 12: item 448 weighs 87 kg and ships to bay 18. Record 13: item 485 weighs 3 kg and ships to bay 0. Record 14: item 522 weighs 16 kg and ships to bay 5. Record 15: item 559 weighs 29 kg and ships to bay 10. Record 16: item 596 weighs 42 kg and ships to bay 15. Record 17: item 633 weighs 55 kg and ships to bay 20. Record 18: item 670 weighs 68 kg and ships to bay 2. Record 19: item 707 weighs 81 kg and ships to bay 7. Record 20: item 744 weighs 94 kg and ships to bay 12. Record 21: item 781 weighs 10 kg and ships to bay 17. Record 22: item 818 weighs 23 kg and ships to bay 22. Record 23: item 855 weighs 36 kg and ships to bay 4. Record 24: item 892 weighs 49 kg and ships to bay 9. Record 25: item 929 weighs 62 kg and ships to bay 14. Record 26: item 966 weighs 75 kg and ships to bay 19. Record 27: item 3 weighs 88 kg and ships to bay 1. Record 28: item 40 weighs 4 kg and ships to bay 6. Record 29: item 77 weighs 17 kg and ships to bay 11. Record 30: item 114 weighs 30 kg and ships to bay 16. Record 31: item 151 weighs 43 kg and ships to bay 21. Record 32: item 188 weighs 56 kg and ships to bay 3. Record 33: item 225 weighs 69 kg and ships to bay 8. Record 34: item 262 weighs 82 kg and ships to bay 13. Record 35: item 299 weighs 95 kg and ships to bay 18. Record 36: item 336 weighs 11 kg and ships to bay 0. Record 37: item 373 weighs 24 kg and ships to bay 5. Record 38: item 410 weighs 37 kg and ships to bay 10. Record 39: item 447 weighs 50 kg and ships to bay 15. Record 40: item 484 weighs 63 kg and ships to bay 20. Record 41: item 521 weighs 76 kg and ships to bay 2. Record 42: item 558 weighs 89 kg and ships to bay 7. Record 43: item 595 weighs 5 kg and ships to bay 12. Record 44: item 632 weighs 18 kg and ships to bay 17. Record 45: item 669 weighs 31 kg and ships to bay 22. Record 46: item 706 weighs 44 kg and ships to bay 4. Record 47: item 743 weighs 57 kg and ships to bay 9. Record 48: item 780 weighs 70 kg and ships to bay 14. Record 49: item 817 weighs 83 kg and ships to bay 19. Record 50: item 854 weighs 96 kg and ships to bay 1. Record 51: item 891 weighs 12 kg and ships to bay 6. Record 52: item 928 weighs 25 kg and ships to bay 11. Record 53: item 965 weighs 38 kg and ships to bay 16. Record 54: item 2 weighs 51 kg and ships to bay 21. Record 55: item 39 weighs 64 kg and ships to bay 3. Record 56: item 76 weighs 77 kg and ships to bay 8. Record 57: item 113 weighs 90 kg and ships to bay 13. Record 58: item 150 weighs 6 kg and ships to bay 18. Record 59: item 187 weighs 19 kg and ships to bay 0. Record 60: item 224 weighs 32 kg and ships to bay 5. Record 61: item 261 weighs 45 kg and ships to bay 10. Record 62: item 298 weighs 58 kg and ships to bay 15. Record 63: item 335 weighs 71 kg and ships to bay 20. Record 64: item 372 weighs 84 kg and ships to bay 2. Record 65: item 409 weighs 0 kg and ships to bay 7. Record 66: item 446 weighs 13 kg and ships to bay 12. Record 67: item 483 weighs 26 kg and ships to bay 17. Record 68: item 520 weighs 39 kg and ships to bay 22. Record 69: item 557 weighs 52 kg and ships to bay 4. Record 70: item 594 weighs 65 kg and ships to bay 9. Record 71: item 631 weighs 78 kg and ships to bay 14. Record 72: item 668 weighs 91 kg and ships to bay 19. Record 73: item 705 weighs 7 kg and ships to bay 1. Record 74: item 742 weighs 20 kg and ships to bay 6. Record 75: item 779 weighs 33 kg and ships to bay 11. Record 76: item 816 weighs 46 kg and ships to bay 16. Record 77: item 853 weighs 59 kg and ships to bay 21. Record 78: item 890 weighs 72 kg and ships to bay 3. Record 79: item 927 weighs 85 kg and ships to bay 8. Record 80: item 964 weighs 1 kg and ships to bay 13. Record 81: item 1 weighs 14 kg and ships to bay 18. Record 82: item 38 weighs 27 kg and ships to bay 0. Record 83: item 75 weighs 40 kg and ships to bay 5. Record 84: item 112 weighs 53 kg and ships to bay 10. Record 85: item 149 weighs 66 kg and ships to bay 15. Record 86: item 186 weighs 79 kg and ships to bay 20. Record 87: item 223 weighs 92 kg and ships to bay 2. Record 88: item 260 weighs 8 kg and ships to bay 7. Record 89: item 297 weighs 21 kg and ships to bay 12. Record 90: item 334 weighs 34 kg and ships to bay 17. Record 91: item 371 weighs 47 kg and ships to bay 22. Record 92: item 408 weighs 60 kg and ships to bay 4. Record 93: item 445 weighs 73 kg and ships to bay 9. Record 94: item 482 weighs 86 kg and ships to bay 14. Record 95: item 519 weighs 2 kg and ships to bay 19. Record 96: item 556 weighs 15 kg and ships to bay 1. Record 97: item 593 weighs 28 kg and ships to bay 6. Record 98: item 630 weighs 41 kg and ships to bay 11. Record 99: item 667 weighs 54 kg and ships to bay 16. Record 100: item 704 weighs 67 kg and ships to bay 21.\nWhich bay receives the heaviest item in the log? Explain briefly.",
+    "[W18a-greedy-off-L5] Here is a log.\nRecord 0: item 5 weighs 35 kg and ships to bay 5. Record 1: item 42 weighs 48 kg and ships to bay 10. Record 2: item 79 weighs 61 kg and ships to bay 15. Record 3: item 116 weighs 74 kg and ships to bay 20. Record 4: item 153 weighs 87 kg and ships to bay 2. Record 5: item 190 weighs 3 kg and ships to bay 7. Record 6: item 227 weighs 16 kg and ships to bay 12. Record 7: item 264 weighs 29 kg and ships to bay 17. Record 8: item 301 weighs 42 kg and ships to bay 22. Record 9: item 338 weighs 55 kg and ships to bay 4. Record 10: item 375 weighs 68 kg and ships to bay 9. Record 11: item 412 weighs 81 kg and ships to bay 14. Record 12: item 449 weighs 94 kg and ships to bay 19. Record 13: item 486 weighs 10 kg and ships to bay 1. Record 14: item 523 weighs 23 kg and ships to bay 6. Record 15: item 560 weighs 36 kg and ships to bay 11. Record 16: item 597 weighs 49 kg and ships to bay 16. Record 17: item 634 weighs 62 kg and ships to bay 21. Record 18: item 671 weighs 75 kg and ships to bay 3. Record 19: item 708 weighs 88 kg and ships to bay 8. Record 20: item 745 weighs 4 kg and ships to bay 13. Record 21: item 782 weighs 17 kg and ships to bay 18. Record 22: item 819 weighs 30 kg and ships to bay 0. Record 23: item 856 weighs 43 kg and ships to bay 5. Record 24: item 893 weighs 56 kg and ships to bay 10. Record 25: item 930 weighs 69 kg and ships to bay 15. Record 26: item 967 weighs 82 kg and ships to bay 20. Record 27: item 4 weighs 95 kg and ships to bay 2. Record 28: item 41 weighs 11 kg and ships to bay 7. Record 29: item 78 weighs 24 kg and ships to bay 12. Record 30: item 115 weighs 37 kg and ships to bay 17. Record 31: item 152 weighs 50 kg and ships to bay 22. Record 32: item 189 weighs 63 kg and ships to bay 4. Record 33: item 226 weighs 76 kg and ships to bay 9. Record 34: item 263 weighs 89 kg and ships to bay 14. Record 35: item 300 weighs 5 kg and ships to bay 19. Record 36: item 337 weighs 18 kg and ships to bay 1. Record 37: item 374 weighs 31 kg and ships to bay 6. Record 38: item 411 weighs 44 kg and ships to bay 11. Record 39: item 448 weighs 57 kg and ships to bay 16. Record 40: item 485 weighs 70 kg and ships to bay 21. Record 41: item 522 weighs 83 kg and ships to bay 3. Record 42: item 559 weighs 96 kg and ships to bay 8. Record 43: item 596 weighs 12 kg and ships to bay 13. Record 44: item 633 weighs 25 kg and ships to bay 18. Record 45: item 670 weighs 38 kg and ships to bay 0. Record 46: item 707 weighs 51 kg and ships to bay 5. Record 47: item 744 weighs 64 kg and ships to bay 10. Record 48: item 781 weighs 77 kg and ships to bay 15. Record 49: item 818 weighs 90 kg and ships to bay 20. Record 50: item 855 weighs 6 kg and ships to bay 2. Record 51: item 892 weighs 19 kg and ships to bay 7. Record 52: item 929 weighs 32 kg and ships to bay 12. Record 53: item 966 weighs 45 kg and ships to bay 17. Record 54: item 3 weighs 58 kg and ships to bay 22. Record 55: item 40 weighs 71 kg and ships to bay 4. Record 56: item 77 weighs 84 kg and ships to bay 9. Record 57: item 114 weighs 0 kg and ships to bay 14. Record 58: item 151 weighs 13 kg and ships to bay 19. Record 59: item 188 weighs 26 kg and ships to bay 1. Record 60: item 225 weighs 39 kg and ships to bay 6. Record 61: item 262 weighs 52 kg and ships to bay 11. Record 62: item 299 weighs 65 kg and ships to bay 16. Record 63: item 336 weighs 78 kg and ships to bay 21. Record 64: item 373 weighs 91 kg and ships to bay 3. Record 65: item 410 weighs 7 kg and ships to bay 8. Record 66: item 447 weighs 20 kg and ships to bay 13. Record 67: item 484 weighs 33 kg and ships to bay 18. Record 68: item 521 weighs 46 kg and ships to bay 0. Record 69: item 558 weighs 59 kg and ships to bay 5. Record 70: item 595 weighs 72 kg and ships to bay 10. Record 71: item 632 weighs 85 kg and ships to bay 15. Record 72: item 669 weighs 1 kg and ships to bay 20. Record 73: item 706 weighs 14 kg and ships to bay 2. Record 74: item 743 weighs 27 kg and ships to bay 7. Record 75: item 780 weighs 40 kg and ships to bay 12. Record 76: item 817 weighs 53 kg and ships to bay 17. Record 77: item 854 weighs 66 kg and ships to bay 22. Record 78: item 891 weighs 79 kg and ships to bay 4. Record 79: item 928 weighs 92 kg and ships to bay 9. Record 80: item 965 weighs 8 kg and ships to bay 14. Record 81: item 2 weighs 21 kg and ships to bay 19. Record 82: item 39 weighs 34 kg and ships to bay 1. Record 83: item 76 weighs 47 kg and ships to bay 6. Record 84: item 113 weighs 60 kg and ships to bay 11. Record 85: item 150 weighs 73 kg and ships to bay 16. Record 86: item 187 weighs 86 kg and ships to bay 21. Record 87: item 224 weighs 2 kg and ships to bay 3. Record 88: item 261 weighs 15 kg and ships to bay 8. Record 89: item 298 weighs 28 kg and ships to bay 13. Record 90: item 335 weighs 41 kg and ships to bay 18. Record 91: item 372 weighs 54 kg and ships to bay 0. Record 92: item 409 weighs 67 kg and ships to bay 5. Record 93: item 446 weighs 80 kg and ships to bay 10. Record 94: item 483 weighs 93 kg and ships to bay 15. Record 95: item 520 weighs 9 kg and ships to bay 20. Record 96: item 557 weighs 22 kg and ships to bay 2. Record 97: item 594 weighs 35 kg and ships to bay 7. Record 98: item 631 weighs 48 kg and ships to bay 12. Record 99: item 668 weighs 61 kg and ships to bay 17. Record 100: item 705 weighs 74 kg and ships to bay 22. Record 101: item 742 weighs 87 kg and ships to bay 4. Record 102: item 779 weighs 3 kg and ships to bay 9. Record 103: item 816 weighs 16 kg and ships to bay 14. Record 104: item 853 weighs 29 kg and ships to bay 19. Record 105: item 890 weighs 42 kg and ships to bay 1. Record 106: item 927 weighs 55 kg and ships to bay 6. Record 107: item 964 weighs 68 kg and ships to bay 11. Record 108: item 1 weighs 81 kg and ships to bay 16. Record 109: item 38 weighs 94 kg and ships to bay 21. Record 110: item 75 weighs 10 kg and ships to bay 3. Record 111: item 112 weighs 23 kg and ships to bay 8. Record 112: item 149 weighs 36 kg and ships to bay 13. Record 113: item 186 weighs 49 kg and ships to bay 18. Record 114: item 223 weighs 62 kg and ships to bay 0. Record 115: item 260 weighs 75 kg and ships to bay 5. Record 116: item 297 weighs 88 kg and ships to bay 10. Record 117: item 334 weighs 4 kg and ships to bay 15. Record 118: item 371 weighs 17 kg and ships to bay 20. Record 119: item 408 weighs 30 kg and ships to bay 2. Record 120: item 445 weighs 43 kg and ships to bay 7. Record 121: item 482 weighs 56 kg and ships to bay 12. Record 122: item 519 weighs 69 kg and ships to bay 17. Record 123: item 556 weighs 82 kg and ships to bay 22. Record 124: item 593 weighs 95 kg and ships to bay 4. Record 125: item 630 weighs 11 kg and ships to bay 9. Record 126: item 667 weighs 24 kg and ships to bay 14. Record 127: item 704 weighs 37 kg and ships to bay 19. Record 128: item 741 weighs 50 kg and ships to bay 1. Record 129: item 778 weighs 63 kg and ships to bay 6. Record 130: item 815 weighs 76 kg and ships to bay 11. Record 131: item 852 weighs 89 kg and ships to bay 16. Record 132: item 889 weighs 5 kg and ships to bay 21. Record 133: item 926 weighs 18 kg and ships to bay 3. Record 134: item 963 weighs 31 kg and ships to bay 8. Record 135: item 0 weighs 44 kg and ships to bay 13.\nWhich bay receives the heaviest item in the log? Explain briefly.",
+    "[W18a-greedy-off-L6] Here is a log.\nRecord 0: item 6 weighs 42 kg and ships to bay 6. Record 1: item 43 weighs 55 kg and ships to bay 11. Record 2: item 80 weighs 68 kg and ships to bay 16. Record 3: item 117 weighs 81 kg and ships to bay 21. Record 4: item 154 weighs 94 kg and ships to bay 3. Record 5: item 191 weighs 10 kg and ships to bay 8. Record 6: item 228 weighs 23 kg and ships to bay 13. Record 7: item 265 weighs 36 kg and ships to bay 18. Record 8: item 302 weighs 49 kg and ships to bay 0. Record 9: item 339 weighs 62 kg and ships to bay 5. Record 10: item 376 weighs 75 kg and ships to bay 10. Record 11: item 413 weighs 88 kg and ships to bay 15. Record 12: item 450 weighs 4 kg and ships to bay 20. Record 13: item 487 weighs 17 kg and ships to bay 2. Record 14: item 524 weighs 30 kg and ships to bay 7. Record 15: item 561 weighs 43 kg and ships to bay 12. Record 16: item 598 weighs 56 kg and ships to bay 17. Record 17: item 635 weighs 69 kg and ships to bay 22. Record 18: item 672 weighs 82 kg and ships to bay 4. Record 19: item 709 weighs 95 kg and ships to bay 9. Record 20: item 746 weighs 11 kg and ships to bay 14. Record 21: item 783 weighs 24 kg and ships to bay 19. Record 22: item 820 weighs 37 kg and ships to bay 1. Record 23: item 857 weighs 50 kg and ships to bay 6. Record 24: item 894 weighs 63 kg and ships to bay 11. Record 25: item 931 weighs 76 kg and ships to bay 16. Record 26: item 968 weighs 89 kg and ships to bay 21. Record 27: item 5 weighs 5 kg and ships to bay 3. Record 28: item 42 weighs 18 kg and ships to bay 8. Record 29: item 79 weighs 31 kg and ships to bay 13. Record 30: item 116 weighs 44 kg and ships to bay 18. Record 31: item 153 weighs 57 kg and ships to bay 0. Record 32: item 190 weighs 70 kg and ships to bay 5. Record 33: item 227 weighs 83 kg and ships to bay 10. Record 34: item 264 weighs 96 kg and ships to bay 15. Record 35: item 301 weighs 12 kg and ships to bay 20. Record 36: item 338 weighs 25 kg and ships to bay 2. Record 37: item 375 weighs 38 kg and ships to bay 7. Record 38: item 412 weighs 51 kg and ships to bay 12. Record 39: item 449 weighs 64 kg and ships to bay 17. Record 40: item 486 weighs 77 kg and ships to bay 22. Record 41: item 523 weighs 90 kg and ships to bay 4. Record 42: item 560 weighs 6 kg and ships to bay 9. Record 43: item 597 weighs 19 kg and ships to bay 14. Record 44: item 634 weighs 32 kg and ships to bay 19. Record 45: item 671 weighs 45 kg and ships to bay 1. Record 46: item 708 weighs 58 kg and ships to bay 6. Record 47: item 745 weighs 71 kg and ships to bay 11. Record 48: item 782 weighs 84 kg and ships to bay 16. Record 49: item 819 weighs 0 kg and ships to bay 21. Record 50: item 856 weighs 13 kg and ships to bay 3. Record 51: item 893 weighs 26 kg and ships to bay 8. Record 52: item 930 weighs 39 kg and ships to bay 13. Record 53: item 967 weighs 52 kg and ships to bay 18. Record 54: item 4 weighs 65 kg and ships to bay 0. Record 55: item 41 weighs 78 kg and ships to bay 5. Record 56: item 78 weighs 91 kg and ships to bay 10. Record 57: item 115 weighs 7 kg and ships to bay 15. Record 58: item 152 weighs 20 kg and ships to bay 20. Record 59: item 189 weighs 33 kg and ships to bay 2. Record 60: item 226 weighs 46 kg and ships to bay 7. Record 61: item 263 weighs 59 kg and ships to bay 12. Record 62: item 300 weighs 72 kg and ships to bay 17. Record 63: item 337 weighs 85 kg and ships to bay 22. Record 64: item 374 weighs 1 kg and ships to bay 4. Record 65: item 411 weighs 14 kg and ships to bay 9. Record 66: item 448 weighs 27 kg and ships to bay 14. Record 67: item 485 weighs 40 kg and ships to bay 19. Record 68: item 522 weighs 53 kg and ships to bay 1. Record 69: item 559 weighs 66 kg and ships to bay 6. Record 70: item 596 weighs 79 kg and ships to bay 11. Record 71: item 633 weighs 92 kg and ships to bay 16. Record 72: item 670 weighs 8 kg and ships to bay 21. Record 73: item 707 weighs 21 kg and ships to bay 3. Record 74: item 744 weighs 34 kg and ships to bay 8. Record 75: item 781 weighs 47 kg and ships to bay 13. Record 76: item 818 weighs 60 kg and ships to bay 18. Record 77: item 855 weighs 73 kg and ships to bay 0. Record 78: item 892 weighs 86 kg and ships to bay 5. Record 79: item 929 weighs 2 kg and ships to bay 10. Record 80: item 966 weighs 15 kg and ships to bay 15. Record 81: item 3 weighs 28 kg and ships to bay 20. Record 82: item 40 weighs 41 kg and ships to bay 2. Record 83: item 77 weighs 54 kg and ships to bay 7. Record 84: item 114 weighs 67 kg and ships to bay 12. Record 85: item 151 weighs 80 kg and ships to bay 17. Record 86: item 188 weighs 93 kg and ships to bay 22. Record 87: item 225 weighs 9 kg and ships to bay 4. Record 88: item 262 weighs 22 kg and ships to bay 9. Record 89: item 299 weighs 35 kg and ships to bay 14. Record 90: item 336 weighs 48 kg and ships to bay 19. Record 91: item 373 weighs 61 kg and ships to bay 1. Record 92: item 410 weighs 74 kg and ships to bay 6. Record 93: item 447 weighs 87 kg and ships to bay 11. Record 94: item 484 weighs 3 kg and ships to bay 16. Record 95: item 521 weighs 16 kg and ships to bay 21. Record 96: item 558 weighs 29 kg and ships to bay 3. Record 97: item 595 weighs 42 kg and ships to bay 8. Record 98: item 632 weighs 55 kg and ships to bay 13. Record 99: item 669 weighs 68 kg and ships to bay 18. Record 100: item 706 weighs 81 kg and ships to bay 0. Record 101: item 743 weighs 94 kg and ships to bay 5. Record 102: item 780 weighs 10 kg and ships to bay 10. Record 103: item 817 weighs 23 kg and ships to bay 15. Record 104: item 854 weighs 36 kg and ships to bay 20. Record 105: item 891 weighs 49 kg and ships to bay 2. Record 106: item 928 weighs 62 kg and ships to bay 7. Record 107: item 965 weighs 75 kg and ships to bay 12. Record 108: item 2 weighs 88 kg and ships to bay 17. Record 109: item 39 weighs 4 kg and ships to bay 22. Record 110: item 76 weighs 17 kg and ships to bay 4. Record 111: item 113 weighs 30 kg and ships to bay 9. Record 112: item 150 weighs 43 kg and ships to bay 14. Record 113: item 187 weighs 56 kg and ships to bay 19. Record 114: item 224 weighs 69 kg and ships to bay 1. Record 115: item 261 weighs 82 kg and ships to bay 6. Record 116: item 298 weighs 95 kg and ships to bay 11. Record 117: item 335 weighs 11 kg and ships to bay 16. Record 118: item 372 weighs 24 kg and ships to bay 21. Record 119: item 409 weighs 37 kg and ships to bay 3. Record 120: item 446 weighs 50 kg and ships to bay 8. Record 121: item 483 weighs 63 kg and ships to bay 13. Record 122: item 520 weighs 76 kg and ships to bay 18. Record 123: item 557 weighs 89 kg and ships to bay 0. Record 124: item 594 weighs 5 kg and ships to bay 5. Record 125: item 631 weighs 18 kg and ships to bay 10. Record 126: item 668 weighs 31 kg and ships to bay 15. Record 127: item 705 weighs 44 kg and ships to bay 20. Record 128: item 742 weighs 57 kg and ships to bay 2. Record 129: item 779 weighs 70 kg and ships to bay 7. Record 130: item 816 weighs 83 kg and ships to bay 12. Record 131: item 853 weighs 96 kg and ships to bay 17. Record 132: item 890 weighs 12 kg and ships to bay 22. Record 133: item 927 weighs 25 kg and ships to bay 4. Record 134: item 964 weighs 38 kg and ships to bay 9. Record 135: item 1 weighs 51 kg and ships to bay 14. Record 136: item 38 weighs 64 kg and ships to bay 19. Record 137: item 75 weighs 77 kg and ships to bay 1. Record 138: item 112 weighs 90 kg and ships to bay 6. Record 139: item 149 weighs 6 kg and ships to bay 11. Record 140: item 186 weighs 19 kg and ships to bay 16. Record 141: item 223 weighs 32 kg and ships to bay 21. Record 142: item 260 weighs 45 kg and ships to bay 3. Record 143: item 297 weighs 58 kg and ships to bay 8. Record 144: item 334 weighs 71 kg and ships to bay 13. Record 145: item 371 weighs 84 kg and ships to bay 18. Record 146: item 408 weighs 0 kg and ships to bay 0. Record 147: item 445 weighs 13 kg and ships to bay 5. Record 148: item 482 weighs 26 kg and ships to bay 10. Record 149: item 519 weighs 39 kg and ships to bay 15. Record 150: item 556 weighs 52 kg and ships to bay 20. Record 151: item 593 weighs 65 kg and ships to bay 2. Record 152: item 630 weighs 78 kg and ships to bay 7. Record 153: item 667 weighs 91 kg and ships to bay 12. Record 154: item 704 weighs 7 kg and ships to bay 17. Record 155: item 741 weighs 20 kg and ships to bay 22. Record 156: item 778 weighs 33 kg and ships to bay 4. Record 157: item 815 weighs 46 kg and ships to bay 9. Record 158: item 852 weighs 59 kg and ships to bay 14. Record 159: item 889 weighs 72 kg and ships to bay 19. Record 160: item 926 weighs 85 kg and ships to bay 1. Record 161: item 963 weighs 1 kg and ships to bay 6. Record 162: item 0 weighs 14 kg and ships to bay 11. Record 163: item 37 weighs 27 kg and ships to bay 16. Record 164: item 74 weighs 40 kg and ships to bay 21. Record 165: item 111 weighs 53 kg and ships to bay 3. Record 166: item 148 weighs 66 kg and ships to bay 8. Record 167: item 185 weighs 79 kg and ships to bay 13. Record 168: item 222 weighs 92 kg and ships to bay 18. Record 169: item 259 weighs 8 kg and ships to bay 0. Record 170: item 296 weighs 21 kg and ships to bay 5. Record 171: item 333 weighs 34 kg and ships to bay 10.\nWhich bay receives the heaviest item in the log? Explain briefly.",
+    "[W18a-greedy-off-L7] Here is a log.\nRecord 0: item 7 weighs 49 kg and ships to bay 7. Record 1: item 44 weighs 62 kg and ships to bay 12. Record 2: item 81 weighs 75 kg and ships to bay 17. Record 3: item 118 weighs 88 kg and ships to bay 22. Record 4: item 155 weighs 4 kg and ships to bay 4. Record 5: item 192 weighs 17 kg and ships to bay 9. Record 6: item 229 weighs 30 kg and ships to bay 14. Record 7: item 266 weighs 43 kg and ships to bay 19. Record 8: item 303 weighs 56 kg and ships to bay 1. Record 9: item 340 weighs 69 kg and ships to bay 6. Record 10: item 377 weighs 82 kg and ships to bay 11. Record 11: item 414 weighs 95 kg and ships to bay 16. Record 12: item 451 weighs 11 kg and ships to bay 21. Record 13: item 488 weighs 24 kg and ships to bay 3. Record 14: item 525 weighs 37 kg and ships to bay 8. Record 15: item 562 weighs 50 kg and ships to bay 13. Record 16: item 599 weighs 63 kg and ships to bay 18. Record 17: item 636 weighs 76 kg and ships to bay 0. Record 18: item 673 weighs 89 kg and ships to bay 5. Record 19: item 710 weighs 5 kg and ships to bay 10. Record 20: item 747 weighs 18 kg and ships to bay 15. Record 21: item 784 weighs 31 kg and ships to bay 20. Record 22: item 821 weighs 44 kg and ships to bay 2. Record 23: item 858 weighs 57 kg and ships to bay 7. Record 24: item 895 weighs 70 kg and ships to bay 12. Record 25: item 932 weighs 83 kg and ships to bay 17. Record 26: item 969 weighs 96 kg and ships to bay 22. Record 27: item 6 weighs 12 kg and ships to bay 4. Record 28: item 43 weighs 25 kg and ships to bay 9. Record 29: item 80 weighs 38 kg and ships to bay 14. Record 30: item 117 weighs 51 kg and ships to bay 19. Record 31: item 154 weighs 64 kg and ships to bay 1. Record 32: item 191 weighs 77 kg and ships to bay 6. Record 33: item 228 weighs 90 kg and ships to bay 11. Record 34: item 265 weighs 6 kg and ships to bay 16. Record 35: item 302 weighs 19 kg and ships to bay 21. Record 36: item 339 weighs 32 kg and ships to bay 3. Record 37: item 376 weighs 45 kg and ships to bay 8. Record 38: item 413 weighs 58 kg and ships to bay 13. Record 39: item 450 weighs 71 kg and ships to bay 18. Record 40: item 487 weighs 84 kg and ships to bay 0. Record 41: item 524 weighs 0 kg and ships to bay 5. Record 42: item 561 weighs 13 kg and ships to bay 10. Record 43: item 598 weighs 26 kg and ships to bay 15. Record 44: item 635 weighs 39 kg and ships to bay 20. Record 45: item 672 weighs 52 kg and ships to bay 2. Record 46: item 709 weighs 65 kg and ships to bay 7. Record 47: item 746 weighs 78 kg and ships to bay 12. Record 48: item 783 weighs 91 kg and ships to bay 17. Record 49: item 820 weighs 7 kg and ships to bay 22. Record 50: item 857 weighs 20 kg and ships to bay 4. Record 51: item 894 weighs 33 kg and ships to bay 9. Record 52: item 931 weighs 46 kg and ships to bay 14. Record 53: item 968 weighs 59 kg and ships to bay 19. Record 54: item 5 weighs 72 kg and ships to bay 1. Record 55: item 42 weighs 85 kg and ships to bay 6. Record 56: item 79 weighs 1 kg and ships to bay 11. Record 57: item 116 weighs 14 kg and ships to bay 16. Record 58: item 153 weighs 27 kg and ships to bay 21. Record 59: item 190 weighs 40 kg and ships to bay 3. Record 60: item 227 weighs 53 kg and ships to bay 8. Record 61: item 264 weighs 66 kg and ships to bay 13. Record 62: item 301 weighs 79 kg and ships to bay 18. Record 63: item 338 weighs 92 kg and ships to bay 0. Record 64: item 375 weighs 8 kg and ships to bay 5. Record 65: item 412 weighs 21 kg and ships to bay 10. Record 66: item 449 weighs 34 kg and ships to bay 15. Record 67: item 486 weighs 47 kg and ships to bay 20. Record 68: item 523 weighs 60 kg and ships to bay 2. Record 69: item 560 weighs 73 kg and ships to bay 7. Record 70: item 597 weighs 86 kg and ships to bay 12. Record 71: item 634 weighs 2 kg and ships to bay 17. Record 72: item 671 weighs 15 kg and ships to bay 22. Record 73: item 708 weighs 28 kg and ships to bay 4. Record 74: item 745 weighs 41 kg and ships to bay 9. Record 75: item 782 weighs 54 kg and ships to bay 14. Record 76: item 819 weighs 67 kg and ships to bay 19. Record 77: item 856 weighs 80 kg and ships to bay 1. Record 78: item 893 weighs 93 kg and ships to bay 6. Record 79: item 930 weighs 9 kg and ships to bay 11. Record 80: item 967 weighs 22 kg and ships to bay 16. Record 81: item 4 weighs 35 kg and ships to bay 21. Record 82: item 41 weighs 48 kg and ships to bay 3. Record 83: item 78 weighs 61 kg and ships to bay 8. Record 84: item 115 weighs 74 kg and ships to bay 13. Record 85: item 152 weighs 87 kg and ships to bay 18. Record 86: item 189 weighs 3 kg and ships to bay 0. Record 87: item 226 weighs 16 kg and ships to bay 5. Record 88: item 263 weighs 29 kg and ships to bay 10. Record 89: item 300 weighs 42 kg and ships to bay 15. Record 90: item 337 weighs 55 kg and ships to bay 20. Record 91: item 374 weighs 68 kg and ships to bay 2. Record 92: item 411 weighs 81 kg and ships to bay 7. Record 93: item 448 weighs 94 kg and ships to bay 12. Record 94: item 485 weighs 10 kg and ships to bay 17. Record 95: item 522 weighs 23 kg and ships to bay 22. Record 96: item 559 weighs 36 kg and ships to bay 4. Record 97: item 596 weighs 49 kg and ships to bay 9. Record 98: item 633 weighs 62 kg and ships to bay 14. Record 99: item 670 weighs 75 kg and ships to bay 19. Record 100: item 707 weighs 88 kg and ships to bay 1. Record 101: item 744 weighs 4 kg and ships to bay 6. Record 102: item 781 weighs 17 kg and ships to bay 11. Record 103: item 818 weighs 30 kg and ships to bay 16. Record 104: item 855 weighs 43 kg and ships to bay 21. Record 105: item 892 weighs 56 kg and ships to bay 3. Record 106: item 929 weighs 69 kg and ships to bay 8. Record 107: item 966 weighs 82 kg and ships to bay 13. Record 108: item 3 weighs 95 kg and ships to bay 18. Record 109: item 40 weighs 11 kg and ships to bay 0. Record 110: item 77 weighs 24 kg and ships to bay 5. Record 111: item 114 weighs 37 kg and ships to bay 10. Record 112: item 151 weighs 50 kg and ships to bay 15. Record 113: item 188 weighs 63 kg and ships to bay 20. Record 114: item 225 weighs 76 kg and ships to bay 2. Record 115: item 262 weighs 89 kg and ships to bay 7. Record 116: item 299 weighs 5 kg and ships to bay 12. Record 117: item 336 weighs 18 kg and ships to bay 17. Record 118: item 373 weighs 31 kg and ships to bay 22. Record 119: item 410 weighs 44 kg and ships to bay 4. Record 120: item 447 weighs 57 kg and ships to bay 9. Record 121: item 484 weighs 70 kg and ships to bay 14. Record 122: item 521 weighs 83 kg and ships to bay 19. Record 123: item 558 weighs 96 kg and ships to bay 1. Record 124: item 595 weighs 12 kg and ships to bay 6. Record 125: item 632 weighs 25 kg and ships to bay 11. Record 126: item 669 weighs 38 kg and ships to bay 16. Record 127: item 706 weighs 51 kg and ships to bay 21. Record 128: item 743 weighs 64 kg and ships to bay 3. Record 129: item 780 weighs 77 kg and ships to bay 8. Record 130: item 817 weighs 90 kg and ships to bay 13. Record 131: item 854 weighs 6 kg and ships to bay 18. Record 132: item 891 weighs 19 kg and ships to bay 0. Record 133: item 928 weighs 32 kg and ships to bay 5. Record 134: item 965 weighs 45 kg and ships to bay 10. Record 135: item 2 weighs 58 kg and ships to bay 15. Record 136: item 39 weighs 71 kg and ships to bay 20. Record 137: item 76 weighs 84 kg and ships to bay 2. Record 138: item 113 weighs 0 kg and ships to bay 7. Record 139: item 150 weighs 13 kg and ships to bay 12. Record 140: item 187 weighs 26 kg and ships to bay 17. Record 141: item 224 weighs 39 kg and ships to bay 22. Record 142: item 261 weighs 52 kg and ships to bay 4. Record 143: item 298 weighs 65 kg and ships to bay 9. Record 144: item 335 weighs 78 kg and ships to bay 14. Record 145: item 372 weighs 91 kg and ships to bay 19. Record 146: item 409 weighs 7 kg and ships to bay 1. Record 147: item 446 weighs 20 kg and ships to bay 6. Record 148: item 483 weighs 33 kg and ships to bay 11. Record 149: item 520 weighs 46 kg and ships to bay 16. Record 150: item 557 weighs 59 kg and ships to bay 21. Record 151: item 594 weighs 72 kg and ships to bay 3. Record 152: item 631 weighs 85 kg and ships to bay 8. Record 153: item 668 weighs 1 kg and ships to bay 13. Record 154: item 705 weighs 14 kg and ships to bay 18. Record 155: item 742 weighs 27 kg and ships to bay 0. Record 156: item 779 weighs 40 kg and ships to bay 5. Record 157: item 816 weighs 53 kg and ships to bay 10. Record 158: item 853 weighs 66 kg and ships to bay 15. Record 159: item 890 weighs 79 kg and ships to bay 20. Record 160: item 927 weighs 92 kg and ships to bay 2. Record 161: item 964 weighs 8 kg and ships to bay 7. Record 162: item 1 weighs 21 kg and ships to bay 12. Record 163: item 38 weighs 34 kg and ships to bay 17. Record 164: item 75 weighs 47 kg and ships to bay 22. Record 165: item 112 weighs 60 kg and ships to bay 4. Record 166: item 149 weighs 73 kg and ships to bay 9. Record 167: item 186 weighs 86 kg and ships to bay 14. Record 168: item 223 weighs 2 kg and ships to bay 19. Record 169: item 260 weighs 15 kg and ships to bay 1. Record 170: item 297 weighs 28 kg and ships to bay 6. Record 171: item 334 weighs 41 kg and ships to bay 11. Record 172: item 371 weighs 54 kg and ships to bay 16. Record 173: item 408 weighs 67 kg and ships to bay 21. Record 174: item 445 weighs 80 kg and ships to bay 3. Record 175: item 482 weighs 93 kg and ships to bay 8. Record 176: item 519 weighs 9 kg and ships to bay 13. Record 177: item 556 weighs 22 kg and ships to bay 18. Record 178: item 593 weighs 35 kg and ships to bay 0. Record 179: item 630 weighs 48 kg and ships to bay 5. Record 180: item 667 weighs 61 kg and ships to bay 10. Record 181: item 704 weighs 74 kg and ships to bay 15. Record 182: item 741 weighs 87 kg and ships to bay 20. Record 183: item 778 weighs 3 kg and ships to bay 2. Record 184: item 815 weighs 16 kg and ships to bay 7. Record 185: item 852 weighs 29 kg and ships to bay 12. Record 186: item 889 weighs 42 kg and ships to bay 17. Record 187: item 926 weighs 55 kg and ships to bay 22. Record 188: item 963 weighs 68 kg and ships to bay 4. Record 189: item 0 weighs 81 kg and ships to bay 9. Record 190: item 37 weighs 94 kg and ships to bay 14. Record 191: item 74 weighs 10 kg and ships to bay 19. Record 192: item 111 weighs 23 kg and ships to bay 1. Record 193: item 148 weighs 36 kg and ships to bay 6. Record 194: item 185 weighs 49 kg and ships to bay 11. Record 195: item 222 weighs 62 kg and ships to bay 16. Record 196: item 259 weighs 75 kg and ships to bay 21. Record 197: item 296 weighs 88 kg and ships to bay 3. Record 198: item 333 weighs 4 kg and ships to bay 8. Record 199: item 370 weighs 17 kg and ships to bay 13. Record 200: item 407 weighs 30 kg and ships to bay 18. Record 201: item 444 weighs 43 kg and ships to bay 0. Record 202: item 481 weighs 56 kg and ships to bay 5. Record 203: item 518 weighs 69 kg and ships to bay 10. Record 204: item 555 weighs 82 kg and ships to bay 15. Record 205: item 592 weighs 95 kg and ships to bay 20. Record 206: item 629 weighs 11 kg and ships to bay 2. Record 207: item 666 weighs 24 kg and ships to bay 7. Record 208: item 703 weighs 37 kg and ships to bay 12. Record 209: item 740 weighs 50 kg and ships to bay 17. Record 210: item 777 weighs 63 kg and ships to bay 22. Record 211: item 814 weighs 76 kg and ships to bay 4. Record 212: item 851 weighs 89 kg and ships to bay 9. Record 213: item 888 weighs 5 kg and ships to bay 14. Record 214: item 925 weighs 18 kg and ships to bay 19.\nWhich bay receives the heaviest item in the log? Explain briefly."
+   ],
+   "send1": [
+    "b9eb2a0c4472cee0",
+    "7cfa00f8f8478989",
+    "138f7c0db3d3f6ca",
+    "f6dad8c91f3acfaa",
+    "24583684154a84e0",
+    "8f724ec922550c2e",
+    "776d1cdca24e1c2d",
+    "bf9c08781a0ff273"
+   ],
+   "send2": [
+    "b9eb2a0c4472cee0",
+    "7cfa00f8f8478989",
+    "138f7c0db3d3f6ca",
+    "f6dad8c91f3acfaa",
+    "24583684154a84e0",
+    "8f724ec922550c2e",
+    "776d1cdca24e1c2d",
+    "bf9c08781a0ff273"
+   ],
+   "alone": [
+    "b9eb2a0c4472cee0",
+    "7cfa00f8f8478989",
+    "138f7c0db3d3f6ca",
+    "f6dad8c91f3acfaa",
+    "24583684154a84e0",
+    "8f724ec922550c2e",
+    "776d1cdca24e1c2d",
+    "bf9c08781a0ff273"
+   ],
+   "same": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "log_send1": [
+    {
+     "prompt": 311,
+     "cached": 0,
+     "multi": 3,
+     "queue_s": 0.028,
+     "prefill_s": 1.6288,
+     "first_s": 1.657,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 649,
+     "cached": 0,
+     "multi": 3,
+     "queue_s": 0.032,
+     "prefill_s": 1.634,
+     "first_s": 1.667,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 990,
+     "cached": 0,
+     "multi": 3,
+     "queue_s": 0.028,
+     "prefill_s": 1.6424,
+     "first_s": 1.675,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 3252,
+     "cached": 0,
+     "multi": 2,
+     "queue_s": 0.024,
+     "prefill_s": 7.8832,
+     "first_s": 7.908,
+     "pieces": 2,
+     "slot": 3
+    },
+    {
+     "prompt": 1926,
+     "cached": 0,
+     "multi": 2,
+     "queue_s": 4.698,
+     "prefill_s": 3.2288,
+     "first_s": 7.928,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 2582,
+     "cached": 0,
+     "multi": 2,
+     "queue_s": 5.334,
+     "prefill_s": 7.7596,
+     "first_s": 13.094,
+     "pieces": 2,
+     "slot": 0
+    },
+    {
+     "prompt": 1382,
+     "cached": 0,
+     "multi": 2,
+     "queue_s": 9.611,
+     "prefill_s": 2.4646,
+     "first_s": 12.076,
+     "pieces": 1,
+     "slot": 3
+    },
+    {
+     "prompt": 4063,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 5.498,
+     "prefill_s": 12.481,
+     "first_s": 17.982,
+     "pieces": 1,
+     "slot": 1
+    }
+   ],
+   "log_send2": [
+    {
+     "prompt": 311,
+     "cached": 0,
+     "multi": 4,
+     "queue_s": 0.013,
+     "prefill_s": 0.7145,
+     "first_s": 0.728,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 3252,
+     "cached": 3200,
+     "multi": 4,
+     "queue_s": 0.013,
+     "prefill_s": 0.7085,
+     "first_s": 0.723,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 649,
+     "cached": 640,
+     "multi": 4,
+     "queue_s": 0.014,
+     "prefill_s": 0.6993,
+     "first_s": 0.714,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 990,
+     "cached": 960,
+     "multi": 4,
+     "queue_s": 0.013,
+     "prefill_s": 0.7025,
+     "first_s": 0.716,
+     "pieces": 1,
+     "slot": 3
+    },
+    {
+     "prompt": 4063,
+     "cached": 4032,
+     "multi": null,
+     "queue_s": 4.201,
+     "prefill_s": 0.2359,
+     "first_s": 4.438,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 1382,
+     "cached": 1344,
+     "multi": null,
+     "queue_s": 3.419,
+     "prefill_s": 0.2715,
+     "first_s": 3.691,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 2582,
+     "cached": 2560,
+     "multi": null,
+     "queue_s": 3.075,
+     "prefill_s": 0.1899,
+     "first_s": 3.267,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 1926,
+     "cached": 1920,
+     "multi": null,
+     "queue_s": 5.569,
+     "prefill_s": 0.0915,
+     "first_s": 5.662,
+     "pieces": 1,
+     "slot": 3
+    }
+   ],
+   "log_alone": [
+    {
+     "prompt": 311,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.013,
+     "prefill_s": 0.5325,
+     "first_s": 0.546,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 649,
+     "cached": 640,
+     "multi": null,
+     "queue_s": 0.014,
+     "prefill_s": 0.1087,
+     "first_s": 0.122,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 990,
+     "cached": 960,
+     "multi": null,
+     "queue_s": 0.014,
+     "prefill_s": 0.2269,
+     "first_s": 0.241,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 1382,
+     "cached": 1344,
+     "multi": null,
+     "queue_s": 0.013,
+     "prefill_s": 0.2678,
+     "first_s": 0.282,
+     "pieces": 1,
+     "slot": 3
+    },
+    {
+     "prompt": 1926,
+     "cached": 1920,
+     "multi": null,
+     "queue_s": 0.014,
+     "prefill_s": 0.0912,
+     "first_s": 0.106,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 2582,
+     "cached": 2560,
+     "multi": null,
+     "queue_s": 0.014,
+     "prefill_s": 0.1883,
+     "first_s": 0.203,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 3252,
+     "cached": 3200,
+     "multi": null,
+     "queue_s": 0.014,
+     "prefill_s": 0.2934,
+     "first_s": 0.309,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 4063,
+     "cached": 4032,
+     "multi": null,
+     "queue_s": 0.014,
+     "prefill_s": 0.2479,
+     "first_s": 0.263,
+     "pieces": 1,
+     "slot": 3
+    }
+   ]
+  },
+  {
+   "kind": "burst",
+   "variant": "seed-low",
+   "prompts": [
+    "[W18a-seed-low-L0] Here is a log.\nRecord 0: item 0 weighs 0 kg and ships to bay 0. Record 1: item 37 weighs 13 kg and ships to bay 5. Record 2: item 74 weighs 26 kg and ships to bay 10. Record 3: item 111 weighs 39 kg and ships to bay 15. Record 4: item 148 weighs 52 kg and ships to bay 20. Record 5: item 185 weighs 65 kg and ships to bay 2. Record 6: item 222 weighs 78 kg and ships to bay 7. Record 7: item 259 weighs 91 kg and ships to bay 12. Record 8: item 296 weighs 7 kg and ships to bay 17. Record 9: item 333 weighs 20 kg and ships to bay 22. Record 10: item 370 weighs 33 kg and ships to bay 4. Record 11: item 407 weighs 46 kg and ships to bay 9. Record 12: item 444 weighs 59 kg and ships to bay 14. Record 13: item 481 weighs 72 kg and ships to bay 19. Record 14: item 518 weighs 85 kg and ships to bay 1.\nWhich bay receives the heaviest item in the log? Explain briefly.",
+    "[W18a-seed-low-L1] Here is a log.\nRecord 0: item 1 weighs 7 kg and ships to bay 1. Record 1: item 38 weighs 20 kg and ships to bay 6. Record 2: item 75 weighs 33 kg and ships to bay 11. Record 3: item 112 weighs 46 kg and ships to bay 16. Record 4: item 149 weighs 59 kg and ships to bay 21. Record 5: item 186 weighs 72 kg and ships to bay 3. Record 6: item 223 weighs 85 kg and ships to bay 8. Record 7: item 260 weighs 1 kg and ships to bay 13. Record 8: item 297 weighs 14 kg and ships to bay 18. Record 9: item 334 weighs 27 kg and ships to bay 0. Record 10: item 371 weighs 40 kg and ships to bay 5. Record 11: item 408 weighs 53 kg and ships to bay 10. Record 12: item 445 weighs 66 kg and ships to bay 15. Record 13: item 482 weighs 79 kg and ships to bay 20. Record 14: item 519 weighs 92 kg and ships to bay 2. Record 15: item 556 weighs 8 kg and ships to bay 7. Record 16: item 593 weighs 21 kg and ships to bay 12. Record 17: item 630 weighs 34 kg and ships to bay 17. Record 18: item 667 weighs 47 kg and ships to bay 22. Record 19: item 704 weighs 60 kg and ships to bay 4. Record 20: item 741 weighs 73 kg and ships to bay 9. Record 21: item 778 weighs 86 kg and ships to bay 14. Record 22: item 815 weighs 2 kg and ships to bay 19. Record 23: item 852 weighs 15 kg and ships to bay 1. Record 24: item 889 weighs 28 kg and ships to bay 6. Record 25: item 926 weighs 41 kg and ships to bay 11. Record 26: item 963 weighs 54 kg and ships to bay 16. Record 27: item 0 weighs 67 kg and ships to bay 21. Record 28: item 37 weighs 80 kg and ships to bay 3. Record 29: item 74 weighs 93 kg and ships to bay 8. Record 30: item 111 weighs 9 kg and ships to bay 13. Record 31: item 148 weighs 22 kg and ships to bay 18. Record 32: item 185 weighs 35 kg and ships to bay 0.\nWhich bay receives the heaviest item in the log? Explain briefly.",
+    "[W18a-seed-low-L2] Here is a log.\nRecord 0: item 2 weighs 14 kg and ships to bay 2. Record 1: item 39 weighs 27 kg and ships to bay 7. Record 2: item 76 weighs 40 kg and ships to bay 12. Record 3: item 113 weighs 53 kg and ships to bay 17. Record 4: item 150 weighs 66 kg and ships to bay 22. Record 5: item 187 weighs 79 kg and ships to bay 4. Record 6: item 224 weighs 92 kg and ships to bay 9. Record 7: item 261 weighs 8 kg and ships to bay 14. Record 8: item 298 weighs 21 kg and ships to bay 19. Record 9: item 335 weighs 34 kg and ships to bay 1. Record 10: item 372 weighs 47 kg and ships to bay 6. Record 11: item 409 weighs 60 kg and ships to bay 11. Record 12: item 446 weighs 73 kg and ships to bay 16. Record 13: item 483 weighs 86 kg and ships to bay 21. Record 14: item 520 weighs 2 kg and ships to bay 3. Record 15: item 557 weighs 15 kg and ships to bay 8. Record 16: item 594 weighs 28 kg and ships to bay 13. Record 17: item 631 weighs 41 kg and ships to bay 18. Record 18: item 668 weighs 54 kg and ships to bay 0. Record 19: item 705 weighs 67 kg and ships to bay 5. Record 20: item 742 weighs 80 kg and ships to bay 10. Record 21: item 779 weighs 93 kg and ships to bay 15. Record 22: item 816 weighs 9 kg and ships to bay 20. Record 23: item 853 weighs 22 kg and ships to bay 2. Record 24: item 890 weighs 35 kg and ships to bay 7. Record 25: item 927 weighs 48 kg and ships to bay 12. Record 26: item 964 weighs 61 kg and ships to bay 17. Record 27: item 1 weighs 74 kg and ships to bay 22. Record 28: item 38 weighs 87 kg and ships to bay 4. Record 29: item 75 weighs 3 kg and ships to bay 9. Record 30: item 112 weighs 16 kg and ships to bay 14. Record 31: item 149 weighs 29 kg and ships to bay 19. Record 32: item 186 weighs 42 kg and ships to bay 1. Record 33: item 223 weighs 55 kg and ships to bay 6. Record 34: item 260 weighs 68 kg and ships to bay 11. Record 35: item 297 weighs 81 kg and ships to bay 16. Record 36: item 334 weighs 94 kg and ships to bay 21. Record 37: item 371 weighs 10 kg and ships to bay 3. Record 38: item 408 weighs 23 kg and ships to bay 8. Record 39: item 445 weighs 36 kg and ships to bay 13. Record 40: item 482 weighs 49 kg and ships to bay 18. Record 41: item 519 weighs 62 kg and ships to bay 0. Record 42: item 556 weighs 75 kg and ships to bay 5. Record 43: item 593 weighs 88 kg and ships to bay 10. Record 44: item 630 weighs 4 kg and ships to bay 15. Record 45: item 667 weighs 17 kg and ships to bay 20. Record 46: item 704 weighs 30 kg and ships to bay 2. Record 47: item 741 weighs 43 kg and ships to bay 7. Record 48: item 778 weighs 56 kg and ships to bay 12. Record 49: item 815 weighs 69 kg and ships to bay 17. Record 50: item 852 weighs 82 kg and ships to bay 22.\nWhich bay receives the heaviest item in the log? Explain briefly.",
+    "[W18a-seed-low-L3] Here is a log.\nRecord 0: item 3 weighs 21 kg and ships to bay 3. Record 1: item 40 weighs 34 kg and ships to bay 8. Record 2: item 77 weighs 47 kg and ships to bay 13. Record 3: item 114 weighs 60 kg and ships to bay 18. Record 4: item 151 weighs 73 kg and ships to bay 0. Record 5: item 188 weighs 86 kg and ships to bay 5. Record 6: item 225 weighs 2 kg and ships to bay 10. Record 7: item 262 weighs 15 kg and ships to bay 15. Record 8: item 299 weighs 28 kg and ships to bay 20. Record 9: item 336 weighs 41 kg and ships to bay 2. Record 10: item 373 weighs 54 kg and ships to bay 7. Record 11: item 410 weighs 67 kg and ships to bay 12. Record 12: item 447 weighs 80 kg and ships to bay 17. Record 13: item 484 weighs 93 kg and ships to bay 22. Record 14: item 521 weighs 9 kg and ships to bay 4. Record 15: item 558 weighs 22 kg and ships to bay 9. Record 16: item 595 weighs 35 kg and ships to bay 14. Record 17: item 632 weighs 48 kg and ships to bay 19. Record 18: item 669 weighs 61 kg and ships to bay 1. Record 19: item 706 weighs 74 kg and ships to bay 6. Record 20: item 743 weighs 87 kg and ships to bay 11. Record 21: item 780 weighs 3 kg and ships to bay 16. Record 22: item 817 weighs 16 kg and ships to bay 21. Record 23: item 854 weighs 29 kg and ships to bay 3. Record 24: item 891 weighs 42 kg and ships to bay 8. Record 25: item 928 weighs 55 kg and ships to bay 13. Record 26: item 965 weighs 68 kg and ships to bay 18. Record 27: item 2 weighs 81 kg and ships to bay 0. Record 28: item 39 weighs 94 kg and ships to bay 5. Record 29: item 76 weighs 10 kg and ships to bay 10. Record 30: item 113 weighs 23 kg and ships to bay 15. Record 31: item 150 weighs 36 kg and ships to bay 20. Record 32: item 187 weighs 49 kg and ships to bay 2. Record 33: item 224 weighs 62 kg and ships to bay 7. Record 34: item 261 weighs 75 kg and ships to bay 12. Record 35: item 298 weighs 88 kg and ships to bay 17. Record 36: item 335 weighs 4 kg and ships to bay 22. Record 37: item 372 weighs 17 kg and ships to bay 4. Record 38: item 409 weighs 30 kg and ships to bay 9. Record 39: item 446 weighs 43 kg and ships to bay 14. Record 40: item 483 weighs 56 kg and ships to bay 19. Record 41: item 520 weighs 69 kg and ships to bay 1. Record 42: item 557 weighs 82 kg and ships to bay 6. Record 43: item 594 weighs 95 kg and ships to bay 11. Record 44: item 631 weighs 11 kg and ships to bay 16. Record 45: item 668 weighs 24 kg and ships to bay 21. Record 46: item 705 weighs 37 kg and ships to bay 3. Record 47: item 742 weighs 50 kg and ships to bay 8. Record 48: item 779 weighs 63 kg and ships to bay 13. Record 49: item 816 weighs 76 kg and ships to bay 18. Record 50: item 853 weighs 89 kg and ships to bay 0. Record 51: item 890 weighs 5 kg and ships to bay 5. Record 52: item 927 weighs 18 kg and ships to bay 10. Record 53: item 964 weighs 31 kg and ships to bay 15. Record 54: item 1 weighs 44 kg and ships to bay 20. Record 55: item 38 weighs 57 kg and ships to bay 2. Record 56: item 75 weighs 70 kg and ships to bay 7. Record 57: item 112 weighs 83 kg and ships to bay 12. Record 58: item 149 weighs 96 kg and ships to bay 17. Record 59: item 186 weighs 12 kg and ships to bay 22. Record 60: item 223 weighs 25 kg and ships to bay 4. Record 61: item 260 weighs 38 kg and ships to bay 9. Record 62: item 297 weighs 51 kg and ships to bay 14. Record 63: item 334 weighs 64 kg and ships to bay 19. Record 64: item 371 weighs 77 kg and ships to bay 1. Record 65: item 408 weighs 90 kg and ships to bay 6. Record 66: item 445 weighs 6 kg and ships to bay 11. Record 67: item 482 weighs 19 kg and ships to bay 16. Record 68: item 519 weighs 32 kg and ships to bay 21. Record 69: item 556 weighs 45 kg and ships to bay 3. Record 70: item 593 weighs 58 kg and ships to bay 8. Record 71: item 630 weighs 71 kg and ships to bay 13.\nWhich bay receives the heaviest item in the log? Explain briefly.",
+    "[W18a-seed-low-L4] Here is a log.\nRecord 0: item 4 weighs 28 kg and ships to bay 4. Record 1: item 41 weighs 41 kg and ships to bay 9. Record 2: item 78 weighs 54 kg and ships to bay 14. Record 3: item 115 weighs 67 kg and ships to bay 19. Record 4: item 152 weighs 80 kg and ships to bay 1. Record 5: item 189 weighs 93 kg and ships to bay 6. Record 6: item 226 weighs 9 kg and ships to bay 11. Record 7: item 263 weighs 22 kg and ships to bay 16. Record 8: item 300 weighs 35 kg and ships to bay 21. Record 9: item 337 weighs 48 kg and ships to bay 3. Record 10: item 374 weighs 61 kg and ships to bay 8. Record 11: item 411 weighs 74 kg and ships to bay 13. Record 12: item 448 weighs 87 kg and ships to bay 18. Record 13: item 485 weighs 3 kg and ships to bay 0. Record 14: item 522 weighs 16 kg and ships to bay 5. Record 15: item 559 weighs 29 kg and ships to bay 10. Record 16: item 596 weighs 42 kg and ships to bay 15. Record 17: item 633 weighs 55 kg and ships to bay 20. Record 18: item 670 weighs 68 kg and ships to bay 2. Record 19: item 707 weighs 81 kg and ships to bay 7. Record 20: item 744 weighs 94 kg and ships to bay 12. Record 21: item 781 weighs 10 kg and ships to bay 17. Record 22: item 818 weighs 23 kg and ships to bay 22. Record 23: item 855 weighs 36 kg and ships to bay 4. Record 24: item 892 weighs 49 kg and ships to bay 9. Record 25: item 929 weighs 62 kg and ships to bay 14. Record 26: item 966 weighs 75 kg and ships to bay 19. Record 27: item 3 weighs 88 kg and ships to bay 1. Record 28: item 40 weighs 4 kg and ships to bay 6. Record 29: item 77 weighs 17 kg and ships to bay 11. Record 30: item 114 weighs 30 kg and ships to bay 16. Record 31: item 151 weighs 43 kg and ships to bay 21. Record 32: item 188 weighs 56 kg and ships to bay 3. Record 33: item 225 weighs 69 kg and ships to bay 8. Record 34: item 262 weighs 82 kg and ships to bay 13. Record 35: item 299 weighs 95 kg and ships to bay 18. Record 36: item 336 weighs 11 kg and ships to bay 0. Record 37: item 373 weighs 24 kg and ships to bay 5. Record 38: item 410 weighs 37 kg and ships to bay 10. Record 39: item 447 weighs 50 kg and ships to bay 15. Record 40: item 484 weighs 63 kg and ships to bay 20. Record 41: item 521 weighs 76 kg and ships to bay 2. Record 42: item 558 weighs 89 kg and ships to bay 7. Record 43: item 595 weighs 5 kg and ships to bay 12. Record 44: item 632 weighs 18 kg and ships to bay 17. Record 45: item 669 weighs 31 kg and ships to bay 22. Record 46: item 706 weighs 44 kg and ships to bay 4. Record 47: item 743 weighs 57 kg and ships to bay 9. Record 48: item 780 weighs 70 kg and ships to bay 14. Record 49: item 817 weighs 83 kg and ships to bay 19. Record 50: item 854 weighs 96 kg and ships to bay 1. Record 51: item 891 weighs 12 kg and ships to bay 6. Record 52: item 928 weighs 25 kg and ships to bay 11. Record 53: item 965 weighs 38 kg and ships to bay 16. Record 54: item 2 weighs 51 kg and ships to bay 21. Record 55: item 39 weighs 64 kg and ships to bay 3. Record 56: item 76 weighs 77 kg and ships to bay 8. Record 57: item 113 weighs 90 kg and ships to bay 13. Record 58: item 150 weighs 6 kg and ships to bay 18. Record 59: item 187 weighs 19 kg and ships to bay 0. Record 60: item 224 weighs 32 kg and ships to bay 5. Record 61: item 261 weighs 45 kg and ships to bay 10. Record 62: item 298 weighs 58 kg and ships to bay 15. Record 63: item 335 weighs 71 kg and ships to bay 20. Record 64: item 372 weighs 84 kg and ships to bay 2. Record 65: item 409 weighs 0 kg and ships to bay 7. Record 66: item 446 weighs 13 kg and ships to bay 12. Record 67: item 483 weighs 26 kg and ships to bay 17. Record 68: item 520 weighs 39 kg and ships to bay 22. Record 69: item 557 weighs 52 kg and ships to bay 4. Record 70: item 594 weighs 65 kg and ships to bay 9. Record 71: item 631 weighs 78 kg and ships to bay 14. Record 72: item 668 weighs 91 kg and ships to bay 19. Record 73: item 705 weighs 7 kg and ships to bay 1. Record 74: item 742 weighs 20 kg and ships to bay 6. Record 75: item 779 weighs 33 kg and ships to bay 11. Record 76: item 816 weighs 46 kg and ships to bay 16. Record 77: item 853 weighs 59 kg and ships to bay 21. Record 78: item 890 weighs 72 kg and ships to bay 3. Record 79: item 927 weighs 85 kg and ships to bay 8. Record 80: item 964 weighs 1 kg and ships to bay 13. Record 81: item 1 weighs 14 kg and ships to bay 18. Record 82: item 38 weighs 27 kg and ships to bay 0. Record 83: item 75 weighs 40 kg and ships to bay 5. Record 84: item 112 weighs 53 kg and ships to bay 10. Record 85: item 149 weighs 66 kg and ships to bay 15. Record 86: item 186 weighs 79 kg and ships to bay 20. Record 87: item 223 weighs 92 kg and ships to bay 2. Record 88: item 260 weighs 8 kg and ships to bay 7. Record 89: item 297 weighs 21 kg and ships to bay 12. Record 90: item 334 weighs 34 kg and ships to bay 17. Record 91: item 371 weighs 47 kg and ships to bay 22. Record 92: item 408 weighs 60 kg and ships to bay 4. Record 93: item 445 weighs 73 kg and ships to bay 9. Record 94: item 482 weighs 86 kg and ships to bay 14. Record 95: item 519 weighs 2 kg and ships to bay 19. Record 96: item 556 weighs 15 kg and ships to bay 1. Record 97: item 593 weighs 28 kg and ships to bay 6. Record 98: item 630 weighs 41 kg and ships to bay 11. Record 99: item 667 weighs 54 kg and ships to bay 16. Record 100: item 704 weighs 67 kg and ships to bay 21.\nWhich bay receives the heaviest item in the log? Explain briefly.",
+    "[W18a-seed-low-L5] Here is a log.\nRecord 0: item 5 weighs 35 kg and ships to bay 5. Record 1: item 42 weighs 48 kg and ships to bay 10. Record 2: item 79 weighs 61 kg and ships to bay 15. Record 3: item 116 weighs 74 kg and ships to bay 20. Record 4: item 153 weighs 87 kg and ships to bay 2. Record 5: item 190 weighs 3 kg and ships to bay 7. Record 6: item 227 weighs 16 kg and ships to bay 12. Record 7: item 264 weighs 29 kg and ships to bay 17. Record 8: item 301 weighs 42 kg and ships to bay 22. Record 9: item 338 weighs 55 kg and ships to bay 4. Record 10: item 375 weighs 68 kg and ships to bay 9. Record 11: item 412 weighs 81 kg and ships to bay 14. Record 12: item 449 weighs 94 kg and ships to bay 19. Record 13: item 486 weighs 10 kg and ships to bay 1. Record 14: item 523 weighs 23 kg and ships to bay 6. Record 15: item 560 weighs 36 kg and ships to bay 11. Record 16: item 597 weighs 49 kg and ships to bay 16. Record 17: item 634 weighs 62 kg and ships to bay 21. Record 18: item 671 weighs 75 kg and ships to bay 3. Record 19: item 708 weighs 88 kg and ships to bay 8. Record 20: item 745 weighs 4 kg and ships to bay 13. Record 21: item 782 weighs 17 kg and ships to bay 18. Record 22: item 819 weighs 30 kg and ships to bay 0. Record 23: item 856 weighs 43 kg and ships to bay 5. Record 24: item 893 weighs 56 kg and ships to bay 10. Record 25: item 930 weighs 69 kg and ships to bay 15. Record 26: item 967 weighs 82 kg and ships to bay 20. Record 27: item 4 weighs 95 kg and ships to bay 2. Record 28: item 41 weighs 11 kg and ships to bay 7. Record 29: item 78 weighs 24 kg and ships to bay 12. Record 30: item 115 weighs 37 kg and ships to bay 17. Record 31: item 152 weighs 50 kg and ships to bay 22. Record 32: item 189 weighs 63 kg and ships to bay 4. Record 33: item 226 weighs 76 kg and ships to bay 9. Record 34: item 263 weighs 89 kg and ships to bay 14. Record 35: item 300 weighs 5 kg and ships to bay 19. Record 36: item 337 weighs 18 kg and ships to bay 1. Record 37: item 374 weighs 31 kg and ships to bay 6. Record 38: item 411 weighs 44 kg and ships to bay 11. Record 39: item 448 weighs 57 kg and ships to bay 16. Record 40: item 485 weighs 70 kg and ships to bay 21. Record 41: item 522 weighs 83 kg and ships to bay 3. Record 42: item 559 weighs 96 kg and ships to bay 8. Record 43: item 596 weighs 12 kg and ships to bay 13. Record 44: item 633 weighs 25 kg and ships to bay 18. Record 45: item 670 weighs 38 kg and ships to bay 0. Record 46: item 707 weighs 51 kg and ships to bay 5. Record 47: item 744 weighs 64 kg and ships to bay 10. Record 48: item 781 weighs 77 kg and ships to bay 15. Record 49: item 818 weighs 90 kg and ships to bay 20. Record 50: item 855 weighs 6 kg and ships to bay 2. Record 51: item 892 weighs 19 kg and ships to bay 7. Record 52: item 929 weighs 32 kg and ships to bay 12. Record 53: item 966 weighs 45 kg and ships to bay 17. Record 54: item 3 weighs 58 kg and ships to bay 22. Record 55: item 40 weighs 71 kg and ships to bay 4. Record 56: item 77 weighs 84 kg and ships to bay 9. Record 57: item 114 weighs 0 kg and ships to bay 14. Record 58: item 151 weighs 13 kg and ships to bay 19. Record 59: item 188 weighs 26 kg and ships to bay 1. Record 60: item 225 weighs 39 kg and ships to bay 6. Record 61: item 262 weighs 52 kg and ships to bay 11. Record 62: item 299 weighs 65 kg and ships to bay 16. Record 63: item 336 weighs 78 kg and ships to bay 21. Record 64: item 373 weighs 91 kg and ships to bay 3. Record 65: item 410 weighs 7 kg and ships to bay 8. Record 66: item 447 weighs 20 kg and ships to bay 13. Record 67: item 484 weighs 33 kg and ships to bay 18. Record 68: item 521 weighs 46 kg and ships to bay 0. Record 69: item 558 weighs 59 kg and ships to bay 5. Record 70: item 595 weighs 72 kg and ships to bay 10. Record 71: item 632 weighs 85 kg and ships to bay 15. Record 72: item 669 weighs 1 kg and ships to bay 20. Record 73: item 706 weighs 14 kg and ships to bay 2. Record 74: item 743 weighs 27 kg and ships to bay 7. Record 75: item 780 weighs 40 kg and ships to bay 12. Record 76: item 817 weighs 53 kg and ships to bay 17. Record 77: item 854 weighs 66 kg and ships to bay 22. Record 78: item 891 weighs 79 kg and ships to bay 4. Record 79: item 928 weighs 92 kg and ships to bay 9. Record 80: item 965 weighs 8 kg and ships to bay 14. Record 81: item 2 weighs 21 kg and ships to bay 19. Record 82: item 39 weighs 34 kg and ships to bay 1. Record 83: item 76 weighs 47 kg and ships to bay 6. Record 84: item 113 weighs 60 kg and ships to bay 11. Record 85: item 150 weighs 73 kg and ships to bay 16. Record 86: item 187 weighs 86 kg and ships to bay 21. Record 87: item 224 weighs 2 kg and ships to bay 3. Record 88: item 261 weighs 15 kg and ships to bay 8. Record 89: item 298 weighs 28 kg and ships to bay 13. Record 90: item 335 weighs 41 kg and ships to bay 18. Record 91: item 372 weighs 54 kg and ships to bay 0. Record 92: item 409 weighs 67 kg and ships to bay 5. Record 93: item 446 weighs 80 kg and ships to bay 10. Record 94: item 483 weighs 93 kg and ships to bay 15. Record 95: item 520 weighs 9 kg and ships to bay 20. Record 96: item 557 weighs 22 kg and ships to bay 2. Record 97: item 594 weighs 35 kg and ships to bay 7. Record 98: item 631 weighs 48 kg and ships to bay 12. Record 99: item 668 weighs 61 kg and ships to bay 17. Record 100: item 705 weighs 74 kg and ships to bay 22. Record 101: item 742 weighs 87 kg and ships to bay 4. Record 102: item 779 weighs 3 kg and ships to bay 9. Record 103: item 816 weighs 16 kg and ships to bay 14. Record 104: item 853 weighs 29 kg and ships to bay 19. Record 105: item 890 weighs 42 kg and ships to bay 1. Record 106: item 927 weighs 55 kg and ships to bay 6. Record 107: item 964 weighs 68 kg and ships to bay 11. Record 108: item 1 weighs 81 kg and ships to bay 16. Record 109: item 38 weighs 94 kg and ships to bay 21. Record 110: item 75 weighs 10 kg and ships to bay 3. Record 111: item 112 weighs 23 kg and ships to bay 8. Record 112: item 149 weighs 36 kg and ships to bay 13. Record 113: item 186 weighs 49 kg and ships to bay 18. Record 114: item 223 weighs 62 kg and ships to bay 0. Record 115: item 260 weighs 75 kg and ships to bay 5. Record 116: item 297 weighs 88 kg and ships to bay 10. Record 117: item 334 weighs 4 kg and ships to bay 15. Record 118: item 371 weighs 17 kg and ships to bay 20. Record 119: item 408 weighs 30 kg and ships to bay 2. Record 120: item 445 weighs 43 kg and ships to bay 7. Record 121: item 482 weighs 56 kg and ships to bay 12. Record 122: item 519 weighs 69 kg and ships to bay 17. Record 123: item 556 weighs 82 kg and ships to bay 22. Record 124: item 593 weighs 95 kg and ships to bay 4. Record 125: item 630 weighs 11 kg and ships to bay 9. Record 126: item 667 weighs 24 kg and ships to bay 14. Record 127: item 704 weighs 37 kg and ships to bay 19. Record 128: item 741 weighs 50 kg and ships to bay 1. Record 129: item 778 weighs 63 kg and ships to bay 6. Record 130: item 815 weighs 76 kg and ships to bay 11. Record 131: item 852 weighs 89 kg and ships to bay 16. Record 132: item 889 weighs 5 kg and ships to bay 21. Record 133: item 926 weighs 18 kg and ships to bay 3. Record 134: item 963 weighs 31 kg and ships to bay 8. Record 135: item 0 weighs 44 kg and ships to bay 13.\nWhich bay receives the heaviest item in the log? Explain briefly.",
+    "[W18a-seed-low-L6] Here is a log.\nRecord 0: item 6 weighs 42 kg and ships to bay 6. Record 1: item 43 weighs 55 kg and ships to bay 11. Record 2: item 80 weighs 68 kg and ships to bay 16. Record 3: item 117 weighs 81 kg and ships to bay 21. Record 4: item 154 weighs 94 kg and ships to bay 3. Record 5: item 191 weighs 10 kg and ships to bay 8. Record 6: item 228 weighs 23 kg and ships to bay 13. Record 7: item 265 weighs 36 kg and ships to bay 18. Record 8: item 302 weighs 49 kg and ships to bay 0. Record 9: item 339 weighs 62 kg and ships to bay 5. Record 10: item 376 weighs 75 kg and ships to bay 10. Record 11: item 413 weighs 88 kg and ships to bay 15. Record 12: item 450 weighs 4 kg and ships to bay 20. Record 13: item 487 weighs 17 kg and ships to bay 2. Record 14: item 524 weighs 30 kg and ships to bay 7. Record 15: item 561 weighs 43 kg and ships to bay 12. Record 16: item 598 weighs 56 kg and ships to bay 17. Record 17: item 635 weighs 69 kg and ships to bay 22. Record 18: item 672 weighs 82 kg and ships to bay 4. Record 19: item 709 weighs 95 kg and ships to bay 9. Record 20: item 746 weighs 11 kg and ships to bay 14. Record 21: item 783 weighs 24 kg and ships to bay 19. Record 22: item 820 weighs 37 kg and ships to bay 1. Record 23: item 857 weighs 50 kg and ships to bay 6. Record 24: item 894 weighs 63 kg and ships to bay 11. Record 25: item 931 weighs 76 kg and ships to bay 16. Record 26: item 968 weighs 89 kg and ships to bay 21. Record 27: item 5 weighs 5 kg and ships to bay 3. Record 28: item 42 weighs 18 kg and ships to bay 8. Record 29: item 79 weighs 31 kg and ships to bay 13. Record 30: item 116 weighs 44 kg and ships to bay 18. Record 31: item 153 weighs 57 kg and ships to bay 0. Record 32: item 190 weighs 70 kg and ships to bay 5. Record 33: item 227 weighs 83 kg and ships to bay 10. Record 34: item 264 weighs 96 kg and ships to bay 15. Record 35: item 301 weighs 12 kg and ships to bay 20. Record 36: item 338 weighs 25 kg and ships to bay 2. Record 37: item 375 weighs 38 kg and ships to bay 7. Record 38: item 412 weighs 51 kg and ships to bay 12. Record 39: item 449 weighs 64 kg and ships to bay 17. Record 40: item 486 weighs 77 kg and ships to bay 22. Record 41: item 523 weighs 90 kg and ships to bay 4. Record 42: item 560 weighs 6 kg and ships to bay 9. Record 43: item 597 weighs 19 kg and ships to bay 14. Record 44: item 634 weighs 32 kg and ships to bay 19. Record 45: item 671 weighs 45 kg and ships to bay 1. Record 46: item 708 weighs 58 kg and ships to bay 6. Record 47: item 745 weighs 71 kg and ships to bay 11. Record 48: item 782 weighs 84 kg and ships to bay 16. Record 49: item 819 weighs 0 kg and ships to bay 21. Record 50: item 856 weighs 13 kg and ships to bay 3. Record 51: item 893 weighs 26 kg and ships to bay 8. Record 52: item 930 weighs 39 kg and ships to bay 13. Record 53: item 967 weighs 52 kg and ships to bay 18. Record 54: item 4 weighs 65 kg and ships to bay 0. Record 55: item 41 weighs 78 kg and ships to bay 5. Record 56: item 78 weighs 91 kg and ships to bay 10. Record 57: item 115 weighs 7 kg and ships to bay 15. Record 58: item 152 weighs 20 kg and ships to bay 20. Record 59: item 189 weighs 33 kg and ships to bay 2. Record 60: item 226 weighs 46 kg and ships to bay 7. Record 61: item 263 weighs 59 kg and ships to bay 12. Record 62: item 300 weighs 72 kg and ships to bay 17. Record 63: item 337 weighs 85 kg and ships to bay 22. Record 64: item 374 weighs 1 kg and ships to bay 4. Record 65: item 411 weighs 14 kg and ships to bay 9. Record 66: item 448 weighs 27 kg and ships to bay 14. Record 67: item 485 weighs 40 kg and ships to bay 19. Record 68: item 522 weighs 53 kg and ships to bay 1. Record 69: item 559 weighs 66 kg and ships to bay 6. Record 70: item 596 weighs 79 kg and ships to bay 11. Record 71: item 633 weighs 92 kg and ships to bay 16. Record 72: item 670 weighs 8 kg and ships to bay 21. Record 73: item 707 weighs 21 kg and ships to bay 3. Record 74: item 744 weighs 34 kg and ships to bay 8. Record 75: item 781 weighs 47 kg and ships to bay 13. Record 76: item 818 weighs 60 kg and ships to bay 18. Record 77: item 855 weighs 73 kg and ships to bay 0. Record 78: item 892 weighs 86 kg and ships to bay 5. Record 79: item 929 weighs 2 kg and ships to bay 10. Record 80: item 966 weighs 15 kg and ships to bay 15. Record 81: item 3 weighs 28 kg and ships to bay 20. Record 82: item 40 weighs 41 kg and ships to bay 2. Record 83: item 77 weighs 54 kg and ships to bay 7. Record 84: item 114 weighs 67 kg and ships to bay 12. Record 85: item 151 weighs 80 kg and ships to bay 17. Record 86: item 188 weighs 93 kg and ships to bay 22. Record 87: item 225 weighs 9 kg and ships to bay 4. Record 88: item 262 weighs 22 kg and ships to bay 9. Record 89: item 299 weighs 35 kg and ships to bay 14. Record 90: item 336 weighs 48 kg and ships to bay 19. Record 91: item 373 weighs 61 kg and ships to bay 1. Record 92: item 410 weighs 74 kg and ships to bay 6. Record 93: item 447 weighs 87 kg and ships to bay 11. Record 94: item 484 weighs 3 kg and ships to bay 16. Record 95: item 521 weighs 16 kg and ships to bay 21. Record 96: item 558 weighs 29 kg and ships to bay 3. Record 97: item 595 weighs 42 kg and ships to bay 8. Record 98: item 632 weighs 55 kg and ships to bay 13. Record 99: item 669 weighs 68 kg and ships to bay 18. Record 100: item 706 weighs 81 kg and ships to bay 0. Record 101: item 743 weighs 94 kg and ships to bay 5. Record 102: item 780 weighs 10 kg and ships to bay 10. Record 103: item 817 weighs 23 kg and ships to bay 15. Record 104: item 854 weighs 36 kg and ships to bay 20. Record 105: item 891 weighs 49 kg and ships to bay 2. Record 106: item 928 weighs 62 kg and ships to bay 7. Record 107: item 965 weighs 75 kg and ships to bay 12. Record 108: item 2 weighs 88 kg and ships to bay 17. Record 109: item 39 weighs 4 kg and ships to bay 22. Record 110: item 76 weighs 17 kg and ships to bay 4. Record 111: item 113 weighs 30 kg and ships to bay 9. Record 112: item 150 weighs 43 kg and ships to bay 14. Record 113: item 187 weighs 56 kg and ships to bay 19. Record 114: item 224 weighs 69 kg and ships to bay 1. Record 115: item 261 weighs 82 kg and ships to bay 6. Record 116: item 298 weighs 95 kg and ships to bay 11. Record 117: item 335 weighs 11 kg and ships to bay 16. Record 118: item 372 weighs 24 kg and ships to bay 21. Record 119: item 409 weighs 37 kg and ships to bay 3. Record 120: item 446 weighs 50 kg and ships to bay 8. Record 121: item 483 weighs 63 kg and ships to bay 13. Record 122: item 520 weighs 76 kg and ships to bay 18. Record 123: item 557 weighs 89 kg and ships to bay 0. Record 124: item 594 weighs 5 kg and ships to bay 5. Record 125: item 631 weighs 18 kg and ships to bay 10. Record 126: item 668 weighs 31 kg and ships to bay 15. Record 127: item 705 weighs 44 kg and ships to bay 20. Record 128: item 742 weighs 57 kg and ships to bay 2. Record 129: item 779 weighs 70 kg and ships to bay 7. Record 130: item 816 weighs 83 kg and ships to bay 12. Record 131: item 853 weighs 96 kg and ships to bay 17. Record 132: item 890 weighs 12 kg and ships to bay 22. Record 133: item 927 weighs 25 kg and ships to bay 4. Record 134: item 964 weighs 38 kg and ships to bay 9. Record 135: item 1 weighs 51 kg and ships to bay 14. Record 136: item 38 weighs 64 kg and ships to bay 19. Record 137: item 75 weighs 77 kg and ships to bay 1. Record 138: item 112 weighs 90 kg and ships to bay 6. Record 139: item 149 weighs 6 kg and ships to bay 11. Record 140: item 186 weighs 19 kg and ships to bay 16. Record 141: item 223 weighs 32 kg and ships to bay 21. Record 142: item 260 weighs 45 kg and ships to bay 3. Record 143: item 297 weighs 58 kg and ships to bay 8. Record 144: item 334 weighs 71 kg and ships to bay 13. Record 145: item 371 weighs 84 kg and ships to bay 18. Record 146: item 408 weighs 0 kg and ships to bay 0. Record 147: item 445 weighs 13 kg and ships to bay 5. Record 148: item 482 weighs 26 kg and ships to bay 10. Record 149: item 519 weighs 39 kg and ships to bay 15. Record 150: item 556 weighs 52 kg and ships to bay 20. Record 151: item 593 weighs 65 kg and ships to bay 2. Record 152: item 630 weighs 78 kg and ships to bay 7. Record 153: item 667 weighs 91 kg and ships to bay 12. Record 154: item 704 weighs 7 kg and ships to bay 17. Record 155: item 741 weighs 20 kg and ships to bay 22. Record 156: item 778 weighs 33 kg and ships to bay 4. Record 157: item 815 weighs 46 kg and ships to bay 9. Record 158: item 852 weighs 59 kg and ships to bay 14. Record 159: item 889 weighs 72 kg and ships to bay 19. Record 160: item 926 weighs 85 kg and ships to bay 1. Record 161: item 963 weighs 1 kg and ships to bay 6. Record 162: item 0 weighs 14 kg and ships to bay 11. Record 163: item 37 weighs 27 kg and ships to bay 16. Record 164: item 74 weighs 40 kg and ships to bay 21. Record 165: item 111 weighs 53 kg and ships to bay 3. Record 166: item 148 weighs 66 kg and ships to bay 8. Record 167: item 185 weighs 79 kg and ships to bay 13. Record 168: item 222 weighs 92 kg and ships to bay 18. Record 169: item 259 weighs 8 kg and ships to bay 0. Record 170: item 296 weighs 21 kg and ships to bay 5. Record 171: item 333 weighs 34 kg and ships to bay 10.\nWhich bay receives the heaviest item in the log? Explain briefly.",
+    "[W18a-seed-low-L7] Here is a log.\nRecord 0: item 7 weighs 49 kg and ships to bay 7. Record 1: item 44 weighs 62 kg and ships to bay 12. Record 2: item 81 weighs 75 kg and ships to bay 17. Record 3: item 118 weighs 88 kg and ships to bay 22. Record 4: item 155 weighs 4 kg and ships to bay 4. Record 5: item 192 weighs 17 kg and ships to bay 9. Record 6: item 229 weighs 30 kg and ships to bay 14. Record 7: item 266 weighs 43 kg and ships to bay 19. Record 8: item 303 weighs 56 kg and ships to bay 1. Record 9: item 340 weighs 69 kg and ships to bay 6. Record 10: item 377 weighs 82 kg and ships to bay 11. Record 11: item 414 weighs 95 kg and ships to bay 16. Record 12: item 451 weighs 11 kg and ships to bay 21. Record 13: item 488 weighs 24 kg and ships to bay 3. Record 14: item 525 weighs 37 kg and ships to bay 8. Record 15: item 562 weighs 50 kg and ships to bay 13. Record 16: item 599 weighs 63 kg and ships to bay 18. Record 17: item 636 weighs 76 kg and ships to bay 0. Record 18: item 673 weighs 89 kg and ships to bay 5. Record 19: item 710 weighs 5 kg and ships to bay 10. Record 20: item 747 weighs 18 kg and ships to bay 15. Record 21: item 784 weighs 31 kg and ships to bay 20. Record 22: item 821 weighs 44 kg and ships to bay 2. Record 23: item 858 weighs 57 kg and ships to bay 7. Record 24: item 895 weighs 70 kg and ships to bay 12. Record 25: item 932 weighs 83 kg and ships to bay 17. Record 26: item 969 weighs 96 kg and ships to bay 22. Record 27: item 6 weighs 12 kg and ships to bay 4. Record 28: item 43 weighs 25 kg and ships to bay 9. Record 29: item 80 weighs 38 kg and ships to bay 14. Record 30: item 117 weighs 51 kg and ships to bay 19. Record 31: item 154 weighs 64 kg and ships to bay 1. Record 32: item 191 weighs 77 kg and ships to bay 6. Record 33: item 228 weighs 90 kg and ships to bay 11. Record 34: item 265 weighs 6 kg and ships to bay 16. Record 35: item 302 weighs 19 kg and ships to bay 21. Record 36: item 339 weighs 32 kg and ships to bay 3. Record 37: item 376 weighs 45 kg and ships to bay 8. Record 38: item 413 weighs 58 kg and ships to bay 13. Record 39: item 450 weighs 71 kg and ships to bay 18. Record 40: item 487 weighs 84 kg and ships to bay 0. Record 41: item 524 weighs 0 kg and ships to bay 5. Record 42: item 561 weighs 13 kg and ships to bay 10. Record 43: item 598 weighs 26 kg and ships to bay 15. Record 44: item 635 weighs 39 kg and ships to bay 20. Record 45: item 672 weighs 52 kg and ships to bay 2. Record 46: item 709 weighs 65 kg and ships to bay 7. Record 47: item 746 weighs 78 kg and ships to bay 12. Record 48: item 783 weighs 91 kg and ships to bay 17. Record 49: item 820 weighs 7 kg and ships to bay 22. Record 50: item 857 weighs 20 kg and ships to bay 4. Record 51: item 894 weighs 33 kg and ships to bay 9. Record 52: item 931 weighs 46 kg and ships to bay 14. Record 53: item 968 weighs 59 kg and ships to bay 19. Record 54: item 5 weighs 72 kg and ships to bay 1. Record 55: item 42 weighs 85 kg and ships to bay 6. Record 56: item 79 weighs 1 kg and ships to bay 11. Record 57: item 116 weighs 14 kg and ships to bay 16. Record 58: item 153 weighs 27 kg and ships to bay 21. Record 59: item 190 weighs 40 kg and ships to bay 3. Record 60: item 227 weighs 53 kg and ships to bay 8. Record 61: item 264 weighs 66 kg and ships to bay 13. Record 62: item 301 weighs 79 kg and ships to bay 18. Record 63: item 338 weighs 92 kg and ships to bay 0. Record 64: item 375 weighs 8 kg and ships to bay 5. Record 65: item 412 weighs 21 kg and ships to bay 10. Record 66: item 449 weighs 34 kg and ships to bay 15. Record 67: item 486 weighs 47 kg and ships to bay 20. Record 68: item 523 weighs 60 kg and ships to bay 2. Record 69: item 560 weighs 73 kg and ships to bay 7. Record 70: item 597 weighs 86 kg and ships to bay 12. Record 71: item 634 weighs 2 kg and ships to bay 17. Record 72: item 671 weighs 15 kg and ships to bay 22. Record 73: item 708 weighs 28 kg and ships to bay 4. Record 74: item 745 weighs 41 kg and ships to bay 9. Record 75: item 782 weighs 54 kg and ships to bay 14. Record 76: item 819 weighs 67 kg and ships to bay 19. Record 77: item 856 weighs 80 kg and ships to bay 1. Record 78: item 893 weighs 93 kg and ships to bay 6. Record 79: item 930 weighs 9 kg and ships to bay 11. Record 80: item 967 weighs 22 kg and ships to bay 16. Record 81: item 4 weighs 35 kg and ships to bay 21. Record 82: item 41 weighs 48 kg and ships to bay 3. Record 83: item 78 weighs 61 kg and ships to bay 8. Record 84: item 115 weighs 74 kg and ships to bay 13. Record 85: item 152 weighs 87 kg and ships to bay 18. Record 86: item 189 weighs 3 kg and ships to bay 0. Record 87: item 226 weighs 16 kg and ships to bay 5. Record 88: item 263 weighs 29 kg and ships to bay 10. Record 89: item 300 weighs 42 kg and ships to bay 15. Record 90: item 337 weighs 55 kg and ships to bay 20. Record 91: item 374 weighs 68 kg and ships to bay 2. Record 92: item 411 weighs 81 kg and ships to bay 7. Record 93: item 448 weighs 94 kg and ships to bay 12. Record 94: item 485 weighs 10 kg and ships to bay 17. Record 95: item 522 weighs 23 kg and ships to bay 22. Record 96: item 559 weighs 36 kg and ships to bay 4. Record 97: item 596 weighs 49 kg and ships to bay 9. Record 98: item 633 weighs 62 kg and ships to bay 14. Record 99: item 670 weighs 75 kg and ships to bay 19. Record 100: item 707 weighs 88 kg and ships to bay 1. Record 101: item 744 weighs 4 kg and ships to bay 6. Record 102: item 781 weighs 17 kg and ships to bay 11. Record 103: item 818 weighs 30 kg and ships to bay 16. Record 104: item 855 weighs 43 kg and ships to bay 21. Record 105: item 892 weighs 56 kg and ships to bay 3. Record 106: item 929 weighs 69 kg and ships to bay 8. Record 107: item 966 weighs 82 kg and ships to bay 13. Record 108: item 3 weighs 95 kg and ships to bay 18. Record 109: item 40 weighs 11 kg and ships to bay 0. Record 110: item 77 weighs 24 kg and ships to bay 5. Record 111: item 114 weighs 37 kg and ships to bay 10. Record 112: item 151 weighs 50 kg and ships to bay 15. Record 113: item 188 weighs 63 kg and ships to bay 20. Record 114: item 225 weighs 76 kg and ships to bay 2. Record 115: item 262 weighs 89 kg and ships to bay 7. Record 116: item 299 weighs 5 kg and ships to bay 12. Record 117: item 336 weighs 18 kg and ships to bay 17. Record 118: item 373 weighs 31 kg and ships to bay 22. Record 119: item 410 weighs 44 kg and ships to bay 4. Record 120: item 447 weighs 57 kg and ships to bay 9. Record 121: item 484 weighs 70 kg and ships to bay 14. Record 122: item 521 weighs 83 kg and ships to bay 19. Record 123: item 558 weighs 96 kg and ships to bay 1. Record 124: item 595 weighs 12 kg and ships to bay 6. Record 125: item 632 weighs 25 kg and ships to bay 11. Record 126: item 669 weighs 38 kg and ships to bay 16. Record 127: item 706 weighs 51 kg and ships to bay 21. Record 128: item 743 weighs 64 kg and ships to bay 3. Record 129: item 780 weighs 77 kg and ships to bay 8. Record 130: item 817 weighs 90 kg and ships to bay 13. Record 131: item 854 weighs 6 kg and ships to bay 18. Record 132: item 891 weighs 19 kg and ships to bay 0. Record 133: item 928 weighs 32 kg and ships to bay 5. Record 134: item 965 weighs 45 kg and ships to bay 10. Record 135: item 2 weighs 58 kg and ships to bay 15. Record 136: item 39 weighs 71 kg and ships to bay 20. Record 137: item 76 weighs 84 kg and ships to bay 2. Record 138: item 113 weighs 0 kg and ships to bay 7. Record 139: item 150 weighs 13 kg and ships to bay 12. Record 140: item 187 weighs 26 kg and ships to bay 17. Record 141: item 224 weighs 39 kg and ships to bay 22. Record 142: item 261 weighs 52 kg and ships to bay 4. Record 143: item 298 weighs 65 kg and ships to bay 9. Record 144: item 335 weighs 78 kg and ships to bay 14. Record 145: item 372 weighs 91 kg and ships to bay 19. Record 146: item 409 weighs 7 kg and ships to bay 1. Record 147: item 446 weighs 20 kg and ships to bay 6. Record 148: item 483 weighs 33 kg and ships to bay 11. Record 149: item 520 weighs 46 kg and ships to bay 16. Record 150: item 557 weighs 59 kg and ships to bay 21. Record 151: item 594 weighs 72 kg and ships to bay 3. Record 152: item 631 weighs 85 kg and ships to bay 8. Record 153: item 668 weighs 1 kg and ships to bay 13. Record 154: item 705 weighs 14 kg and ships to bay 18. Record 155: item 742 weighs 27 kg and ships to bay 0. Record 156: item 779 weighs 40 kg and ships to bay 5. Record 157: item 816 weighs 53 kg and ships to bay 10. Record 158: item 853 weighs 66 kg and ships to bay 15. Record 159: item 890 weighs 79 kg and ships to bay 20. Record 160: item 927 weighs 92 kg and ships to bay 2. Record 161: item 964 weighs 8 kg and ships to bay 7. Record 162: item 1 weighs 21 kg and ships to bay 12. Record 163: item 38 weighs 34 kg and ships to bay 17. Record 164: item 75 weighs 47 kg and ships to bay 22. Record 165: item 112 weighs 60 kg and ships to bay 4. Record 166: item 149 weighs 73 kg and ships to bay 9. Record 167: item 186 weighs 86 kg and ships to bay 14. Record 168: item 223 weighs 2 kg and ships to bay 19. Record 169: item 260 weighs 15 kg and ships to bay 1. Record 170: item 297 weighs 28 kg and ships to bay 6. Record 171: item 334 weighs 41 kg and ships to bay 11. Record 172: item 371 weighs 54 kg and ships to bay 16. Record 173: item 408 weighs 67 kg and ships to bay 21. Record 174: item 445 weighs 80 kg and ships to bay 3. Record 175: item 482 weighs 93 kg and ships to bay 8. Record 176: item 519 weighs 9 kg and ships to bay 13. Record 177: item 556 weighs 22 kg and ships to bay 18. Record 178: item 593 weighs 35 kg and ships to bay 0. Record 179: item 630 weighs 48 kg and ships to bay 5. Record 180: item 667 weighs 61 kg and ships to bay 10. Record 181: item 704 weighs 74 kg and ships to bay 15. Record 182: item 741 weighs 87 kg and ships to bay 20. Record 183: item 778 weighs 3 kg and ships to bay 2. Record 184: item 815 weighs 16 kg and ships to bay 7. Record 185: item 852 weighs 29 kg and ships to bay 12. Record 186: item 889 weighs 42 kg and ships to bay 17. Record 187: item 926 weighs 55 kg and ships to bay 22. Record 188: item 963 weighs 68 kg and ships to bay 4. Record 189: item 0 weighs 81 kg and ships to bay 9. Record 190: item 37 weighs 94 kg and ships to bay 14. Record 191: item 74 weighs 10 kg and ships to bay 19. Record 192: item 111 weighs 23 kg and ships to bay 1. Record 193: item 148 weighs 36 kg and ships to bay 6. Record 194: item 185 weighs 49 kg and ships to bay 11. Record 195: item 222 weighs 62 kg and ships to bay 16. Record 196: item 259 weighs 75 kg and ships to bay 21. Record 197: item 296 weighs 88 kg and ships to bay 3. Record 198: item 333 weighs 4 kg and ships to bay 8. Record 199: item 370 weighs 17 kg and ships to bay 13. Record 200: item 407 weighs 30 kg and ships to bay 18. Record 201: item 444 weighs 43 kg and ships to bay 0. Record 202: item 481 weighs 56 kg and ships to bay 5. Record 203: item 518 weighs 69 kg and ships to bay 10. Record 204: item 555 weighs 82 kg and ships to bay 15. Record 205: item 592 weighs 95 kg and ships to bay 20. Record 206: item 629 weighs 11 kg and ships to bay 2. Record 207: item 666 weighs 24 kg and ships to bay 7. Record 208: item 703 weighs 37 kg and ships to bay 12. Record 209: item 740 weighs 50 kg and ships to bay 17. Record 210: item 777 weighs 63 kg and ships to bay 22. Record 211: item 814 weighs 76 kg and ships to bay 4. Record 212: item 851 weighs 89 kg and ships to bay 9. Record 213: item 888 weighs 5 kg and ships to bay 14. Record 214: item 925 weighs 18 kg and ships to bay 19.\nWhich bay receives the heaviest item in the log? Explain briefly."
+   ],
+   "send1": [
+    "77029204d42f121b",
+    "890822aa0ef4dfda",
+    "5e162ef41de809f9",
+    "ef835baf24f24f5c",
+    "cef07614d5e2d7c8",
+    "72c49e8abdd47d98",
+    "a0ab77b0b309373d",
+    "a680a2103682a8b6"
+   ],
+   "send2": [
+    "77029204d42f121b",
+    "890822aa0ef4dfda",
+    "5e162ef41de809f9",
+    "ef835baf24f24f5c",
+    "cef07614d5e2d7c8",
+    "72c49e8abdd47d98",
+    "a0ab77b0b309373d",
+    "a680a2103682a8b6"
+   ],
+   "alone": [
+    "77029204d42f121b",
+    "890822aa0ef4dfda",
+    "5e162ef41de809f9",
+    "ef835baf24f24f5c",
+    "cef07614d5e2d7c8",
+    "72c49e8abdd47d98",
+    "a0ab77b0b309373d",
+    "a680a2103682a8b6"
+   ],
+   "same": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "log_send1": [
+    {
+     "prompt": 654,
+     "cached": 0,
+     "multi": 3,
+     "queue_s": 0.023,
+     "prefill_s": 2.3154,
+     "first_s": 2.339,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 995,
+     "cached": 0,
+     "multi": 3,
+     "queue_s": 0.023,
+     "prefill_s": 2.3217,
+     "first_s": 2.346,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 1387,
+     "cached": 0,
+     "multi": 3,
+     "queue_s": 0.022,
+     "prefill_s": 2.3314,
+     "first_s": 2.355,
+     "pieces": 1,
+     "slot": 3
+    },
+    {
+     "prompt": 316,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 7.756,
+     "prefill_s": 0.5333,
+     "first_s": 8.289,
+     "pieces": 1,
+     "slot": 3
+    },
+    {
+     "prompt": 1931,
+     "cached": 0,
+     "multi": 2,
+     "queue_s": 4.464,
+     "prefill_s": 2.8355,
+     "first_s": 7.3,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 2587,
+     "cached": 0,
+     "multi": 2,
+     "queue_s": 10.1,
+     "prefill_s": 3.9457,
+     "first_s": 14.047,
+     "pieces": 2,
+     "slot": 3
+    },
+    {
+     "prompt": 4068,
+     "cached": 0,
+     "multi": 2,
+     "queue_s": 0.027,
+     "prefill_s": 13.0175,
+     "first_s": 13.046,
+     "pieces": 2,
+     "slot": 0
+    },
+    {
+     "prompt": 3257,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 7.62,
+     "prefill_s": 11.1466,
+     "first_s": 18.769,
+     "pieces": 1,
+     "slot": 1
+    }
+   ],
+   "log_send2": [
+    {
+     "prompt": 3257,
+     "cached": 3200,
+     "multi": 4,
+     "queue_s": 0.018,
+     "prefill_s": 0.5148,
+     "first_s": 0.534,
+     "pieces": 1,
+     "slot": 3
+    },
+    {
+     "prompt": 995,
+     "cached": 960,
+     "multi": 4,
+     "queue_s": 0.018,
+     "prefill_s": 0.5046,
+     "first_s": 0.524,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 1387,
+     "cached": 1344,
+     "multi": 4,
+     "queue_s": 0.02,
+     "prefill_s": 0.5107,
+     "first_s": 0.531,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 1931,
+     "cached": 1920,
+     "multi": 4,
+     "queue_s": 0.018,
+     "prefill_s": 0.4994,
+     "first_s": 0.519,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 654,
+     "cached": 640,
+     "multi": null,
+     "queue_s": 3.461,
+     "prefill_s": 0.1428,
+     "first_s": 3.605,
+     "pieces": 1,
+     "slot": 3
+    },
+    {
+     "prompt": 316,
+     "cached": 0,
+     "multi": 2,
+     "queue_s": 3.94,
+     "prefill_s": 0.6001,
+     "first_s": 4.54,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 2587,
+     "cached": 2560,
+     "multi": null,
+     "queue_s": 4.649,
+     "prefill_s": 0.2141,
+     "first_s": 4.864,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 4068,
+     "cached": 4032,
+     "multi": 2,
+     "queue_s": 3.94,
+     "prefill_s": 0.5953,
+     "first_s": 4.536,
+     "pieces": 1,
+     "slot": 0
+    }
+   ],
+   "log_alone": [
+    {
+     "prompt": 316,
+     "cached": 0,
+     "multi": null,
+     "queue_s": 0.012,
+     "prefill_s": 0.5334,
+     "first_s": 0.546,
+     "pieces": 1,
+     "slot": 3
+    },
+    {
+     "prompt": 654,
+     "cached": 640,
+     "multi": null,
+     "queue_s": 0.013,
+     "prefill_s": 0.142,
+     "first_s": 0.156,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 995,
+     "cached": 960,
+     "multi": null,
+     "queue_s": 0.013,
+     "prefill_s": 0.2634,
+     "first_s": 0.277,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 1387,
+     "cached": 1344,
+     "multi": null,
+     "queue_s": 0.014,
+     "prefill_s": 0.2769,
+     "first_s": 0.291,
+     "pieces": 1,
+     "slot": 2
+    },
+    {
+     "prompt": 1931,
+     "cached": 1920,
+     "multi": null,
+     "queue_s": 0.014,
+     "prefill_s": 0.1263,
+     "first_s": 0.141,
+     "pieces": 1,
+     "slot": 3
+    },
+    {
+     "prompt": 2587,
+     "cached": 2560,
+     "multi": null,
+     "queue_s": 0.014,
+     "prefill_s": 0.2172,
+     "first_s": 0.232,
+     "pieces": 1,
+     "slot": 0
+    },
+    {
+     "prompt": 3257,
+     "cached": 3200,
+     "multi": null,
+     "queue_s": 0.02,
+     "prefill_s": 0.3114,
+     "first_s": 0.332,
+     "pieces": 1,
+     "slot": 1
+    },
+    {
+     "prompt": 4068,
+     "cached": 4032,
+     "multi": null,
+     "queue_s": 0.014,
+     "prefill_s": 0.2615,
+     "first_s": 0.277,
+     "pieces": 1,
+     "slot": 2
+    }
+   ]
+  }
+ ],
+ "ok": true,
+ "equal": 92,
+ "total": 92
+}

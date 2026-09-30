@@ -1,0 +1,184 @@
+{
+ "label": "B10-probe1",
+ "base": "http://127.0.0.1:8001",
+ "model": "GLM-5.3-Flash-EXL3",
+ "started": "2026-09-30T16:36:15+0700",
+ "args": {
+  "base": "http://127.0.0.1:8001",
+  "model": "GLM-5.3-Flash-EXL3",
+  "key": "",
+  "suites": "tf",
+  "reps": 3,
+  "long_tokens": 512,
+  "edit_tokens": 1024,
+  "ctx": "2000,8000,32000",
+  "extra": "{}",
+  "label": "B10-probe1",
+  "out": "results/W20/probe1-B10.json"
+ },
+ "suites": {
+  "tf": [
+   {
+    "prompt": "code",
+    "temperature": 1.0,
+    "tokens": 64,
+    "runs": [
+     {
+      "ttft_s": 0.1485727209999368,
+      "decode_s": 1.2397732100000667,
+      "prompt_tokens": 14,
+      "tokens": 64,
+      "finish": "length",
+      "decode_tps": 50.815745566882036,
+      "sha256": "fd2cbd8108e02a8a",
+      "text_head": " Also, write a function that returns the sum of all elements in a list and test it.\n\nSolution\n\nFibonacci function\n\n`Copy`\n\n```\ndef fib(n):\n    \"\"\"Compute the n-"
+     },
+     {
+      "ttft_s": 0.15012887800003227,
+      "decode_s": 1.3386837200000627,
+      "prompt_tokens": 14,
+      "tokens": 64,
+      "finish": "length",
+      "decode_tps": 47.061153473949055,
+      "sha256": "07736d854c834c4a",
+      "text_head": " A... - HomeworkLib\n\nAnswer #1\n\nProgram:\n\nShort Program\n\ndef fibo(n):\n\n\"\"\"Computes nth Fibonacci number recursively\"\"\"\n\nif n == 1:\n\nreturn 0\n\nelif n == 2:\n\nretu"
+     },
+     {
+      "ttft_s": 0.15053043000011712,
+      "decode_s": 0.9703106150000167,
+      "prompt_tokens": 14,
+      "tokens": 64,
+      "finish": "length",
+      "decode_tps": 64.92766236510657,
+      "sha256": "e48057c21359dde0",
+      "text_head": " Explain your reasoning. Write your answer inside a code block, i.e.: ```python # your code here ``` Explain your reasoning. Write your answer inside a code blo"
+     }
+    ],
+    "median_tps": 50.82,
+    "min_tps": 47.06,
+    "max_tps": 64.93
+   },
+   {
+    "prompt": "chat",
+    "temperature": 1.0,
+    "tokens": 64,
+    "runs": [
+     {
+      "ttft_s": 0.19626606499991794,
+      "decode_s": 1.377087242000016,
+      "prompt_tokens": 25,
+      "tokens": 64,
+      "finish": "length",
+      "decode_tps": 45.748735503860885,
+      "sha256": "b477594e9bdd442a",
+      "text_head": "# Matrix Multiplication on a GPU, Explained Simply\n\n## The Big Idea\n\nImagine you need to multiply two grids of numbers. The key insight is that **none of the mu"
+     },
+     {
+      "ttft_s": 0.19477456000004167,
+      "decode_s": 1.3727099029999863,
+      "prompt_tokens": 25,
+      "tokens": 64,
+      "finish": "length",
+      "decode_tps": 45.89462046009631,
+      "sha256": "9b3d47595683198b",
+      "text_head": "# How GPUs Do Matrix Multiplication\n\n## The Plain-English Version\n\n**The problem:** Multiplying two matrices is basically doing a *huge pile of independent litt"
+     },
+     {
+      "ttft_s": 0.19667728800004625,
+      "decode_s": 1.3499104459999671,
+      "prompt_tokens": 25,
+      "tokens": 64,
+      "finish": "length",
+      "decode_tps": 46.66976256586545,
+      "sha256": "4674a98db1e92d48",
+      "text_head": "# How GPUs Do Matrix Multiplication\n\n## The Plain-English Explanation\n\nImagine you're multiplying two matrices, A and B, to get C. Each entry in the result is c"
+     }
+    ],
+    "median_tps": 45.89,
+    "min_tps": 45.75,
+    "max_tps": 46.67
+   },
+   {
+    "prompt": "code",
+    "temperature": 0.0,
+    "tokens": 64,
+    "runs": [
+     {
+      "ttft_s": 0.1494710679999116,
+      "decode_s": 0.726768618000051,
+      "prompt_tokens": 14,
+      "tokens": 64,
+      "finish": "length",
+      "decode_tps": 86.68508578887976,
+      "sha256": "50d57925c660c6ba",
+      "text_head": " The Fibonacci sequence is a series of numbers where each number is the sum of the two preceding ones, usually starting with 0 and 1. That is, F(0) = 0, F(1) = "
+     },
+     {
+      "ttft_s": 0.14854846999992333,
+      "decode_s": 0.6993062940000527,
+      "prompt_tokens": 14,
+      "tokens": 64,
+      "finish": "length",
+      "decode_tps": 90.08927924792172,
+      "sha256": "50d57925c660c6ba",
+      "text_head": " The Fibonacci sequence is a series of numbers where each number is the sum of the two preceding ones, usually starting with 0 and 1. That is, F(0) = 0, F(1) = "
+     },
+     {
+      "ttft_s": 0.14859822700009317,
+      "decode_s": 0.7299071009999807,
+      "prompt_tokens": 14,
+      "tokens": 64,
+      "finish": "length",
+      "decode_tps": 86.31235387858169,
+      "sha256": "50d57925c660c6ba",
+      "text_head": " The Fibonacci sequence is a series of numbers where each number is the sum of the two preceding ones, usually starting with 0 and 1. That is, F(0) = 0, F(1) = "
+     }
+    ],
+    "median_tps": 86.69,
+    "min_tps": 86.31,
+    "max_tps": 90.09
+   },
+   {
+    "prompt": "chat",
+    "temperature": 0.0,
+    "tokens": 64,
+    "runs": [
+     {
+      "ttft_s": 0.1963025050001761,
+      "decode_s": 1.3693611749999945,
+      "prompt_tokens": 25,
+      "tokens": 64,
+      "finish": "length",
+      "decode_tps": 46.0068542545032,
+      "sha256": "40b60ca939556244",
+      "text_head": "# Matrix Multiplication on a GPU\n\n## The Plain-English Explanation\n\nImagine you have a huge stack of homework to grade, and each problem is completely independe"
+     },
+     {
+      "ttft_s": 0.20069400400006998,
+      "decode_s": 1.2596575509999184,
+      "prompt_tokens": 25,
+      "tokens": 64,
+      "finish": "length",
+      "decode_tps": 50.01359294039121,
+      "sha256": "40b60ca939556244",
+      "text_head": "# Matrix Multiplication on a GPU\n\n## The Plain-English Explanation\n\nImagine you have a huge stack of homework to grade, and each problem is completely independe"
+     },
+     {
+      "ttft_s": 0.19559681500004444,
+      "decode_s": 1.3911487739999302,
+      "prompt_tokens": 25,
+      "tokens": 64,
+      "finish": "length",
+      "decode_tps": 45.28631385617938,
+      "sha256": "40b60ca939556244",
+      "text_head": "# Matrix Multiplication on a GPU\n\n## The Plain-English Explanation\n\nImagine you have a huge stack of homework to grade, and each problem is completely independe"
+     }
+    ],
+    "median_tps": 46.01,
+    "min_tps": 45.29,
+    "max_tps": 50.01
+   }
+  ]
+ },
+ "finished": "2026-09-30T16:36:35+0700"
+}

@@ -1,0 +1,6 @@
+idle_memavail_r0_min=17.59
+idle_memavail_r0_mean=17.73
+idle_memfree_r0_mean=15.43
+idle_memavail_r1_min=17.31
+idle_memavail_r1_mean=17.42
+idle_memfree_r1_mean=16.27

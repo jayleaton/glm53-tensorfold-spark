@@ -1,0 +1,971 @@
+{
+ "db": "/var/tmp/w19/out/cap-COMBINED-r0.sqlite",
+ "segments": [
+  {
+   "name": "prefill",
+   "wall_ms": 13329.3,
+   "kernels": 106080,
+   "idle_ms": 140.8,
+   "sum_ms": {
+    "routed experts": 4056.8,
+    "dense q4 / GEMM": 3764.83,
+    "NCCL": 2871.08,
+    "attention + indexer": 1811.78,
+    "KDA": 1509.42,
+    "router / grouping / combine": 871.53,
+    "hc": 496.89,
+    "norms / elementwise / other": 163.58,
+    "RoCE all-gather": 30.16,
+    "L2 prefetch (0460, side stream)": 28.71,
+    "sampling / argmax / softmax": 0.86
+   },
+   "excl_ms": {
+    "routed experts": 4056.8,
+    "dense q4 / GEMM": 3078.49,
+    "attention + indexer": 1769.58,
+    "NCCL": 1676.85,
+    "KDA": 1465.29,
+    "router / grouping / combine": 634.2,
+    "hc": 312.22,
+    "norms / elementwise / other": 153.0,
+    "RoCE all-gather": 26.71,
+    "L2 prefetch (0460, side stream)": 14.49,
+    "sampling / argmax / softmax": 0.86
+   },
+   "top_names": {
+    "norms / elementwise / other": [
+     [
+      "elementwise_kernel",
+      48.5
+     ],
+     [
+      "vectorized_elementwise_kernel",
+      31.9
+     ],
+     [
+      "CatArrayBatchedCopy_alignedK_contig",
+      21.2
+     ],
+     [
+      "unrolled_elementwise_kernel",
+      18.9
+     ],
+     [
+      "index_elementwise_kernel",
+      11.6
+     ],
+     [
+      "_rmsnorm",
+      10.0
+     ]
+    ],
+    "hc": [
+     [
+      "_hc_post",
+      308.1
+     ],
+     [
+      "_hc_partial_mm",
+      112.4
+     ],
+     [
+      "_hc_finish",
+      70.1
+     ],
+     [
+      "_stream_mean",
+      4.6
+     ],
+     [
+      "_hc_partial",
+      1.7
+     ]
+    ],
+    "NCCL": [
+     [
+      "ncclDevKernel_SendRecv",
+      2837.3
+     ],
+     [
+      "ncclDevKernel_AllGather_RING_LL",
+      33.7
+     ]
+    ],
+    "dense q4 / GEMM": [
+     [
+      "_fq4",
+      3473.4
+     ],
+     [
+      "_qmm",
+      227.3
+     ],
+     [
+      "_reduce",
+      21.4
+     ],
+     [
+      "_group_sums",
+      21.2
+     ],
+     [
+      "_swiglu",
+      16.2
+     ],
+     [
+      "q4_kernel",
+      5.3
+     ]
+    ],
+    "KDA": [
+     [
+      "_kda_prep",
+      825.7
+     ],
+     [
+      "_kda_state",
+      498.6
+     ],
+     [
+      "_lchunks",
+      120.2
+     ],
+     [
+      "_kda_norm",
+      57.5
+     ],
+     [
+      "chain_kernel",
+      4.2
+     ],
+     [
+      "_lsparse_chunks",
+      2.8
+     ]
+    ],
+    "attention + indexer": [
+     [
+      "_lsparse_one",
+      1060.6
+     ],
+     [
+      "_expand2",
+      413.8
+     ],
+     [
+      "_absorb2",
+      162.1
+     ],
+     [
+      "_scores_rows",
+      73.2
+     ],
+     [
+      "gatherTopK",
+      39.6
+     ],
+     [
+      "_lmerge",
+      32.3
+     ]
+    ],
+    "router / grouping / combine": [
+     [
+      "_combine_s",
+      676.9
+     ],
+     [
+      "_router_part",
+      117.5
+     ],
+     [
+      "_router_sum",
+      39.3
+     ],
+     [
+      "_topk",
+      19.0
+     ],
+     [
+      "DeviceRadixSortOnesweepKernel",
+      13.3
+     ],
+     [
+      "searchsorted_cuda_kernel",
+      2.0
+     ]
+    ],
+    "routed experts": [
+     [
+      "expert_kernel",
+      3606.2
+     ],
+     [
+      "rot_in1_kernel",
+      327.5
+     ],
+     [
+      "ld_kernel",
+      115.3
+     ],
+     [
+      "plan_kernel",
+      5.2
+     ],
+     [
+      "gateup_epilogue_kernel",
+      1.0
+     ],
+     [
+      "rot_in_kernel",
+      0.9
+     ]
+    ],
+    "RoCE all-gather": [
+     [
+      "gather_kernel",
+      30.2
+     ]
+    ],
+    "L2 prefetch (0460, side stream)": [
+     [
+      "segments_kernel",
+      28.7
+     ]
+    ],
+    "sampling / argmax / softmax": [
+     [
+      "radixSortKVInPlace",
+      0.8
+     ],
+     [
+      "bitonicSortKVInPlace",
+      0.0
+     ]
+    ]
+   },
+   "prompt_tokens": 21454
+  },
+  {
+   "name": "prose",
+   "wall_ms": 5363.5,
+   "kernels": 186674,
+   "idle_ms": 279.9,
+   "sum_ms": {
+    "routed experts": 2741.3,
+    "dense q4 / GEMM": 1438.35,
+    "L2 prefetch (0460, side stream)": 863.33,
+    "RoCE all-gather": 267.57,
+    "KDA": 232.18,
+    "attention + indexer": 145.14,
+    "hc": 131.57,
+    "router / grouping / combine": 75.29,
+    "norms / elementwise / other": 27.13,
+    "NCCL": 1.5,
+    "sampling / argmax / softmax": 0.67
+   },
+   "excl_ms": {
+    "routed experts": 2741.25,
+    "dense q4 / GEMM": 1287.66,
+    "L2 prefetch (0460, side stream)": 443.65,
+    "RoCE all-gather": 168.21,
+    "KDA": 154.91,
+    "attention + indexer": 138.16,
+    "hc": 72.1,
+    "router / grouping / combine": 50.52,
+    "norms / elementwise / other": 25.2,
+    "NCCL": 1.25,
+    "sampling / argmax / softmax": 0.67
+   },
+   "top_names": {
+    "norms / elementwise / other": [
+     [
+      "_rmsnorm",
+      7.1
+     ],
+     [
+      "elementwise_kernel",
+      6.8
+     ],
+     [
+      "vectorized_elementwise_kernel",
+      3.4
+     ],
+     [
+      "index_elementwise_kernel",
+      2.7
+     ],
+     [
+      "unrolled_elementwise_kernel",
+      2.1
+     ],
+     [
+      "_embed_b16",
+      1.1
+     ]
+    ],
+    "hc": [
+     [
+      "_hc_partial",
+      54.0
+     ],
+     [
+      "_hc_finish",
+      51.6
+     ],
+     [
+      "_hc_post",
+      22.5
+     ],
+     [
+      "_stream_mean",
+      1.8
+     ],
+     [
+      "_hc_partial_mm",
+      1.6
+     ]
+    ],
+    "dense q4 / GEMM": [
+     [
+      "_qmm",
+      1253.6
+     ],
+     [
+      "q4_kernel",
+      111.5
+     ],
+     [
+      "_fq4",
+      29.3
+     ],
+     [
+      "_reduce",
+      22.6
+     ],
+     [
+      "_group_sums",
+      15.4
+     ],
+     [
+      "_swiglu",
+      5.9
+     ]
+    ],
+    "KDA": [
+     [
+      "chain_kernel",
+      118.7
+     ],
+     [
+      "_lchunks",
+      69.2
+     ],
+     [
+      "replay_layers_kernel",
+      35.5
+     ],
+     [
+      "_kda_prep",
+      2.4
+     ],
+     [
+      "_dattn_kernel",
+      2.0
+     ],
+     [
+      "_dconv_kernel",
+      1.7
+     ]
+    ],
+    "RoCE all-gather": [
+     [
+      "gather_kernel",
+      267.6
+     ]
+    ],
+    "attention + indexer": [
+     [
+      "_expand2",
+      79.4
+     ],
+     [
+      "_absorb2",
+      37.7
+     ],
+     [
+      "_pool_keys",
+      6.7
+     ],
+     [
+      "_lwrite8",
+      4.1
+     ],
+     [
+      "_index_write",
+      3.6
+     ],
+     [
+      "computeBlockDigitCounts",
+      2.8
+     ]
+    ],
+    "router / grouping / combine": [
+     [
+      "_router_part",
+      27.1
+     ],
+     [
+      "_topk",
+      17.3
+     ],
+     [
+      "_group",
+      14.7
+     ],
+     [
+      "_router_sum",
+      8.0
+     ],
+     [
+      "_combine",
+      7.7
+     ],
+     [
+      "_combine_s",
+      0.6
+     ]
+    ],
+    "L2 prefetch (0460, side stream)": [
+     [
+      "segments_kernel",
+      863.3
+     ]
+    ],
+    "routed experts": [
+     [
+      "ld_kernel",
+      2501.6
+     ],
+     [
+      "expert_kernel",
+      142.9
+     ],
+     [
+      "gateup_epilogue_kernel",
+      29.3
+     ],
+     [
+      "rot_in_kernel",
+      24.1
+     ],
+     [
+      "down_epilogue_kernel",
+      23.3
+     ],
+     [
+      "grouped_loop_kernel",
+      19.0
+     ]
+    ],
+    "sampling / argmax / softmax": [
+     [
+      "bitonicSortKVInPlace",
+      0.7
+     ]
+    ],
+    "NCCL": [
+     [
+      "ncclDevKernel_AllGather_RING_LL",
+      1.5
+     ]
+    ]
+   },
+   "tokens": 256,
+   "rounds": 95,
+   "decode_s": 5.1684
+  },
+  {
+   "name": "code",
+   "wall_ms": 6196.7,
+   "kernels": 183062,
+   "idle_ms": 362.3,
+   "sum_ms": {
+    "routed experts": 3414.59,
+    "dense q4 / GEMM": 1444.49,
+    "L2 prefetch (0460, side stream)": 845.4,
+    "RoCE all-gather": 296.63,
+    "KDA": 247.5,
+    "attention + indexer": 143.43,
+    "hc": 136.64,
+    "router / grouping / combine": 79.78,
+    "norms / elementwise / other": 29.22,
+    "NCCL": 16.93,
+    "sampling / argmax / softmax": 0.62
+   },
+   "excl_ms": {
+    "routed experts": 3414.54,
+    "dense q4 / GEMM": 1317.73,
+    "L2 prefetch (0460, side stream)": 435.5,
+    "RoCE all-gather": 192.73,
+    "KDA": 162.33,
+    "attention + indexer": 135.74,
+    "hc": 76.69,
+    "router / grouping / combine": 54.45,
+    "norms / elementwise / other": 27.61,
+    "NCCL": 16.47,
+    "sampling / argmax / softmax": 0.62
+   },
+   "top_names": {
+    "norms / elementwise / other": [
+     [
+      "_rmsnorm",
+      7.4
+     ],
+     [
+      "elementwise_kernel",
+      7.1
+     ],
+     [
+      "vectorized_elementwise_kernel",
+      3.7
+     ],
+     [
+      "index_elementwise_kernel",
+      3.3
+     ],
+     [
+      "unrolled_elementwise_kernel",
+      2.2
+     ],
+     [
+      "_embed_b16",
+      1.1
+     ]
+    ],
+    "hc": [
+     [
+      "_hc_partial",
+      57.2
+     ],
+     [
+      "_hc_finish",
+      51.4
+     ],
+     [
+      "_hc_post",
+      24.7
+     ],
+     [
+      "_hc_partial_mm",
+      1.7
+     ],
+     [
+      "_stream_mean",
+      1.7
+     ]
+    ],
+    "dense q4 / GEMM": [
+     [
+      "_qmm",
+      1263.6
+     ],
+     [
+      "q4_kernel",
+      105.8
+     ],
+     [
+      "_fq4",
+      29.0
+     ],
+     [
+      "_reduce",
+      24.7
+     ],
+     [
+      "_group_sums",
+      15.5
+     ],
+     [
+      "_swiglu",
+      5.9
+     ]
+    ],
+    "KDA": [
+     [
+      "chain_kernel",
+      136.9
+     ],
+     [
+      "_lchunks",
+      72.0
+     ],
+     [
+      "replay_layers_kernel",
+      29.0
+     ],
+     [
+      "_dattn_kernel",
+      2.6
+     ],
+     [
+      "_kda_prep",
+      2.4
+     ],
+     [
+      "_dconv_kernel",
+      1.9
+     ]
+    ],
+    "NCCL": [
+     [
+      "ncclDevKernel_AllGather_RING_LL",
+      16.9
+     ]
+    ],
+    "attention + indexer": [
+     [
+      "_expand2",
+      76.8
+     ],
+     [
+      "_absorb2",
+      36.7
+     ],
+     [
+      "_pool_keys",
+      7.9
+     ],
+     [
+      "_lwrite8",
+      4.5
+     ],
+     [
+      "_index_write",
+      3.7
+     ],
+     [
+      "_lmerge",
+      3.1
+     ]
+    ],
+    "router / grouping / combine": [
+     [
+      "_router_part",
+      28.0
+     ],
+     [
+      "_group",
+      17.7
+     ],
+     [
+      "_topk",
+      16.9
+     ],
+     [
+      "_router_sum",
+      8.3
+     ],
+     [
+      "_combine",
+      7.9
+     ],
+     [
+      "_combine_s",
+      0.9
+     ]
+    ],
+    "L2 prefetch (0460, side stream)": [
+     [
+      "segments_kernel",
+      845.4
+     ]
+    ],
+    "routed experts": [
+     [
+      "ld_kernel",
+      3107.4
+     ],
+     [
+      "expert_kernel",
+      188.6
+     ],
+     [
+      "grouped_loop_kernel",
+      34.6
+     ],
+     [
+      "gateup_epilogue_kernel",
+      29.2
+     ],
+     [
+      "rot_in_kernel",
+      27.9
+     ],
+     [
+      "down_epilogue_kernel",
+      25.5
+     ]
+    ],
+    "RoCE all-gather": [
+     [
+      "gather_kernel",
+      296.6
+     ]
+    ],
+    "sampling / argmax / softmax": [
+     [
+      "bitonicSortKVInPlace",
+      0.6
+     ]
+    ]
+   },
+   "tokens": 384,
+   "rounds": 92,
+   "decode_s": 5.9442
+  },
+  {
+   "name": "conc4",
+   "wall_ms": 20807.2,
+   "kernels": 490651,
+   "idle_ms": 656.0,
+   "sum_ms": {
+    "routed experts": 12660.29,
+    "dense q4 / GEMM": 3824.39,
+    "L2 prefetch (0460, side stream)": 1872.44,
+    "KDA": 1486.63,
+    "RoCE all-gather": 906.3,
+    "attention + indexer": 409.67,
+    "hc": 377.9,
+    "router / grouping / combine": 228.5,
+    "norms / elementwise / other": 122.29,
+    "NCCL": 42.96,
+    "sampling / argmax / softmax": 5.03
+   },
+   "excl_ms": {
+    "routed experts": 12660.26,
+    "dense q4 / GEMM": 3720.68,
+    "KDA": 1220.07,
+    "L2 prefetch (0460, side stream)": 992.55,
+    "RoCE all-gather": 630.45,
+    "attention + indexer": 393.31,
+    "hc": 218.89,
+    "router / grouping / combine": 162.86,
+    "norms / elementwise / other": 118.58,
+    "NCCL": 28.55,
+    "sampling / argmax / softmax": 5.03
+   },
+   "top_names": {
+    "norms / elementwise / other": [
+     [
+      "elementwise_kernel",
+      24.1
+     ],
+     [
+      "_rmsnorm",
+      23.4
+     ],
+     [
+      "vectorized_elementwise_kernel",
+      18.9
+     ],
+     [
+      "index_elementwise_kernel",
+      15.9
+     ],
+     [
+      "unrolled_elementwise_kernel",
+      12.8
+     ],
+     [
+      "_prep_kernel",
+      4.0
+     ]
+    ],
+    "hc": [
+     [
+      "_hc_partial",
+      157.2
+     ],
+     [
+      "_hc_finish",
+      114.9
+     ],
+     [
+      "_hc_post",
+      92.2
+     ],
+     [
+      "_hc_partial_mm",
+      7.9
+     ],
+     [
+      "_stream_mean",
+      5.8
+     ]
+    ],
+    "dense q4 / GEMM": [
+     [
+      "_qmm",
+      3363.8
+     ],
+     [
+      "q4_kernel",
+      208.1
+     ],
+     [
+      "_fq4",
+      111.4
+     ],
+     [
+      "_reduce",
+      87.0
+     ],
+     [
+      "_group_sums",
+      38.4
+     ],
+     [
+      "_swiglu",
+      15.6
+     ]
+    ],
+    "KDA": [
+     [
+      "chain_kernel",
+      779.3
+     ],
+     [
+      "_lchunks",
+      439.9
+     ],
+     [
+      "replay_layers_kernel",
+      219.5
+     ],
+     [
+      "_conv_shift",
+      12.9
+     ],
+     [
+      "_dattn_kernel",
+      12.3
+     ],
+     [
+      "_kda_prep",
+      9.3
+     ]
+    ],
+    "RoCE all-gather": [
+     [
+      "gather_kernel",
+      906.3
+     ]
+    ],
+    "attention + indexer": [
+     [
+      "_expand2",
+      169.1
+     ],
+     [
+      "_absorb2",
+      80.8
+     ],
+     [
+      "_pool_keys",
+      28.9
+     ],
+     [
+      "_lwrite8",
+      22.2
+     ],
+     [
+      "_index_write",
+      20.3
+     ],
+     [
+      "computeBlockDigitCounts",
+      18.1
+     ]
+    ],
+    "router / grouping / combine": [
+     [
+      "_router_part",
+      78.4
+     ],
+     [
+      "_group",
+      60.1
+     ],
+     [
+      "_topk",
+      36.3
+     ],
+     [
+      "_combine",
+      29.4
+     ],
+     [
+      "_router_sum",
+      22.0
+     ],
+     [
+      "_combine_s",
+      2.1
+     ]
+    ],
+    "L2 prefetch (0460, side stream)": [
+     [
+      "segments_kernel",
+      1872.4
+     ]
+    ],
+    "sampling / argmax / softmax": [
+     [
+      "bitonicSortKVInPlace",
+      4.1
+     ],
+     [
+      "radixSortKVInPlace",
+      1.0
+     ]
+    ],
+    "routed experts": [
+     [
+      "ld_kernel",
+      11629.6
+     ],
+     [
+      "grouped_loop_kernel",
+      602.9
+     ],
+     [
+      "expert_kernel",
+      181.5
+     ],
+     [
+      "rot_in_kernel",
+      90.0
+     ],
+     [
+      "down_epilogue_kernel",
+      80.2
+     ],
+     [
+      "gateup_epilogue_kernel",
+      74.5
+     ]
+    ],
+    "NCCL": [
+     [
+      "ncclDevKernel_AllGather_RING_LL",
+      43.0
+     ]
+    ]
+   },
+   "tokens": 1536,
+   "rounds": null,
+   "decode_s": 20.4445
+  }
+ ]
+}

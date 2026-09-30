@@ -1,0 +1,929 @@
+{
+ "device": "NVIDIA GB10",
+ "loads": [
+  {
+   "window": "1 rows, U 8",
+   "rows": 1,
+   "U": 8,
+   "MB": 50.331648,
+   "old_rotate_us": 232.72534211476645,
+   "old_flush_us": 244.35200293858847,
+   "old_rotate_GBs": 216.27059409447293,
+   "old_flush_GBs": 205.9800918130782,
+   "roof_GBs": 253.44246588636304,
+   "new nc,8,2": {
+    "rotate_us": 223.46667448679605,
+    "flush_us": 220.66134214401245,
+    "rotate_GBs": 225.23111383650155,
+    "flush_GBs": 228.0945430267144,
+    "same_bits": true
+   },
+   "new nc,8,1": {
+    "rotate_us": 237.2373342514038,
+    "flush_us": 219.4773554801941,
+    "rotate_GBs": 212.15736620384897,
+    "flush_GBs": 229.32501573968523,
+    "same_bits": true
+   },
+   "new nc,8,4": {
+    "rotate_us": 228.01067431767783,
+    "flush_us": 228.17065318425497,
+    "rotate_GBs": 220.7425075629354,
+    "flush_GBs": 220.58773684342137,
+    "same_bits": true
+   },
+   "new nc,4,2": {
+    "rotate_us": 220.07467349370322,
+    "flush_us": 219.13601954778036,
+    "rotate_GBs": 228.70259081147785,
+    "flush_GBs": 229.6822225021099,
+    "same_bits": true
+   },
+   "new nc,4,4": {
+    "rotate_us": 241.80267254511514,
+    "flush_us": 221.38669093449911,
+    "rotate_GBs": 208.1517440242899,
+    "flush_GBs": 227.34721670731076,
+    "same_bits": true
+   },
+   "new w32,8,2": {
+    "rotate_us": 221.97333971659342,
+    "flush_us": 220.65065304438272,
+    "rotate_GBs": 226.7463654160514,
+    "flush_GBs": 228.10559273475639,
+    "same_bits": true
+   },
+   "new w32,4,4": {
+    "rotate_us": 223.92533222834268,
+    "flush_us": 222.33599424362183,
+    "rotate_GBs": 224.76978151214917,
+    "flush_GBs": 226.3765170872411,
+    "same_bits": true
+   },
+   "new cpa,8,2": {
+    "rotate_us": 225.77067216237387,
+    "flush_us": 225.2266804377238,
+    "rotate_GBs": 222.9326223726772,
+    "flush_GBs": 223.47107324132912,
+    "same_bits": true
+   },
+   "new cpa,4,4": {
+    "rotate_us": 228.60799233118692,
+    "flush_us": 231.77599906921387,
+    "rotate_GBs": 220.16574086825446,
+    "flush_GBs": 217.15642776700864,
+    "same_bits": true
+   },
+   "new nc,8,2 pdl": {
+    "rotate_us": 223.76533349355063,
+    "flush_us": 223.17864497502646,
+    "rotate_GBs": 224.9304984565478,
+    "flush_GBs": 225.5217922200042,
+    "same_bits": true
+   },
+   "probe 3 cpa": {
+    "rotate_us": 226.71999533971152,
+    "flush_us": 231.7013144493103,
+    "rotate_GBs": 221.99915770368787,
+    "flush_GBs": 217.22642411254486
+   },
+   "probe 1 nc": {
+    "rotate_us": 221.79200251897177,
+    "flush_us": 218.92265478769937,
+    "rotate_GBs": 226.93175330203667,
+    "flush_GBs": 229.906073671586
+   },
+   "probe 2 nc": {
+    "rotate_us": 222.61333465576172,
+    "flush_us": 221.11998001734415,
+    "rotate_GBs": 226.0944883550232,
+    "flush_GBs": 227.62143880463492
+   },
+   "probe 3 nc": {
+    "rotate_us": 220.55466969807944,
+    "flush_us": 217.83467133839926,
+    "rotate_GBs": 228.20486217272,
+    "flush_GBs": 231.05434819332032
+   },
+   "probe 3 w32": {
+    "rotate_us": 28.405333558718365,
+    "flush_us": 31.519989172617596,
+    "rotate_GBs": 1771.908359954881,
+    "flush_GBs": 1596.816792174684
+   },
+   "routed_old_rotate_us": 240.11733134587607,
+   "routed_new_rotate_us": 228.7786602973938
+  },
+  {
+   "window": "2 rows, U 13",
+   "rows": 2,
+   "U": 13,
+   "MB": 81.788928,
+   "old_rotate_us": 370.38934230804443,
+   "old_flush_us": 368.28800042470294,
+   "old_rotate_GBs": 220.81879432691127,
+   "old_flush_GBs": 222.07872074485866,
+   "roof_GBs": 254.07442658304592,
+   "new nc,8,2": {
+    "rotate_us": 369.99468008677167,
+    "flush_us": 360.06398995717365,
+    "rotate_GBs": 221.0543351077879,
+    "flush_GBs": 227.15109058733714,
+    "same_bits": true
+   },
+   "new nc,8,1": {
+    "rotate_us": 366.14398161570233,
+    "flush_us": 352.34135389328003,
+    "rotate_GBs": 223.3791407388039,
+    "flush_GBs": 232.12979996884752,
+    "same_bits": true
+   },
+   "new nc,8,4": {
+    "rotate_us": 374.4746843973796,
+    "flush_us": 360.1173361142476,
+    "rotate_GBs": 218.40976548686643,
+    "flush_GBs": 227.11744144984002,
+    "same_bits": true
+   },
+   "new nc,4,2": {
+    "rotate_us": 358.06934038798016,
+    "flush_us": 377.8773347536723,
+    "rotate_GBs": 228.41645115825594,
+    "flush_GBs": 216.44306360241458,
+    "same_bits": true
+   },
+   "new nc,4,4": {
+    "rotate_us": 361.9519869486491,
+    "flush_us": 369.01330947875977,
+    "rotate_GBs": 225.96623571403012,
+    "flush_GBs": 221.64221695832282,
+    "same_bits": true
+   },
+   "new w32,8,2": {
+    "rotate_us": 360.27733484903973,
+    "flush_us": 359.0933481852214,
+    "rotate_GBs": 227.0165788649194,
+    "flush_GBs": 227.76508786181424,
+    "same_bits": true
+   },
+   "new w32,4,4": {
+    "rotate_us": 356.6933472951253,
+    "flush_us": 365.2053276697795,
+    "rotate_GBs": 229.2975986802705,
+    "flush_GBs": 223.95327177141831,
+    "same_bits": true
+   },
+   "new cpa,8,2": {
+    "rotate_us": 368.3520158131917,
+    "flush_us": 390.9119764963786,
+    "rotate_GBs": 222.04012599045728,
+    "flush_GBs": 209.22594578208756,
+    "same_bits": true
+   },
+   "new cpa,4,4": {
+    "rotate_us": 432.1173429489136,
+    "flush_us": 380.0639907519023,
+    "rotate_GBs": 189.27481003619283,
+    "flush_GBs": 215.19778245287668,
+    "same_bits": true
+   },
+   "new nc,8,2 pdl": {
+    "rotate_us": 363.14666271209717,
+    "flush_us": 390.1333212852478,
+    "rotate_GBs": 225.22285456012108,
+    "flush_GBs": 209.6435334735216,
+    "same_bits": true
+   },
+   "probe 3 cpa": {
+    "rotate_us": 389.4186814626058,
+    "flush_us": 385.9306573867798,
+    "rotate_GBs": 210.02825979691434,
+    "flush_GBs": 211.9264858454381
+   },
+   "probe 1 nc": {
+    "rotate_us": 360.703984896342,
+    "flush_us": 363.2960120836894,
+    "rotate_GBs": 226.74805775573634,
+    "flush_GBs": 225.130266448284
+   },
+   "probe 2 nc": {
+    "rotate_us": 360.21331946055096,
+    "flush_us": 357.53599802652997,
+    "rotate_GBs": 227.0569231656554,
+    "flush_GBs": 228.75718375616847
+   },
+   "probe 3 nc": {
+    "rotate_us": 364.77867762247723,
+    "flush_us": 353.3546527226766,
+    "rotate_GBs": 224.2152105300583,
+    "flush_GBs": 231.4641320548577
+   },
+   "probe 3 w32": {
+    "rotate_us": 42.00533529122671,
+    "flush_us": 52.5546669960022,
+    "rotate_GBs": 1947.108085983605,
+    "flush_GBs": 1556.263842490366
+   },
+   "routed_old_rotate_us": 378.58132521311444,
+   "routed_new_rotate_us": 363.27465375264484
+  },
+  {
+   "window": "3 rows, U 17",
+   "rows": 3,
+   "U": 17,
+   "MB": 106.954752,
+   "old_rotate_us": 505.72800636291504,
+   "old_flush_us": 547.4240183830261,
+   "old_rotate_GBs": 211.48670956389213,
+   "old_flush_GBs": 195.37825964582547,
+   "roof_GBs": 244.61486171827823,
+   "new nc,8,2": {
+    "rotate_us": 477.2160053253174,
+    "flush_us": 483.92532269159955,
+    "rotate_GBs": 224.12230689347712,
+    "flush_GBs": 221.0149933983949,
+    "same_bits": true
+   },
+   "new nc,8,1": {
+    "rotate_us": 465.7493432362874,
+    "flush_us": 461.2692991892497,
+    "rotate_GBs": 229.64015634851668,
+    "flush_GBs": 231.87051942973247,
+    "same_bits": true
+   },
+   "new nc,8,4": {
+    "rotate_us": 478.80534331003827,
+    "flush_us": 468.58662366867065,
+    "rotate_GBs": 223.3783592735392,
+    "flush_GBs": 228.24969087386032,
+    "same_bits": true
+   },
+   "new nc,4,2": {
+    "rotate_us": 480.128010114034,
+    "flush_us": 457.3333462079366,
+    "rotate_GBs": 222.76299184169122,
+    "flush_GBs": 233.86606921807686,
+    "same_bits": true
+   },
+   "new nc,4,4": {
+    "rotate_us": 461.5466594696045,
+    "flush_us": 460.7360363006592,
+    "rotate_GBs": 231.73117994811008,
+    "flush_GBs": 232.1388898918367,
+    "same_bits": true
+   },
+   "new w32,8,2": {
+    "rotate_us": 481.06666405995685,
+    "flush_us": 470.70934375127155,
+    "rotate_GBs": 222.32833823353408,
+    "flush_GBs": 227.22037159414486,
+    "same_bits": true
+   },
+   "new w32,4,4": {
+    "rotate_us": 461.4826838175456,
+    "flush_us": 459.5946470896403,
+    "rotate_GBs": 231.7633049960467,
+    "flush_GBs": 232.71539970555688,
+    "same_bits": true
+   },
+   "new cpa,8,2": {
+    "rotate_us": 474.8693307240804,
+    "flush_us": 475.882629553477,
+    "rotate_GBs": 225.22985815259005,
+    "flush_GBs": 224.7502752944695,
+    "same_bits": true
+   },
+   "new cpa,4,4": {
+    "rotate_us": 473.5146760940552,
+    "flush_us": 472.80001640319824,
+    "rotate_GBs": 225.87420707263433,
+    "flush_GBs": 226.21562666950132,
+    "same_bits": true
+   },
+   "new nc,8,2 pdl": {
+    "rotate_us": 464.85332647959393,
+    "flush_us": 466.261347134908,
+    "rotate_GBs": 230.08279366307835,
+    "flush_GBs": 229.38798735348252,
+    "same_bits": true
+   },
+   "probe 3 cpa": {
+    "rotate_us": 485.1306676864624,
+    "flush_us": 485.9412908554077,
+    "rotate_GBs": 220.46586440320516,
+    "flush_GBs": 220.09809417867413
+   },
+   "probe 1 nc": {
+    "rotate_us": 470.84800402323407,
+    "flush_us": 464.9279713630676,
+    "rotate_GBs": 227.15345734952356,
+    "flush_GBs": 230.04585352529327
+   },
+   "probe 2 nc": {
+    "rotate_us": 468.0853287378947,
+    "flush_us": 475.02930959065753,
+    "rotate_GBs": 228.49413436730364,
+    "flush_GBs": 225.15400595421175
+   },
+   "probe 3 nc": {
+    "rotate_us": 474.10134474436444,
+    "flush_us": 464.26665782928467,
+    "rotate_GBs": 225.59470287448778,
+    "flush_GBs": 230.37353683780645
+   },
+   "probe 3 w32": {
+    "rotate_us": 59.78666742642721,
+    "flush_us": 56.06400966644287,
+    "rotate_GBs": 1788.9398523779118,
+    "flush_GBs": 1907.7256984710068
+   },
+   "routed_old_rotate_us": 491.38132731119794,
+   "routed_new_rotate_us": 476.2880007425944
+  },
+  {
+   "window": "4 rows, U 22",
+   "rows": 4,
+   "U": 22,
+   "MB": 138.412032,
+   "old_rotate_us": 638.3999983469645,
+   "old_flush_us": 616.7146563529968,
+   "old_rotate_GBs": 216.8108276290664,
+   "old_flush_GBs": 224.43447804291412,
+   "roof_GBs": 247.4848917138131,
+   "new nc,8,2": {
+    "rotate_us": 606.1866680781046,
+    "flush_us": 624.5760122934977,
+    "rotate_GBs": 228.3323591375424,
+    "flush_GBs": 221.60958678470362,
+    "same_bits": true
+   },
+   "new nc,8,1": {
+    "rotate_us": 589.5893176396688,
+    "flush_us": 597.5787043571472,
+    "rotate_GBs": 234.7600742735834,
+    "flush_GBs": 231.6214265849692,
+    "same_bits": true
+   },
+   "new nc,8,4": {
+    "rotate_us": 618.5280084609985,
+    "flush_us": 598.9653666814169,
+    "rotate_GBs": 223.77649856858116,
+    "flush_GBs": 231.08520074687365,
+    "same_bits": true
+   },
+   "new nc,4,2": {
+    "rotate_us": 611.6160154342651,
+    "flush_us": 587.8826975822449,
+    "rotate_GBs": 226.30544084383308,
+    "flush_GBs": 235.4415814060187,
+    "same_bits": true
+   },
+   "new nc,4,4": {
+    "rotate_us": 591.264009475708,
+    "flush_us": 597.813347975413,
+    "rotate_GBs": 234.09514156414528,
+    "flush_GBs": 231.5305144469485,
+    "same_bits": true
+   },
+   "new w32,8,2": {
+    "rotate_us": 605.8026552200317,
+    "flush_us": 610.0266774495443,
+    "rotate_GBs": 228.47709696770443,
+    "flush_GBs": 226.89504757183042,
+    "same_bits": true
+   },
+   "new w32,4,4": {
+    "rotate_us": 593.2799975077311,
+    "flush_us": 592.4800237019857,
+    "rotate_GBs": 233.29967735545702,
+    "flush_GBs": 233.61468144556466,
+    "same_bits": true
+   },
+   "new cpa,8,2": {
+    "rotate_us": 635.8400185902914,
+    "flush_us": 613.205353418986,
+    "rotate_GBs": 217.6837379736976,
+    "flush_GBs": 225.71889046348062,
+    "same_bits": true
+   },
+   "new cpa,4,4": {
+    "rotate_us": 608.6613337198893,
+    "flush_us": 630.7199796040853,
+    "rotate_GBs": 227.40401653918485,
+    "flush_GBs": 219.4508442350024,
+    "same_bits": true
+   },
+   "new nc,8,2 pdl": {
+    "rotate_us": 592.960000038147,
+    "flush_us": 602.3892958958944,
+    "rotate_GBs": 233.425580125296,
+    "flush_GBs": 229.7717322386162,
+    "same_bits": true
+   },
+   "probe 3 cpa": {
+    "rotate_us": 621.1306651433309,
+    "flush_us": 610.3253761927286,
+    "rotate_GBs": 222.83883209672203,
+    "flush_GBs": 226.78400308934923
+   },
+   "probe 1 nc": {
+    "rotate_us": 613.8986746470133,
+    "flush_us": 602.8479933738708,
+    "rotate_GBs": 225.46396940763194,
+    "flush_GBs": 229.59690257135915
+   },
+   "probe 2 nc": {
+    "rotate_us": 603.6586761474609,
+    "flush_us": 602.6346882184347,
+    "rotate_GBs": 229.2885656565779,
+    "flush_GBs": 229.67816938846758
+   },
+   "probe 3 nc": {
+    "rotate_us": 605.3119897842407,
+    "flush_us": 613.0773226420084,
+    "rotate_GBs": 228.66230032769715,
+    "flush_GBs": 225.76602801670145
+   },
+   "probe 3 w32": {
+    "rotate_us": 68.45866640408833,
+    "flush_us": 86.84800068537395,
+    "rotate_GBs": 2021.833600774526,
+    "flush_GBs": 1593.7273271428335
+   },
+   "routed_old_rotate_us": 737.0773156483968,
+   "routed_new_rotate_us": 615.7973210016886
+  },
+  {
+   "window": "8 rows, U 35",
+   "rows": 8,
+   "U": 35,
+   "MB": 220.20096,
+   "old_rotate_us": 1075.3173033396404,
+   "old_flush_us": 980.6079665819803,
+   "old_rotate_GBs": 204.777658944124,
+   "old_flush_GBs": 224.55554870468293,
+   "roof_GBs": 237.55583494157878,
+   "new nc,8,2": {
+    "rotate_us": 963.0719820658366,
+    "flush_us": 964.6186828613281,
+    "rotate_GBs": 228.6443423757985,
+    "flush_GBs": 228.27772664201623,
+    "same_bits": true
+   },
+   "new nc,8,1": {
+    "rotate_us": 935.9359741210938,
+    "flush_us": 974.8480121294657,
+    "rotate_GBs": 235.2735294813124,
+    "flush_GBs": 225.882350130654,
+    "same_bits": true
+   },
+   "new nc,8,4": {
+    "rotate_us": 952.4906476338705,
+    "flush_us": 949.7386415799459,
+    "rotate_GBs": 231.18438017949276,
+    "flush_GBs": 231.854270595627,
+    "same_bits": true
+   },
+   "new nc,4,2": {
+    "rotate_us": 1005.8560371398926,
+    "flush_us": 930.4533004760742,
+    "rotate_GBs": 218.91896242541006,
+    "flush_GBs": 236.65987308264943,
+    "same_bits": true
+   },
+   "new nc,4,4": {
+    "rotate_us": 930.5706818898519,
+    "flush_us": 957.8453699747721,
+    "rotate_GBs": 236.63002100260059,
+    "flush_GBs": 229.8919709825394,
+    "same_bits": true
+   },
+   "new w32,8,2": {
+    "rotate_us": 944.0320332845052,
+    "flush_us": 937.9733602205912,
+    "rotate_GBs": 233.25581361245767,
+    "flush_GBs": 234.76248829520432,
+    "same_bits": true
+   },
+   "new w32,4,4": {
+    "rotate_us": 931.4560095469157,
+    "flush_us": 930.2933613459269,
+    "rotate_GBs": 236.40510957367857,
+    "flush_GBs": 236.70056043549354,
+    "same_bits": true
+   },
+   "new cpa,8,2": {
+    "rotate_us": 983.9146931966146,
+    "flush_us": 981.7173480987549,
+    "rotate_GBs": 223.80086558581098,
+    "flush_GBs": 224.30179157621356,
+    "same_bits": true
+   },
+   "new cpa,4,4": {
+    "rotate_us": 991.7653401692709,
+    "flush_us": 1017.2480146090189,
+    "rotate_GBs": 222.02929572273308,
+    "flush_GBs": 216.46732835810414,
+    "same_bits": true
+   },
+   "new nc,8,2 pdl": {
+    "rotate_us": 940.7359759012858,
+    "flush_us": 936.3519748051962,
+    "rotate_GBs": 234.07307219119932,
+    "flush_GBs": 235.1690026026931,
+    "same_bits": true
+   },
+   "probe 3 cpa": {
+    "rotate_us": 981.1200300852457,
+    "flush_us": 992.3626780509949,
+    "rotate_GBs": 224.43834928216435,
+    "flush_GBs": 221.89564850672917
+   },
+   "probe 1 nc": {
+    "rotate_us": 962.0266755421957,
+    "flush_us": 960.8426292737325,
+    "rotate_GBs": 228.8927797931334,
+    "flush_GBs": 229.17484434099498
+   },
+   "probe 2 nc": {
+    "rotate_us": 964.9279912312826,
+    "flush_us": 973.3440081278483,
+    "rotate_GBs": 228.20455205057914,
+    "flush_GBs": 226.23138187652634
+   },
+   "probe 3 nc": {
+    "rotate_us": 959.9466323852539,
+    "flush_us": 967.3920273780823,
+    "rotate_GBs": 229.38875201098375,
+    "flush_GBs": 227.62329414354338
+   },
+   "probe 3 w32": {
+    "rotate_us": 108.99200042088826,
+    "flush_us": 113.20535341898601,
+    "rotate_GBs": 2020.340567653244,
+    "flush_GBs": 1945.1461732998703
+   },
+   "routed_old_rotate_us": 1001.7386277516683,
+   "routed_new_rotate_us": 985.8346780141195
+  },
+  {
+   "window": "16 rows, U 64",
+   "rows": 16,
+   "U": 64,
+   "MB": 402.653184,
+   "old_rotate_us": 1787.434736887614,
+   "old_flush_us": 1785.909374554952,
+   "old_rotate_GBs": 225.26874726689226,
+   "old_flush_GBs": 225.46115146539339,
+   "roof_GBs": 238.78456761219408,
+   "new nc,8,2": {
+    "rotate_us": 1772.2986539204915,
+    "flush_us": 1760.1066033045452,
+    "rotate_GBs": 227.19262530008317,
+    "flush_GBs": 228.7663617896957,
+    "same_bits": true
+   },
+   "new nc,8,1": {
+    "rotate_us": 1737.4080022176106,
+    "flush_us": 1722.2294012705486,
+    "rotate_GBs": 231.75511076618585,
+    "flush_GBs": 233.79764838699697,
+    "same_bits": true
+   },
+   "new nc,8,4": {
+    "rotate_us": 1732.9920132954915,
+    "flush_us": 1739.573359489441,
+    "rotate_GBs": 232.34566628746708,
+    "flush_GBs": 231.4666304835672,
+    "same_bits": true
+   },
+   "new nc,4,2": {
+    "rotate_us": 1880.5012702941895,
+    "flush_us": 1766.528030236562,
+    "rotate_GBs": 214.12013400927302,
+    "flush_GBs": 227.9347834328331,
+    "same_bits": true
+   },
+   "new nc,4,4": {
+    "rotate_us": 1753.610610961914,
+    "flush_us": 1721.9946384429932,
+    "rotate_GBs": 229.61379309807626,
+    "flush_GBs": 233.82952246824308,
+    "same_bits": true
+   },
+   "new w32,8,2": {
+    "rotate_us": 1726.3894081115723,
+    "flush_us": 1728.597362836202,
+    "rotate_GBs": 233.23427617668605,
+    "flush_GBs": 232.93636369972558,
+    "same_bits": true
+   },
+   "new w32,4,4": {
+    "rotate_us": 1736.36261622111,
+    "flush_us": 1796.4693506558735,
+    "rotate_GBs": 231.8946401163049,
+    "flush_GBs": 224.13584949445158,
+    "same_bits": true
+   },
+   "new cpa,8,2": {
+    "rotate_us": 1811.0933303833008,
+    "flush_us": 1799.4239926338196,
+    "rotate_GBs": 222.32602662988234,
+    "flush_GBs": 223.76781995144785,
+    "same_bits": true
+   },
+   "new cpa,4,4": {
+    "rotate_us": 1790.463924407959,
+    "flush_us": 1794.261376063029,
+    "rotate_GBs": 224.8876274528361,
+    "flush_GBs": 224.4116656423281,
+    "same_bits": true
+   },
+   "new nc,8,2 pdl": {
+    "rotate_us": 1727.4667421976726,
+    "flush_us": 1729.3439904848735,
+    "rotate_GBs": 233.08881969429243,
+    "flush_GBs": 232.8357956632469,
+    "same_bits": true
+   },
+   "probe 3 cpa": {
+    "rotate_us": 1810.7520739237468,
+    "flush_us": 1855.7440241177876,
+    "rotate_GBs": 222.36792645361137,
+    "flush_GBs": 216.97668361961692
+   },
+   "probe 1 nc": {
+    "rotate_us": 1764.5972569783528,
+    "flush_us": 1762.6773317654927,
+    "rotate_GBs": 228.18418333568764,
+    "flush_GBs": 228.43272375704956
+   },
+   "probe 2 nc": {
+    "rotate_us": 1764.4586563110352,
+    "flush_us": 1757.0133407910664,
+    "rotate_GBs": 228.202107518818,
+    "flush_GBs": 229.16911024631833
+   },
+   "probe 3 nc": {
+    "rotate_us": 1762.7520561218262,
+    "flush_us": 1765.440007050832,
+    "rotate_GBs": 228.42304032585517,
+    "flush_GBs": 228.07525738166103
+   },
+   "probe 3 w32": {
+    "rotate_us": 197.1199909845988,
+    "flush_us": 201.94131135940552,
+    "rotate_GBs": 2042.6806129037402,
+    "flush_GBs": 1993.9119008857829
+   },
+   "routed_old_rotate_us": 1839.51997756958,
+   "routed_new_rotate_us": 1840.8746719360352
+  },
+  {
+   "window": "3+3+3+2 rows, U 51",
+   "rows": 11,
+   "U": 51,
+   "MB": 320.864256,
+   "old_rotate_us": 1420.7679430643718,
+   "old_flush_us": 1419.0186858177185,
+   "old_rotate_GBs": 225.83860901868783,
+   "old_flush_GBs": 226.11700551011415,
+   "roof_GBs": 229.00380488013548,
+   "new nc,8,2": {
+    "rotate_us": 1402.016003926595,
+    "flush_us": 1421.8347271283467,
+    "rotate_GBs": 228.859196401013,
+    "flush_GBs": 225.66916525385733,
+    "same_bits": true
+   },
+   "new nc,8,1": {
+    "rotate_us": 1369.8347409566243,
+    "flush_us": 1366.6667143503826,
+    "rotate_GBs": 234.23574129527802,
+    "flush_GBs": 234.77871571088664,
+    "same_bits": true
+   },
+   "new nc,8,4": {
+    "rotate_us": 1373.8346099853516,
+    "flush_us": 1378.7412643432617,
+    "rotate_GBs": 233.55377253410526,
+    "flush_GBs": 232.72260307146016,
+    "same_bits": true
+   },
+   "new nc,4,2": {
+    "rotate_us": 1360.2026303609211,
+    "flush_us": 1435.6053272883098,
+    "rotate_GBs": 235.89445339835927,
+    "flush_GBs": 223.50450357137848,
+    "same_bits": true
+   },
+   "new nc,4,4": {
+    "rotate_us": 1464.1067186991374,
+    "flush_us": 1431.3280582427979,
+    "rotate_GBs": 219.1535985061859,
+    "flush_GBs": 224.17240698398396,
+    "same_bits": true
+   },
+   "new w32,8,2": {
+    "rotate_us": 1413.098653157552,
+    "flush_us": 1369.8666095733643,
+    "rotate_GBs": 227.06429963897614,
+    "flush_GBs": 234.23029202816397,
+    "same_bits": true
+   },
+   "new w32,4,4": {
+    "rotate_us": 1369.5573806762695,
+    "flush_us": 1380.458652973175,
+    "rotate_GBs": 234.28317829338513,
+    "flush_GBs": 232.433079620991,
+    "same_bits": true
+   },
+   "new cpa,8,2": {
+    "rotate_us": 1491.2106196085613,
+    "flush_us": 1436.1707369486492,
+    "rotate_GBs": 215.17031315417134,
+    "flush_GBs": 223.41651152266348,
+    "same_bits": true
+   },
+   "new cpa,4,4": {
+    "rotate_us": 1421.994686126709,
+    "flush_us": 1423.5306978225708,
+    "rotate_GBs": 225.64377991733852,
+    "flush_GBs": 225.40030678003166,
+    "same_bits": true
+   },
+   "new nc,8,2 pdl": {
+    "rotate_us": 1385.8346939086914,
+    "flush_us": 1369.4612979888916,
+    "rotate_GBs": 231.5314066030597,
+    "flush_GBs": 234.29961582061642,
+    "same_bits": true
+   },
+   "probe 3 cpa": {
+    "rotate_us": 1482.7200571695964,
+    "flush_us": 1439.6160046259563,
+    "rotate_GBs": 216.40245199927102,
+    "flush_GBs": 222.8818344398495
+   },
+   "probe 1 nc": {
+    "rotate_us": 1398.3786900838215,
+    "flush_us": 1398.1012900670369,
+    "rotate_GBs": 229.45448058906473,
+    "flush_GBs": 229.50000710221434
+   },
+   "probe 2 nc": {
+    "rotate_us": 1412.0747248331706,
+    "flush_us": 1408.5332949956257,
+    "rotate_GBs": 227.22894925968487,
+    "flush_GBs": 227.80026367853552
+   },
+   "probe 3 nc": {
+    "rotate_us": 1414.84800974528,
+    "flush_us": 1396.3412642478943,
+    "rotate_GBs": 226.78355115880348,
+    "flush_GBs": 229.78928161435223
+   },
+   "probe 3 w32": {
+    "rotate_us": 154.02666727701822,
+    "flush_us": 158.76267353693643,
+    "rotate_GBs": 2083.173398947359,
+    "flush_GBs": 2021.0308182127603
+   },
+   "routed_old_rotate_us": 1543.4880256652832,
+   "routed_new_rotate_us": 1427.519957224528
+  },
+  {
+   "window": "4+4+4+4 rows, U 60",
+   "rows": 16,
+   "U": 60,
+   "MB": 377.48736,
+   "old_rotate_us": 1771.7119852701824,
+   "old_flush_us": 1674.3039886156719,
+   "old_rotate_GBs": 213.06361481910616,
+   "old_flush_GBs": 225.4592729675748,
+   "roof_GBs": 238.436359061545,
+   "new nc,8,2": {
+    "rotate_us": 1661.4400545756023,
+    "flush_us": 1649.1413712501526,
+    "rotate_GBs": 227.20492319924554,
+    "flush_GBs": 228.89933305950655,
+    "same_bits": true
+   },
+   "new nc,8,1": {
+    "rotate_us": 1630.0800641377766,
+    "flush_us": 1625.055968761444,
+    "rotate_GBs": 231.57596261976875,
+    "flush_GBs": 232.29191317496992,
+    "same_bits": true
+   },
+   "new nc,8,4": {
+    "rotate_us": 1628.8426717122395,
+    "flush_us": 1627.776026725769,
+    "rotate_GBs": 231.75188528379186,
+    "flush_GBs": 231.90374707711257,
+    "same_bits": true
+   },
+   "new nc,4,2": {
+    "rotate_us": 1618.6453501383464,
+    "flush_us": 1644.9706554412842,
+    "rotate_GBs": 233.21190152477564,
+    "flush_GBs": 229.47969238924463,
+    "same_bits": true
+   },
+   "new nc,4,4": {
+    "rotate_us": 1728.8533846537273,
+    "flush_us": 1723.573386669159,
+    "rotate_GBs": 218.3455019094098,
+    "flush_GBs": 219.01438193444267,
+    "same_bits": true
+   },
+   "new w32,8,2": {
+    "rotate_us": 1705.7280540466309,
+    "flush_us": 1624.735991160075,
+    "rotate_GBs": 221.30571113282537,
+    "flush_GBs": 232.33766104391574,
+    "same_bits": true
+   },
+   "new w32,4,4": {
+    "rotate_us": 1625.1626014709473,
+    "flush_us": 1618.5813148816426,
+    "rotate_GBs": 232.27667167478089,
+    "flush_GBs": 233.2211279898554,
+    "same_bits": true
+   },
+   "new cpa,8,2": {
+    "rotate_us": 1698.304017384847,
+    "flush_us": 1728.117287158966,
+    "rotate_GBs": 222.27313610273282,
+    "flush_GBs": 218.43850692599182,
+    "same_bits": true
+   },
+   "new cpa,4,4": {
+    "rotate_us": 1679.9786885579426,
+    "flush_us": 1685.8986616134644,
+    "rotate_GBs": 224.69770751915132,
+    "flush_GBs": 223.90868952866438,
+    "same_bits": true
+   },
+   "new nc,8,2 pdl": {
+    "rotate_us": 1672.7147102355957,
+    "flush_us": 1624.4693994522095,
+    "rotate_GBs": 225.673486154033,
+    "flush_GBs": 232.37578998243563,
+    "same_bits": true
+   },
+   "probe 3 cpa": {
+    "rotate_us": 1697.6532936096191,
+    "flush_us": 1692.1387314796448,
+    "rotate_GBs": 222.3583351329476,
+    "flush_GBs": 223.08298544169392
+   },
+   "probe 1 nc": {
+    "rotate_us": 1622.378667195638,
+    "flush_us": 1624.0533987681072,
+    "rotate_GBs": 232.67524877685037,
+    "flush_GBs": 232.435312956049
+   },
+   "probe 2 nc": {
+    "rotate_us": 1629.5785903930664,
+    "flush_us": 1630.1013628641765,
+    "rotate_GBs": 231.6472259916886,
+    "flush_GBs": 231.57293687352927
+   },
+   "probe 3 nc": {
+    "rotate_us": 1625.1200040181477,
+    "flush_us": 1622.431993484497,
+    "rotate_GBs": 232.2827600833499,
+    "flush_GBs": 232.66760117893782
+   },
+   "probe 3 w32": {
+    "rotate_us": 187.30666240056357,
+    "flush_us": 188.34135929743448,
+    "rotate_GBs": 2015.3440094550756,
+    "flush_GBs": 2004.2722501745372
+   },
+   "routed_old_rotate_us": 1826.0480562845867,
+   "routed_new_rotate_us": 1718.8159624735515
+  }
+ ],
+ "gate": {
+  "probe_pass": true,
+  "probe_line": "GATE 0580 load path: probe 3 (nc,8,2, no decode / mma) >= 220 GB/s [flush] on every U 8-22 window: PASS (231, 231, 230, 226)",
+  "best": "new nc,8,1",
+  "flush": [
+   1.1133358263952615,
+   1.0452590828615962,
+   1.1867774840970478,
+   1.0320224798111495
+  ],
+  "rotate": [
+   0.9809811042141624,
+   1.0115947848537845,
+   1.0858372936155605,
+   1.082787593409429
+  ],
+  "geomean": 1.0926401312369154,
+  "pass": false,
+  "line": "GATE 0580: nc,8,1 >= 1.05x grouped_kernel [flush] (and >= 1.00x [rotate]) on every U 8-22 window: FAIL (flush 1.113 1.045 1.187 1.032; rotate 0.981 1.012 1.086 1.083; geomean 1.093)"
+ }
+}

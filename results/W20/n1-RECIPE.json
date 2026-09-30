@@ -1,0 +1,228 @@
+{
+ "args": {
+  "base": "http://127.0.0.1:8001",
+  "model": "GLM-5.3-Flash-EXL3",
+  "corpus": "results/W20/n1-corpus.txt",
+  "lengths": "8000,16000,32000",
+  "chars_per_token": 3.4,
+  "tokens": 512,
+  "no_batch": false,
+  "out": "results/W20/n1-RECIPE.json"
+ },
+ "alone": {
+  "8000-g-drafted": {
+   "sha": "a20eb26e51a1dd3a",
+   "tokens": 512,
+   "prompt_tokens": 8743,
+   "cached": 0,
+   "slot": 2,
+   "wall": 14.05,
+   "decode_tps": 62.9,
+   "tpr": 4.154,
+   "head": "# Summary of the TensorFold Patch Document\n\n## Overview\n\nThe document describes a series of patches applied to **TensorF"
+  },
+  "8000-g-serial": {
+   "sha": "a20eb26e51a1dd3a",
+   "tokens": 512,
+   "prompt_tokens": 8743,
+   "cached": 0,
+   "slot": 3,
+   "wall": 20.51,
+   "decode_tps": 34.8,
+   "tpr": 1.0,
+   "head": "# Summary of the TensorFold Patch Document\n\n## Overview\n\nThe document describes a series of patches applied to **TensorF"
+  },
+  "8000-s-serial": {
+   "sha": "13a91a33bf3bbefe",
+   "tokens": 512,
+   "prompt_tokens": 8743,
+   "cached": 0,
+   "slot": 0,
+   "wall": 20.47,
+   "decode_tps": 34.9,
+   "tpr": 1.0,
+   "head": "# Patch 0390 \u2014 `glm-mla-expand-v2` (summary, section by section)\n\n## 1. Purpose (patch name and what it replaces)\n\nThe p"
+  },
+  "8000-s-drafted": {
+   "sha": "13a91a33bf3bbefe",
+   "tokens": 512,
+   "prompt_tokens": 8743,
+   "cached": 8704,
+   "slot": 2,
+   "wall": 10.27,
+   "decode_tps": 51.0,
+   "tpr": 2.581,
+   "head": "# Patch 0390 \u2014 `glm-mla-expand-v2` (summary, section by section)\n\n## 1. Purpose (patch name and what it replaces)\n\nThe p"
+  },
+  "16000-g-drafted": {
+   "sha": "95ad7ea86c19ca90",
+   "tokens": 512,
+   "prompt_tokens": 16889,
+   "cached": 0,
+   "slot": 1,
+   "wall": 20.09,
+   "decode_tps": 55.9,
+   "tpr": 3.234,
+   "head": "# Summary of the technical document (patches 0001\u20130084)\n\nThe document is the patch log of **TensorFold**, a CUDA serving"
+  },
+  "16000-g-serial": {
+   "sha": "95ad7ea86c19ca90",
+   "tokens": 512,
+   "prompt_tokens": 16889,
+   "cached": 0,
+   "slot": 3,
+   "wall": 25.53,
+   "decode_tps": 34.6,
+   "tpr": 1.0,
+   "head": "# Summary of the technical document (patches 0001\u20130084)\n\nThe document is the patch log of **TensorFold**, a CUDA serving"
+  },
+  "16000-s-serial": {
+   "sha": "f597b0f9c4d491e8",
+   "tokens": 512,
+   "prompt_tokens": 16889,
+   "cached": 0,
+   "slot": 0,
+   "wall": 25.48,
+   "decode_tps": 34.8,
+   "tpr": 1.0,
+   "head": "## Section-by-Section Summary\n\nThis document is an excerpt from a running log of patches (0080\u20130084) for a GLM-5.3 infer"
+  },
+  "16000-s-drafted": {
+   "sha": "f597b0f9c4d491e8",
+   "tokens": 512,
+   "prompt_tokens": 16889,
+   "cached": 16832,
+   "slot": 1,
+   "wall": 9.49,
+   "decode_tps": 55.7,
+   "tpr": 2.988,
+   "head": "## Section-by-Section Summary\n\nThis document is an excerpt from a running log of patches (0080\u20130084) for a GLM-5.3 infer"
+  },
+  "32000-g-drafted": {
+   "sha": "cbbd3595ba6407c6",
+   "tokens": 512,
+   "prompt_tokens": 32098,
+   "cached": 0,
+   "slot": 2,
+   "wall": 30.66,
+   "decode_tps": 48.6,
+   "tpr": 2.481,
+   "head": "# Summary of the technical document (TensorFold patch log, sections 0084\u20130310)\n\nThe document is a chronological log of e"
+  },
+  "32000-g-serial": {
+   "sha": "cbbd3595ba6407c6",
+   "tokens": 512,
+   "prompt_tokens": 32098,
+   "cached": 0,
+   "slot": 3,
+   "wall": 34.33,
+   "decode_tps": 34.7,
+   "tpr": 1.0,
+   "head": "# Summary of the technical document (TensorFold patch log, sections 0084\u20130310)\n\nThe document is a chronological log of e"
+  },
+  "32000-s-serial": {
+   "sha": "d05bf5e46099e741",
+   "tokens": 512,
+   "prompt_tokens": 32098,
+   "cached": 0,
+   "slot": 0,
+   "wall": 34.32,
+   "decode_tps": 34.7,
+   "tpr": 1.0,
+   "head": "# Summary of the Technical Document, Section by Section\n\n## 0084 \u2014 pipelined fast prefill\n\nThis patch addresses ineffici"
+  },
+  "32000-s-drafted": {
+   "sha": "d05bf5e46099e741",
+   "tokens": 512,
+   "prompt_tokens": 32098,
+   "cached": 31936,
+   "slot": 2,
+   "wall": 10.36,
+   "decode_tps": 51.7,
+   "tpr": 2.594,
+   "head": "# Summary of the Technical Document, Section by Section\n\n## 0084 \u2014 pipelined fast prefill\n\nThis patch addresses ineffici"
+  }
+ },
+ "pairs": {
+  "8000-greedy": true,
+  "8000-sampled": true,
+  "16000-greedy": true,
+  "16000-sampled": true,
+  "32000-greedy": true,
+  "32000-sampled": true
+ },
+ "batched": {
+  "8000-g": {
+   "same": true,
+   "sha": "a20eb26e51a1dd3a",
+   "tokens": 512,
+   "prompt_tokens": 8743,
+   "cached": 8704,
+   "slot": 1,
+   "wall": 18.71,
+   "decode_tps": 28.1,
+   "tpr": 3.703,
+   "head": "# Summary of the TensorFold Patch Document\n\n## Overview\n\nThe document describes a series of patches applied to **TensorF"
+  },
+  "16000-g": {
+   "same": true,
+   "sha": "95ad7ea86c19ca90",
+   "tokens": 512,
+   "prompt_tokens": 16889,
+   "cached": 16832,
+   "slot": 2,
+   "wall": 22.29,
+   "decode_tps": 23.5,
+   "tpr": 3.024,
+   "head": "# Summary of the technical document (patches 0001\u20130084)\n\nThe document is the patch log of **TensorFold**, a CUDA serving"
+  },
+  "16000-s": {
+   "same": true,
+   "sha": "f597b0f9c4d491e8",
+   "tokens": 512,
+   "prompt_tokens": 16889,
+   "cached": 16832,
+   "slot": 3,
+   "wall": 23.76,
+   "decode_tps": 22.0,
+   "tpr": 2.733,
+   "head": "## Section-by-Section Summary\n\nThis document is an excerpt from a running log of patches (0080\u20130084) for a GLM-5.3 infer"
+  },
+  "8000-s": {
+   "same": true,
+   "sha": "13a91a33bf3bbefe",
+   "tokens": 512,
+   "prompt_tokens": 8743,
+   "cached": 8704,
+   "slot": 0,
+   "wall": 25.28,
+   "decode_tps": 20.6,
+   "tpr": 2.433,
+   "head": "# Patch 0390 \u2014 `glm-mla-expand-v2` (summary, section by section)\n\n## 1. Purpose (patch name and what it replaces)\n\nThe p"
+  },
+  "32000-s": {
+   "same": true,
+   "sha": "d05bf5e46099e741",
+   "tokens": 512,
+   "prompt_tokens": 32098,
+   "cached": 31936,
+   "slot": 1,
+   "wall": 16.51,
+   "decode_tps": 32.2,
+   "tpr": 2.433,
+   "head": "# Summary of the Technical Document, Section by Section\n\n## 0084 \u2014 pipelined fast prefill\n\nThis patch addresses ineffici"
+  },
+  "32000-g": {
+   "same": true,
+   "sha": "cbbd3595ba6407c6",
+   "tokens": 512,
+   "prompt_tokens": 32098,
+   "cached": 31936,
+   "slot": 0,
+   "wall": 16.96,
+   "decode_tps": 31.2,
+   "tpr": 2.344,
+   "head": "# Summary of the technical document (TensorFold patch log, sections 0084\u20130310)\n\nThe document is a chronological log of e"
+  }
+ }
+}

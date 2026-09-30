@@ -1,0 +1,5690 @@
+{
+ "argv": [
+  "tests/cuda/bench_decode_cold.py",
+  "--mode",
+  "both",
+  "--no-hot",
+  "--shapes",
+  "1024x4096",
+  "4096x128",
+  "160x4096",
+  "4096x1024",
+  "4096x1536",
+  "8192x512",
+  "--json",
+  "/w19/kg-head/cold570.json"
+ ],
+ "errors": [],
+ "device": "NVIDIA GB10",
+ "torch": "2.13.0a0+9186a08b2c.nv26.07",
+ "triton": "3.7.1",
+ "triton_fused_qmm": true,
+ "pdl_supported": true,
+ "rotate": [
+  {
+   "mode": "rotate",
+   "shape": "4096x128",
+   "name": "KDA f_b/g_b",
+   "MB": 0.294912,
+   "sk": 1,
+   "copies": 342,
+   "rotation_MB": 100.859904,
+   "roof_GBs": 128.9267413010283,
+   "roof_valid": true,
+   "rows": 1,
+   "old_us": 3.642947353117647,
+   "old_GBs": 80.95423057585866,
+   "new (1, 4) serial": {
+    "us": 3.294783726073148,
+    "GBs": 89.50875824298417,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 1.8565614669643649,
+    "GBs": 158.8484977457849,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 3.2858946170026098,
+    "GBs": 89.75090024920473,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 1.8441169931177508,
+    "GBs": 159.9204394843778,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 3.2756021845410443,
+    "GBs": 90.03291101459597,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 1.9082104602055243,
+    "GBs": 154.54899034996194,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 3.436818806051511,
+    "GBs": 85.80958631881387,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 2.0048654915993676,
+    "GBs": 147.09814759928656,
+    "same_bits": true
+   },
+   "auto serial": true,
+   "best_new": "new (1, 6) serial pdl",
+   "best_us": 1.8441169931177508,
+   "speedup": 1.9754426463793435
+  },
+  {
+   "mode": "rotate",
+   "shape": "4096x128",
+   "name": "KDA f_b/g_b",
+   "MB": 0.294912,
+   "sk": 1,
+   "copies": 342,
+   "rotation_MB": 100.859904,
+   "roof_GBs": 128.9267413010283,
+   "roof_valid": true,
+   "rows": 2,
+   "old_us": 3.626760334996452,
+   "old_GBs": 81.31554686816341,
+   "new (1, 4) serial": {
+    "us": 3.298994044811405,
+    "GBs": 89.39452329834666,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 1.8592748725623416,
+    "GBs": 158.61667596979348,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 3.299929942303931,
+    "GBs": 89.36916999943932,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 1.8663859506796676,
+    "GBs": 158.01233388657053,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 3.797239727444119,
+    "GBs": 77.66483581970267,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 1.908304049954777,
+    "GBs": 154.54141073954585,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 3.4348539441649675,
+    "GBs": 85.85867253569491,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 2.010479482293826,
+    "GBs": 146.68739601536478,
+    "same_bits": true
+   },
+   "auto serial": true,
+   "best_new": "new (1, 4) serial pdl",
+   "best_us": 1.8592748725623416,
+   "speedup": 1.9506316083314068
+  },
+  {
+   "mode": "rotate",
+   "shape": "4096x128",
+   "name": "KDA f_b/g_b",
+   "MB": 0.294912,
+   "sk": 1,
+   "copies": 342,
+   "rotation_MB": 100.859904,
+   "roof_GBs": 128.9267413010283,
+   "roof_valid": true,
+   "rows": 4,
+   "old_us": 3.6273215249267934,
+   "old_GBs": 81.30296638259877,
+   "new (1, 4) serial": {
+    "us": 3.3058245279635603,
+    "GBs": 89.2098166449477,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 1.8844444152207402,
+    "GBs": 156.49811563449833,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 3.338760102701466,
+    "GBs": 88.32979637002971,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 1.8653568120030632,
+    "GBs": 158.0995110974595,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 3.280187210841486,
+    "GBs": 89.90706354359101,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 1.9151345331069323,
+    "GBs": 153.99022622267836,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 3.461239630715889,
+    "GBs": 85.20415558139305,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 2.1283743325729816,
+    "GBs": 138.56209196221715,
+    "same_bits": true
+   },
+   "auto serial": true,
+   "best_new": "new (1, 6) serial pdl",
+   "best_us": 1.8653568120030632,
+   "speedup": 1.9445724815681198
+  },
+  {
+   "mode": "rotate",
+   "shape": "4096x128",
+   "name": "KDA f_b/g_b",
+   "MB": 0.294912,
+   "sk": 1,
+   "copies": 342,
+   "rotation_MB": 100.859904,
+   "roof_GBs": 128.9267413010283,
+   "roof_valid": true,
+   "rows": 8,
+   "old_us": 3.6328421001545865,
+   "old_GBs": 81.1794159695107,
+   "new (1, 4) serial": {
+    "us": 3.3942457528142205,
+    "GBs": 86.88587140618324,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 2.4899181566740336,
+    "GBs": 118.44244727864293,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 3.3681403126632956,
+    "GBs": 87.55929760147185,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 2.3767953379112376,
+    "GBs": 124.07967791588355,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 3.3506433866177385,
+    "GBs": 88.01652875918106,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 2.3572397859472978,
+    "GBs": 125.10903717055857,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 3.533754432410525,
+    "GBs": 83.45571421012069,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 2.5380116108565303,
+    "GBs": 116.19804997679773,
+    "same_bits": true
+   },
+   "auto serial": true,
+   "best_new": "new (1, 8) serial pdl",
+   "best_us": 2.3572397859472978,
+   "speedup": 1.5411423656650465
+  },
+  {
+   "mode": "rotate",
+   "shape": "4096x128",
+   "name": "KDA f_b/g_b",
+   "MB": 0.294912,
+   "sk": 1,
+   "copies": 342,
+   "rotation_MB": 100.859904,
+   "roof_GBs": 128.9267413010283,
+   "roof_valid": true,
+   "rows": 16,
+   "old_us": 3.6689590292367322,
+   "old_GBs": 80.38029251619953,
+   "new (1, 4) serial": {
+    "us": 3.8155787869503626,
+    "GBs": 77.29155036940313,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 3.02858485115899,
+    "GBs": 97.37617220370828,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 3.7309004549394573,
+    "GBs": 79.04579700312203,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 3.042058637964795,
+    "GBs": 96.94487684080366,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 3.7431577492875663,
+    "GBs": 78.78695469250006,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 3.004538036926448,
+    "GBs": 98.15552220523263,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 4.029660894159685,
+    "GBs": 73.18531453289911,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 3.417637264519407,
+    "GBs": 86.29119393730363,
+    "same_bits": true
+   },
+   "auto serial": true,
+   "best_new": "new (1, 8) serial pdl",
+   "best_us": 3.004538036926448,
+   "speedup": 1.22113915155821
+  },
+  {
+   "mode": "rotate",
+   "shape": "8192x512",
+   "name": "DSA kv_b",
+   "MB": 2.359296,
+   "sk": 4,
+   "copies": 43,
+   "rotation_MB": 101.449728,
+   "roof_GBs": 230.24940354801478,
+   "roof_valid": true,
+   "rows": 1,
+   "old_us": 13.829953448716985,
+   "old_GBs": 170.59319893942765,
+   "new (1, 4) split": {
+    "us": 18.24893092000207,
+    "GBs": 129.28406657586999,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 13.98920874262965,
+    "GBs": 168.6511398468493,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 14.807070410528848,
+    "GBs": 159.33577234308132,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 13.026976308157277,
+    "GBs": 181.10848935241006,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 20.122047080550082,
+    "GBs": 117.24930324213828,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 14.619534791902055,
+    "GBs": 161.37969050197438,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 17.362604307573896,
+    "GBs": 135.8837624935581,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 10.463255782460058,
+    "GBs": 225.48392670998018,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 22.988650687905245,
+    "GBs": 102.62872893367637,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 14.943255934604379,
+    "GBs": 157.88366406390284,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 21.255441876344904,
+    "GBs": 110.99726901587735,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 11.031814092813535,
+    "GBs": 213.86292228554854,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 23.179906745289646,
+    "GBs": 101.78194528239113,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 15.970232874848122,
+    "GBs": 147.73084515979153,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 21.18176776309346,
+    "GBs": 111.38333808525526,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 11.672557786453602,
+    "GBs": 202.12330863232415,
+    "same_bits": true
+   },
+   "auto serial": true,
+   "best_new": "new (1, 6) serial pdl",
+   "best_us": 10.463255782460058,
+   "speedup": 1.3217638693207374
+  },
+  {
+   "mode": "rotate",
+   "shape": "8192x512",
+   "name": "DSA kv_b",
+   "MB": 2.359296,
+   "sk": 4,
+   "copies": 43,
+   "rotation_MB": 101.449728,
+   "roof_GBs": 230.24940354801478,
+   "roof_valid": true,
+   "rows": 2,
+   "old_us": 13.414697591648546,
+   "old_GBs": 175.8739609209531,
+   "new (1, 4) split": {
+    "us": 18.272000689839206,
+    "GBs": 129.1208357556581,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 14.411906863367834,
+    "GBs": 163.70463828050788,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 14.959627805754195,
+    "GBs": 157.71087560697873,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 13.843349246091622,
+    "GBs": 170.42812097412752,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 20.15330209288486,
+    "GBs": 117.06746562554387,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 15.44111689855886,
+    "GBs": 152.7930923326017,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 17.52186098764109,
+    "GBs": 134.64871121076186,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 10.44688391131024,
+    "GBs": 225.83729464493484,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 23.06158182232879,
+    "GBs": 102.30417055414958,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 14.85023249027341,
+    "GBs": 158.87266421891303,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 21.43330213635467,
+    "GBs": 110.07617888231123,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 11.009488687958829,
+    "GBs": 214.29660058421987,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 23.229023744893627,
+    "GBs": 101.56673073781835,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 16.0297668257425,
+    "GBs": 147.1821783590241,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 21.128185959749445,
+    "GBs": 111.66581004609723,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 11.723906494850336,
+    "GBs": 201.23804305640854,
+    "same_bits": true
+   },
+   "auto serial": true,
+   "best_new": "new (1, 6) serial pdl",
+   "best_us": 10.44688391131024,
+   "speedup": 1.2840860208205458
+  },
+  {
+   "mode": "rotate",
+   "shape": "8192x512",
+   "name": "DSA kv_b",
+   "MB": 2.359296,
+   "sk": 4,
+   "copies": 43,
+   "rotation_MB": 101.449728,
+   "roof_GBs": 230.24940354801478,
+   "roof_valid": true,
+   "rows": 4,
+   "old_us": 13.539720413296722,
+   "old_GBs": 174.24997917113905,
+   "new (1, 4) split": {
+    "us": 19.67999962873237,
+    "GBs": 119.88292909088672,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 14.070325119550837,
+    "GBs": 167.67885460739907,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 16.530605249626692,
+    "GBs": 142.72290484060042,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 13.826233009959376,
+    "GBs": 170.63910309485897,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 22.25339551304662,
+    "GBs": 106.01959591365743,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 14.395534992218018,
+    "GBs": 163.89081762333916,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 19.582511380661366,
+    "GBs": 120.47974614379204,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 10.437953610752905,
+    "GBs": 226.03051210818904,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 26.223629019981207,
+    "GBs": 89.9683258256256,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 14.771349208299505,
+    "GBs": 159.7210902491151,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 24.51423157093137,
+    "GBs": 96.24189088584853,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 11.563162470972815,
+    "GBs": 204.03553144933986,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 26.276466458342796,
+    "GBs": 89.78741505218339,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 16.02307031320971,
+    "GBs": 147.24369012192085,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 24.27460426507994,
+    "GBs": 97.1919448917216,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 12.037209300107735,
+    "GBs": 196.00024733132156,
+    "same_bits": true
+   },
+   "auto serial": true,
+   "best_new": "new (1, 6) serial pdl",
+   "best_us": 10.437953610752905,
+   "speedup": 1.2971623479288563
+  },
+  {
+   "mode": "rotate",
+   "shape": "8192x512",
+   "name": "DSA kv_b",
+   "MB": 2.359296,
+   "sk": 4,
+   "copies": 43,
+   "rotation_MB": 101.449728,
+   "roof_GBs": 230.24940354801478,
+   "roof_valid": true,
+   "rows": 8,
+   "old_us": 14.080000478167866,
+   "old_GBs": 167.56363067304378,
+   "new (1, 4) split": {
+    "us": 22.699163403621938,
+    "GBs": 103.9375750572175,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 14.126884382824565,
+    "GBs": 167.00752523100047,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 19.31832557500795,
+    "GBs": 122.12735471505941,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 14.225115609723469,
+    "GBs": 165.85425839262223,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 26.47962681082792,
+    "GBs": 89.09853665442326,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 14.272743879362594,
+    "GBs": 165.30080129941797,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 23.98437122965968,
+    "GBs": 98.36805715725559,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 10.472930447999822,
+    "GBs": 225.27562955892554,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 32.52613821695017,
+    "GBs": 72.5353862872818,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 14.69172156134317,
+    "GBs": 160.58676242597568,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 30.831628067548884,
+    "GBs": 76.52194022420835,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 11.847441972688188,
+    "GBs": 199.13969660614217,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 32.651163810907406,
+    "GBs": 72.25763876789766,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 16.071441561676735,
+    "GBs": 146.80052134376518,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 30.65079034760941,
+    "GBs": 76.97341482041138,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 12.11237214332403,
+    "GBs": 194.7839755980724,
+    "same_bits": true
+   },
+   "auto serial": true,
+   "best_new": "new (1, 6) serial pdl",
+   "best_us": 10.472930447999822,
+   "speedup": 1.3444184078255712
+  },
+  {
+   "mode": "rotate",
+   "shape": "8192x512",
+   "name": "DSA kv_b",
+   "MB": 2.359296,
+   "sk": 4,
+   "copies": 43,
+   "rotation_MB": 101.449728,
+   "roof_GBs": 230.24940354801478,
+   "roof_valid": true,
+   "rows": 16,
+   "old_us": 15.474605005840923,
+   "old_GBs": 152.46243759433463,
+   "new (1, 4) split": {
+    "us": 29.282231663548668,
+    "GBs": 80.57090822544502,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 14.603162920752236,
+    "GBs": 161.5606162037168,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 26.257115741108738,
+    "GBs": 89.85358571986002,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 15.132278897041498,
+    "GBs": 155.91148009182305,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 35.229766091635064,
+    "GBs": 66.96882385944056,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 14.550325482390647,
+    "GBs": 162.14730061229963,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 33.15125509750011,
+    "GBs": 71.1676222532495,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 10.79665089762488,
+    "GBs": 218.52109717829381,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 45.37599863008011,
+    "GBs": 51.99435982078869,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 14.793674613154211,
+    "GBs": 159.48005223138853,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 43.81172047104946,
+    "GBs": 53.85079550936625,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 12.535814629044644,
+    "GBs": 188.2044422173944,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 45.87981312773948,
+    "GBs": 51.423400383763585,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 16.224000343056613,
+    "GBs": 145.42011526828574,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 43.9419524614201,
+    "GBs": 53.6911964044247,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 13.293395208757977,
+    "GBs": 177.47881282019245,
+    "same_bits": true
+   },
+   "auto serial": true,
+   "best_new": "new (1, 6) serial pdl",
+   "best_us": 10.79665089762488,
+   "speedup": 1.4332782593947841
+  },
+  {
+   "mode": "rotate",
+   "shape": "4096x1024",
+   "name": "shared down",
+   "MB": 2.359296,
+   "sk": 2,
+   "copies": 43,
+   "rotation_MB": 101.449728,
+   "roof_GBs": 209.21955867089372,
+   "roof_valid": true,
+   "rows": 1,
+   "old_us": 16.548464464586836,
+   "old_GBs": 142.56887731479952,
+   "new (1, 4) split": {
+    "us": 15.683720278185467,
+    "GBs": 150.42961479500192,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 17.9363724797271,
+    "GBs": 131.5369650505773,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 14.101581518040147,
+    "GBs": 167.30719153605244,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 13.98623266885447,
+    "GBs": 168.68702643949624,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 15.497674775678059,
+    "GBs": 152.23548268690362,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 14.632186224294264,
+    "GBs": 161.24015672263582,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 11.07125573380049,
+    "GBs": 213.1010299759476,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 13.870883819668792,
+    "GBs": 170.08981047440818,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 17.18251095261685,
+    "GBs": 137.30798755234815,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 14.720000499902769,
+    "GBs": 160.27825542638968,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 13.93637269042259,
+    "GBs": 169.29053580931895,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 11.276651260464691,
+    "GBs": 209.21955867089372,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 19.415069458096525,
+    "GBs": 121.51880296344343,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 14.980464480644049,
+    "GBs": 157.49151189860623,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 13.636465682539828,
+    "GBs": 173.01374527131688,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 12.008185996565707,
+    "GBs": 196.47397206162105,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 6) split pdl",
+   "best_us": 11.07125573380049,
+   "speedup": 1.4947233504926143
+  },
+  {
+   "mode": "rotate",
+   "shape": "4096x1024",
+   "name": "shared down",
+   "MB": 2.359296,
+   "sk": 2,
+   "copies": 43,
+   "rotation_MB": 101.449728,
+   "roof_GBs": 209.21955867089372,
+   "roof_valid": true,
+   "rows": 2,
+   "old_us": 16.504558019859846,
+   "old_GBs": 142.94814784867742,
+   "new (1, 4) split": {
+    "us": 15.603348266246707,
+    "GBs": 151.2044696908835,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 14.638884122981581,
+    "GBs": 161.16638264088323,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 14.431256194447363,
+    "GBs": 163.48514420440915,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 14.005581999933996,
+    "GBs": 168.45397785048266,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 15.440372533576433,
+    "GBs": 152.80045833541294,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 14.396279357200445,
+    "GBs": 163.88234358761412,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 10.92241877733275,
+    "GBs": 216.00490221966558,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 13.77562728039054,
+    "GBs": 171.26595776574422,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 17.18176797378895,
+    "GBs": 137.31392506284232,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 14.91199953611507,
+    "GBs": 158.2145971964436,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 14.153674591419309,
+    "GBs": 166.69141181402657,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 11.29823230033697,
+    "GBs": 208.81992308917512,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 18.141767313314038,
+    "GBs": 130.04774889095503,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 15.000558176706004,
+    "GBs": 157.2805473108122,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 13.699721458346344,
+    "GBs": 172.2148882496173,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 11.9672556256139,
+    "GBs": 197.14595173770027,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 6) split pdl",
+   "best_us": 10.92241877733275,
+   "speedup": 1.5110717100603839
+  },
+  {
+   "mode": "rotate",
+   "shape": "4096x1024",
+   "name": "shared down",
+   "MB": 2.359296,
+   "sk": 2,
+   "copies": 43,
+   "rotation_MB": 101.449728,
+   "roof_GBs": 209.21955867089372,
+   "roof_valid": true,
+   "rows": 4,
+   "old_us": 16.459162845168002,
+   "old_GBs": 143.34240581942052,
+   "new (1, 4) split": {
+    "us": 15.656930069590723,
+    "GBs": 150.68701140731815,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 14.776558377021967,
+    "GBs": 159.6647838964168,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 15.135999335799106,
+    "GBs": 155.8731569457644,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 14.157395030176916,
+    "GBs": 166.6476067787251,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 15.92409333517385,
+    "GBs": 148.15889045241158,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 14.513116936350977,
+    "GBs": 162.56301181524114,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 11.042232430258462,
+    "GBs": 213.661142789835,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 16.117581101351007,
+    "GBs": 146.38027785709352,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 21.3492096856583,
+    "GBs": 110.50975819422945,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 14.922419259714525,
+    "GBs": 158.10412232346934,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 15.156837396843489,
+    "GBs": 155.65885799443484,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 11.299721030301827,
+    "GBs": 208.79241121733966,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 18.87776685315509,
+    "GBs": 124.97749433777358,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 15.033301919005638,
+    "GBs": 156.93797761204368,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 14.10679068676261,
+    "GBs": 167.2454105535069,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 12.014139530270599,
+    "GBs": 196.37661058085453,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 6) split pdl",
+   "best_us": 11.042232430258462,
+   "speedup": 1.4905647883362612
+  },
+  {
+   "mode": "rotate",
+   "shape": "4096x1024",
+   "name": "shared down",
+   "MB": 2.359296,
+   "sk": 2,
+   "copies": 43,
+   "rotation_MB": 101.449728,
+   "roof_GBs": 209.21955867089372,
+   "roof_valid": true,
+   "rows": 8,
+   "old_us": 16.529860884644265,
+   "old_GBs": 142.72933187185586,
+   "new (1, 4) split": {
+    "us": 16.466605108837747,
+    "GBs": 143.27762063922628,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 14.638139757999154,
+    "GBs": 161.17457812292986,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 16.200930573219477,
+    "GBs": 145.62719032325046,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 14.086696990700656,
+    "GBs": 167.48397452983414,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 16.602046267930852,
+    "GBs": 142.1087474353873,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 14.458790768024533,
+    "GBs": 163.1738115484428,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 11.001302059306655,
+    "GBs": 214.45606958897483,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 14.036092647286349,
+    "GBs": 168.08780472506584,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 19.210418989492016,
+    "GBs": 122.8133546327397,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 14.972279238146404,
+    "GBs": 157.57761142932605,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 16.46586074385532,
+    "GBs": 143.28409772810903,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 11.399441680242848,
+    "GBs": 206.9659257162618,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 20.1480929241624,
+    "GBs": 117.09773271745426,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 15.160557835601097,
+    "GBs": 155.62065892191208,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 15.268465807271559,
+    "GBs": 154.52082938656434,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 12.052836806275124,
+    "GBs": 195.7461166960851,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 6) split pdl",
+   "best_us": 11.001302059306655,
+   "speedup": 1.502536772059692
+  },
+  {
+   "mode": "rotate",
+   "shape": "4096x1024",
+   "name": "shared down",
+   "MB": 2.359296,
+   "sk": 2,
+   "copies": 43,
+   "rotation_MB": 101.449728,
+   "roof_GBs": 209.21955867089372,
+   "roof_valid": true,
+   "rows": 16,
+   "old_us": 17.359628233798716,
+   "old_GBs": 135.90705792918513,
+   "new (1, 4) split": {
+    "us": 18.29283736472906,
+    "GBs": 128.97375912547201,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 14.97079050818155,
+    "GBs": 157.59328131073926,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 19.013209398402726,
+    "GBs": 124.08720435163363,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 14.583069224690282,
+    "GBs": 161.78322708675938,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 18.100092577379804,
+    "GBs": 130.34717860772042,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 14.8189760917841,
+    "GBs": 159.20776073780394,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 12.512744859207508,
+    "GBs": 188.551435080522,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 14.822697916696239,
+    "GBs": 159.16778532891078,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 21.89395316811495,
+    "GBs": 107.76016473059504,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 15.22753543631975,
+    "GBs": 154.93616874945877,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 19.21637252319691,
+    "GBs": 122.775305128582,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 11.7008367250132,
+    "GBs": 201.6348108641212,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 22.95293087183043,
+    "GBs": 102.78844184101588,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 15.540836855422619,
+    "GBs": 151.81267405022516,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 18.51311672565549,
+    "GBs": 127.43915759632661,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 12.360930442810059,
+    "GBs": 190.86718519416343,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 8) serial pdl",
+   "best_us": 11.7008367250132,
+   "speedup": 1.4836228076483249
+  },
+  {
+   "mode": "rotate",
+   "shape": "4096x1536",
+   "name": "index q_b",
+   "MB": 3.538944,
+   "sk": 2,
+   "copies": 29,
+   "rotation_MB": 102.629376,
+   "roof_GBs": 236.84868241304724,
+   "roof_valid": true,
+   "rows": 1,
+   "old_us": 22.930757752780256,
+   "old_GBs": 154.33175118562832,
+   "new (1, 4) split": {
+    "us": 22.300689384855072,
+    "GBs": 158.69213453120338,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 21.166345168804302,
+    "GBs": 167.19674425492312,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 20.276965766117492,
+    "GBs": 174.5302547146143,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 20.243862579608784,
+    "GBs": 174.81565022895896,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 22.29186173143058,
+    "GBs": 158.75497715878254,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 20.769102820034686,
+    "GBs": 170.39464971911048,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 16.70069016259292,
+    "GBs": 211.904056990813,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 20.28248227875808,
+    "GBs": 174.482785260774,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 24.040828491079395,
+    "GBs": 147.2055757692861,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 21.064828182088917,
+    "GBs": 168.00250965299145,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 19.216551862913988,
+    "GBs": 184.1612389801214,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 16.91365550304281,
+    "GBs": 209.235904051808,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 25.108966334112758,
+    "GBs": 140.94343641665688,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 21.68165609754365,
+    "GBs": 163.22295603613657,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 19.273930582506903,
+    "GBs": 183.61298879077418,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 17.902345492922027,
+    "GBs": 197.68046602603982,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 6) split pdl",
+   "best_us": 16.70069016259292,
+   "speedup": 1.3730425227660212
+  },
+  {
+   "mode": "rotate",
+   "shape": "4096x1536",
+   "name": "index q_b",
+   "MB": 3.538944,
+   "sk": 2,
+   "copies": 29,
+   "rotation_MB": 102.629376,
+   "roof_GBs": 236.84868241304724,
+   "roof_valid": true,
+   "rows": 2,
+   "old_us": 22.853516299149085,
+   "old_GBs": 154.85336933169305,
+   "new (1, 4) split": {
+    "us": 21.836136949473413,
+    "GBs": 162.06822700318992,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 21.499586516413196,
+    "GBs": 164.6052121652806,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 20.980966502222522,
+    "GBs": 168.6740217437132,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 20.438068899615057,
+    "GBs": 173.15451950877093,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 22.110895863894758,
+    "GBs": 160.05430181500694,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 20.78124161424308,
+    "GBs": 170.29511834242248,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 16.56496524810791,
+    "GBs": 213.6402912408299,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 20.21075939310008,
+    "GBs": 175.10198064146908,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 23.912828544090534,
+    "GBs": 147.99353382536432,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 21.276689808944177,
+    "GBs": 166.32963265330488,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 19.326896503053863,
+    "GBs": 183.10979206831308,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 16.92579326958492,
+    "GBs": 209.08585752133482,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 24.983171758980586,
+    "GBs": 141.65311090766016,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 21.707035344222497,
+    "GBs": 163.03212041076435,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 19.312552336988777,
+    "GBs": 183.24579466495283,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 17.89020669871363,
+    "GBs": 197.81459541518115,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 6) split pdl",
+   "best_us": 16.56496524810791,
+   "speedup": 1.379629595163773
+  },
+  {
+   "mode": "rotate",
+   "shape": "4096x1536",
+   "name": "index q_b",
+   "MB": 3.538944,
+   "sk": 2,
+   "copies": 29,
+   "rotation_MB": 102.629376,
+   "roof_GBs": 236.84868241304724,
+   "roof_valid": true,
+   "rows": 4,
+   "old_us": 22.795033865961535,
+   "old_GBs": 155.25065770068866,
+   "new (1, 4) split": {
+    "us": 22.224551644818536,
+    "GBs": 159.2357882650503,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 21.15862122897444,
+    "GBs": 167.2577793090695,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 21.544828497130297,
+    "GBs": 164.25955771573564,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 20.145654678344727,
+    "GBs": 175.6678577343101,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 22.47503502615567,
+    "GBs": 157.4611116681909,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 20.752551226780334,
+    "GBs": 170.53055122365558,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 16.54289611454668,
+    "GBs": 213.9252991432436,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 20.13351793946891,
+    "GBs": 175.77375253742426,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 27.22537928614123,
+    "GBs": 129.9869494123617,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 21.349516408196813,
+    "GBs": 165.7622557971045,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 20.52855080571668,
+    "GBs": 172.39132140854747,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 16.99199964260233,
+    "GBs": 208.2711908213064,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 25.73351818939735,
+    "GBs": 137.5227426717776,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 21.759999209436877,
+    "GBs": 162.63530002635434,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 19.715311198398986,
+    "GBs": 179.502314946334,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 17.891310412308265,
+    "GBs": 197.80239224765762,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 6) split pdl",
+   "best_us": 16.54289611454668,
+   "speedup": 1.3779348977424308
+  },
+  {
+   "mode": "rotate",
+   "shape": "4096x1536",
+   "name": "index q_b",
+   "MB": 3.538944,
+   "sk": 2,
+   "copies": 29,
+   "rotation_MB": 102.629376,
+   "roof_GBs": 236.84868241304724,
+   "roof_valid": true,
+   "rows": 8,
+   "old_us": 22.859034867122254,
+   "old_GBs": 154.81598503924593,
+   "new (1, 4) split": {
+    "us": 23.110619906721443,
+    "GBs": 153.13063925951815,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 21.2082760087375,
+    "GBs": 166.86617990741004,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 23.049930046344624,
+    "GBs": 153.5338282105209,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 20.251586519438646,
+    "GBs": 174.74897567176362,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 23.124966128119105,
+    "GBs": 153.0356403721074,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 20.872827233939336,
+    "GBs": 169.54789882252544,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 16.67641360184242,
+    "GBs": 212.21253469085315,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 20.355310933343297,
+    "GBs": 173.85850855282118,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 25.86593093543217,
+    "GBs": 136.81873692596216,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 21.462068475525953,
+    "GBs": 164.89296006280094,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 21.66289707710003,
+    "GBs": 163.36429921651788,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 17.19393093010475,
+    "GBs": 205.82518415283874,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 27.132689952850342,
+    "GBs": 130.43100430328792,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 21.837240663068048,
+    "GBs": 162.06003563376913,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 20.774621388007855,
+    "GBs": 170.34938610447335,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 18.267586313444994,
+    "GBs": 193.7280568585751,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 6) split pdl",
+   "best_us": 16.67641360184242,
+   "speedup": 1.3707404609224116
+  },
+  {
+   "mode": "rotate",
+   "shape": "4096x1536",
+   "name": "index q_b",
+   "MB": 3.538944,
+   "sk": 2,
+   "copies": 29,
+   "rotation_MB": 102.629376,
+   "roof_GBs": 236.84868241304724,
+   "roof_valid": true,
+   "rows": 16,
+   "old_us": 23.310344794700885,
+   "old_GBs": 151.8186037644756,
+   "new (1, 4) split": {
+    "us": 24.754758538870977,
+    "GBs": 142.96015024517405,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 21.79862096391875,
+    "GBs": 162.34715057698776,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 25.577931568540375,
+    "GBs": 138.35927234838374,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 20.98537930126848,
+    "GBs": 168.63855302277454,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 24.52193046438283,
+    "GBs": 144.3175122423653,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 21.168552595993567,
+    "GBs": 167.1793092112397,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 17.392551076823267,
+    "GBs": 203.47469352646485,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 21.302069055623022,
+    "GBs": 166.1314678287478,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 28.404965482909105,
+    "GBs": 124.58892098035945,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 21.700413062654693,
+    "GBs": 163.0818726713706,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 24.98427547257522,
+    "GBs": 141.64685319310675,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 17.87696624624318,
+    "GBs": 197.96110543888867,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 29.745654813174543,
+    "GBs": 118.97347771388037,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 22.28193036441145,
+    "GBs": 158.82573646547146,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 24.137930623416242,
+    "GBs": 146.61339678252554,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 18.93627643585205,
+    "GBs": 186.88700558361714,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 6) split pdl",
+   "best_us": 17.392551076823267,
+   "speedup": 1.3402487473941342
+  },
+  {
+   "mode": "rotate",
+   "shape": "160x4096",
+   "name": "index k",
+   "MB": 0.434176,
+   "sk": 8,
+   "copies": 232,
+   "rotation_MB": 100.728832,
+   "roof_GBs": 153.75255467902255,
+   "roof_valid": true,
+   "rows": 1,
+   "old_us": 8.859586099098468,
+   "old_GBs": 49.00635257037355,
+   "new (1, 4) split": {
+    "us": 6.590758418214732,
+    "GBs": 65.87648529190169,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 20.40124145047418,
+    "GBs": 21.28184213955806,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 6.354207108760702,
+    "GBs": 68.3289028148596,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 20.56951769467058,
+    "GBs": 21.107738472277937,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 8.006620509871121,
+    "GBs": 54.2271235991162,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 19.222896674583698,
+    "GBs": 22.586398259845133,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 5.571862233096156,
+    "GBs": 77.92296037419044,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 18.931861581473516,
+    "GBs": 22.933613693060128,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 6.034758584252719,
+    "GBs": 71.94587719431757,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 20.091034215072106,
+    "GBs": 21.610435548125505,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 5.821379094288267,
+    "GBs": 74.58301425962763,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 18.555585680336787,
+    "GBs": 23.398668599293693,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 6.691586354683185,
+    "GBs": 64.88386714103105,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 24.379861765894397,
+    "GBs": 17.808796627689652,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 5.841517242892035,
+    "GBs": 74.32589547318479,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 24.029380288617364,
+    "GBs": 18.068547535770936,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 6) split pdl",
+   "best_us": 5.571862233096156,
+   "speedup": 1.590058355440601
+  },
+  {
+   "mode": "rotate",
+   "shape": "160x4096",
+   "name": "index k",
+   "MB": 0.434176,
+   "sk": 8,
+   "copies": 232,
+   "rotation_MB": 100.728832,
+   "roof_GBs": 153.75255467902255,
+   "roof_valid": true,
+   "rows": 2,
+   "old_us": 8.099999921075229,
+   "old_GBs": 53.60197583092885,
+   "new (1, 4) split": {
+    "us": 6.580827565028749,
+    "GBs": 65.97589675609488,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 20.40427512135999,
+    "GBs": 21.278677993588097,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 6.282896317284683,
+    "GBs": 69.10443497301583,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 20.57420590828205,
+    "GBs": 21.10292868339694,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 6.282482681603267,
+    "GBs": 69.10898477625406,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 19.217930991074134,
+    "GBs": 22.59223431500796,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 5.5413790817918445,
+    "GBs": 78.35161493041296,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 18.93241446593712,
+    "GBs": 22.9329439613295,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 6.053931240377755,
+    "GBs": 71.71802631390774,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 19.00303363800049,
+    "GBs": 22.847720436161072,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 5.178482881907759,
+    "GBs": 83.84231635039201,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 18.526069049177497,
+    "GBs": 23.43594849222891,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 6.672275991275392,
+    "GBs": 65.0716487998585,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 24.374069838688293,
+    "GBs": 17.81302847138168,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 5.84068945769606,
+    "GBs": 74.33642948229381,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 24.029793410465636,
+    "GBs": 18.06823690006858,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 8) split pdl",
+   "best_us": 5.178482881907759,
+   "speedup": 1.564164660923081
+  },
+  {
+   "mode": "rotate",
+   "shape": "160x4096",
+   "name": "index k",
+   "MB": 0.434176,
+   "sk": 8,
+   "copies": 232,
+   "rotation_MB": 100.728832,
+   "roof_GBs": 153.75255467902255,
+   "roof_valid": true,
+   "rows": 4,
+   "old_us": 8.160413853053388,
+   "old_GBs": 53.205144716716056,
+   "new (1, 4) split": {
+    "us": 7.483586155135056,
+    "GBs": 58.01710450037098,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 20.4106199330297,
+    "GBs": 21.272063338820498,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 7.2100691754242465,
+    "GBs": 60.21800754421371,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 20.581931903444488,
+    "GBs": 21.09500711773993,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 7.10193093480735,
+    "GBs": 61.13492288020647,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 19.223585210997484,
+    "GBs": 22.585589276635833,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 6.404689673719735,
+    "GBs": 67.79032585787063,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 18.9588974262106,
+    "GBs": 22.90090980711533,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 6.882344854289088,
+    "GBs": 63.0854758359603,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 19.020138115718446,
+    "GBs": 22.827173880571998,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 6.03600000513011,
+    "GBs": 71.93108012441778,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 18.580138683319092,
+    "GBs": 23.367748077671525,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 7.466069069401971,
+    "GBs": 58.15322574222814,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 24.142068007896686,
+    "GBs": 17.98420913477604,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 6.662620552654924,
+    "GBs": 65.16595032970763,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 23.78413800535531,
+    "GBs": 18.25485539573642,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 8) split pdl",
+   "best_us": 6.03600000513011,
+   "speedup": 1.3519572309671468
+  },
+  {
+   "mode": "rotate",
+   "shape": "160x4096",
+   "name": "index k",
+   "MB": 0.434176,
+   "sk": 8,
+   "copies": 232,
+   "rotation_MB": 100.728832,
+   "roof_GBs": 153.75255467902255,
+   "roof_valid": true,
+   "rows": 8,
+   "old_us": 8.281103495893808,
+   "old_GBs": 52.42972753755421,
+   "new (1, 4) split": {
+    "us": 9.212276031231058,
+    "GBs": 47.13015529800403,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 20.648689105592926,
+    "GBs": 21.02680696966853,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 8.966068769323416,
+    "GBs": 48.42434417695897,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 20.796689493902797,
+    "GBs": 20.877168942070917,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 8.808413456226218,
+    "GBs": 49.291055893056786,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 19.272138332498486,
+    "GBs": 22.52868843660445,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 8.160965709850705,
+    "GBs": 53.201546904666834,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 19.060965242057012,
+    "GBs": 22.77827982404656,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 8.551999926567078,
+    "GBs": 50.768943373259106,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 20.691723659120758,
+    "GBs": 20.98307551138295,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 7.740551541591513,
+    "GBs": 56.09109346628423,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 18.823311246674635,
+    "GBs": 23.065867333873175,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 9.238896698787295,
+    "GBs": 46.99435594479482,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 24.14482831954956,
+    "GBs": 17.982153124214047,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 8.357103528647587,
+    "GBs": 51.95292824980258,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 23.79186194518517,
+    "GBs": 18.248929024567808,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 8) split pdl",
+   "best_us": 7.740551541591513,
+   "speedup": 1.0698337775283586
+  },
+  {
+   "mode": "rotate",
+   "shape": "160x4096",
+   "name": "index k",
+   "MB": 0.434176,
+   "sk": 8,
+   "copies": 232,
+   "rotation_MB": 100.728832,
+   "roof_GBs": 153.75255467902255,
+   "roof_valid": true,
+   "rows": 16,
+   "old_us": 8.71820696469011,
+   "old_GBs": 49.80106594836188,
+   "new (1, 4) split": {
+    "us": 12.82896563924592,
+    "GBs": 33.843414364739125,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 20.84786110910876,
+    "GBs": 20.82592539002966,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 12.469930895443621,
+    "GBs": 34.81783529038186,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 21.002206309088344,
+    "GBs": 20.67287567840517,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 12.364000082015991,
+    "GBs": 35.11614340989281,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 19.436137429599103,
+    "GBs": 22.33859487630488,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 11.650069006558123,
+    "GBs": 37.26810542972674,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 19.312274867090686,
+    "GBs": 22.481867257381616,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 12.135310419674578,
+    "GBs": 35.77790637280154,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 19.330069936555006,
+    "GBs": 22.461170674759522,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 11.257793368964359,
+    "GBs": 38.56670537202632,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 18.998483131671772,
+    "GBs": 22.85319290971177,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 12.799724422652146,
+    "GBs": 33.9207302956947,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 24.379310936763368,
+    "GBs": 17.80919900181731,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 11.904413330143896,
+    "GBs": 36.47185190559507,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 23.986345735089532,
+    "GBs": 18.100964807025424,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 8) split pdl",
+   "best_us": 11.257793368964359,
+   "speedup": 0.7744152587419648
+  },
+  {
+   "mode": "rotate",
+   "shape": "1024x4096",
+   "name": "(1,16,8) grid",
+   "MB": 2.359296,
+   "sk": 8,
+   "copies": 43,
+   "rotation_MB": 101.449728,
+   "roof_GBs": 228.11224437845817,
+   "roof_valid": true,
+   "rows": 1,
+   "old_us": 16.922046971875567,
+   "old_GBs": 139.42143074777823,
+   "new (1, 4) split": {
+    "us": 15.842976958252663,
+    "GBs": 148.9174671033675,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 21.700465401937794,
+    "GBs": 108.72098622314898,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 14.39479062723559,
+    "GBs": 163.89929253546114,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 23.935257002364757,
+    "GBs": 98.56990462926328,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 16.043906988099565,
+    "GBs": 147.05246058519214,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 20.134697126787763,
+    "GBs": 117.17563890549546,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 11.061581068260725,
+    "GBs": 213.28741211955565,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 22.30251112649607,
+    "GBs": 105.78611469437105,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 18.287628196006597,
+    "GBs": 129.01049686230994,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 20.087814608285594,
+    "GBs": 117.44911260913689,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 14.999813811723577,
+    "GBs": 157.28835234981503,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 21.797209285026373,
+    "GBs": 108.238443240563,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 19.1940471183422,
+    "GBs": 122.91811025854007,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 25.22641836210739,
+    "GBs": 93.52481062249801,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 14.554045921148257,
+    "GBs": 162.1058510315502,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 26.304001031919967,
+    "GBs": 89.69342713821325,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 6) split pdl",
+   "best_us": 11.061581068260725,
+   "speedup": 1.5298036390503365
+  },
+  {
+   "mode": "rotate",
+   "shape": "1024x4096",
+   "name": "(1,16,8) grid",
+   "MB": 2.359296,
+   "sk": 8,
+   "copies": 43,
+   "rotation_MB": 101.449728,
+   "roof_GBs": 228.11224437845817,
+   "roof_valid": true,
+   "rows": 2,
+   "old_us": 17.037395821061246,
+   "old_GBs": 138.47750118498107,
+   "new (1, 4) split": {
+    "us": 15.854139660680017,
+    "GBs": 148.81261616808573,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 21.69600059819776,
+    "GBs": 108.74335983360831,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 14.43795409313468,
+    "GBs": 163.40930195378976,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 23.866792057835777,
+    "GBs": 98.8526650034399,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 16.077395095381625,
+    "GBs": 146.74616043227851,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 20.108651283175448,
+    "GBs": 117.32741131047318,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 11.042232430258462,
+    "GBs": 213.661142789835,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 22.480372772660367,
+    "GBs": 104.94914936950117,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 18.301766972209133,
+    "GBs": 128.9108315925202,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 20.128000614254972,
+    "GBs": 117.2146228140071,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 15.036279378935347,
+    "GBs": 156.9069010053903,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 21.824743858603544,
+    "GBs": 108.10188725628231,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 19.18139568594999,
+    "GBs": 122.99918309532292,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 25.224929632142533,
+    "GBs": 93.53033028856098,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 14.524279638778332,
+    "GBs": 162.4380732591324,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 26.280186897100403,
+    "GBs": 89.77470400944182,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 6) split pdl",
+   "best_us": 11.042232430258462,
+   "speedup": 1.54293037469258
+  },
+  {
+   "mode": "rotate",
+   "shape": "1024x4096",
+   "name": "(1,16,8) grid",
+   "MB": 2.359296,
+   "sk": 8,
+   "copies": 43,
+   "rotation_MB": 101.449728,
+   "roof_GBs": 228.11224437845817,
+   "roof_valid": true,
+   "rows": 4,
+   "old_us": 17.040371894836426,
+   "old_GBs": 138.45331631024519,
+   "new (1, 4) split": {
+    "us": 16.820092533909996,
+    "GBs": 140.26652916704012,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 21.688558334528015,
+    "GBs": 108.78067428963313,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 15.412093595016835,
+    "GBs": 153.08082483763445,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 23.897301319033602,
+    "GBs": 98.7264615574345,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 17.034418361131536,
+    "GBs": 138.5017057807708,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 20.09227941202563,
+    "GBs": 117.42301366702647,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 11.238697656365328,
+    "GBs": 209.92610284019443,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 22.44911637417106,
+    "GBs": 105.09527237849325,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 19.96502349543017,
+    "GBs": 118.17146123269144,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 20.128000614254972,
+    "GBs": 117.2146228140071,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 16.802231932795326,
+    "GBs": 140.41563105643266,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 22.01525555100552,
+    "GBs": 107.16641442266801,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 20.986046901969022,
+    "GBs": 112.42212556851945,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 25.042605954547263,
+    "GBs": 94.21128153684008,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 16.028279481932174,
+    "GBs": 147.19583612573695,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 26.084464649821438,
+    "GBs": 90.44831978240929,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 6) split pdl",
+   "best_us": 11.238697656365328,
+   "speedup": 1.516223001620225
+  },
+  {
+   "mode": "rotate",
+   "shape": "1024x4096",
+   "name": "(1,16,8) grid",
+   "MB": 2.359296,
+   "sk": 8,
+   "copies": 43,
+   "rotation_MB": 101.449728,
+   "roof_GBs": 228.11224437845817,
+   "roof_valid": true,
+   "rows": 8,
+   "old_us": 17.055999401003817,
+   "old_GBs": 138.32645889171087,
+   "new (1, 4) split": {
+    "us": 18.66492975589841,
+    "GBs": 126.4026187537312,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 21.777115588964417,
+    "GBs": 108.33831461112217,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 17.50027856161428,
+    "GBs": 134.81476833031456,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 24.155533590982127,
+    "GBs": 97.67103637407476,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 18.818232902260714,
+    "GBs": 125.37287705247647,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 19.98958199523216,
+    "GBs": 118.02627991734545,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 12.823070204535195,
+    "GBs": 183.98838674107677,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 22.653766842775568,
+    "GBs": 104.14585867217022,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 23.370418437691622,
+    "GBs": 100.95223610523577,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 20.16372043032979,
+    "GBs": 117.0069783575854,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 20.20613953124645,
+    "GBs": 116.76134356845466,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 22.46325515037359,
+    "GBs": 105.02912352668362,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 24.410791175310003,
+    "GBs": 96.64971458959845,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 24.84837243723315,
+    "GBs": 94.94770757962392,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 19.195534462152526,
+    "GBs": 122.90858609077958,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 25.973580604375794,
+    "GBs": 90.83445351398825,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 6) split pdl",
+   "best_us": 12.823070204535195,
+   "speedup": 1.3301026297876417
+  },
+  {
+   "mode": "rotate",
+   "shape": "1024x4096",
+   "name": "(1,16,8) grid",
+   "MB": 2.359296,
+   "sk": 8,
+   "copies": 43,
+   "rotation_MB": 101.449728,
+   "roof_GBs": 228.11224437845817,
+   "roof_valid": true,
+   "rows": 16,
+   "old_us": 17.922976682352466,
+   "old_GBs": 131.63527698627416,
+   "new (1, 4) split": {
+    "us": 22.410419098166532,
+    "GBs": 105.27674603787403,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 22.099349387856417,
+    "GBs": 106.75861802956209,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 22.652279498965243,
+    "GBs": 104.1526968668991,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 24.583442266597306,
+    "GBs": 95.97093744701847,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 22.44167411050131,
+    "GBs": 105.13012480187456,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 20.257488239643184,
+    "GBs": 116.46537675796063,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 22.87181449490924,
+    "GBs": 103.15298773191462,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 23.458977078282555,
+    "GBs": 100.5711371014616,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 30.706605245900708,
+    "GBs": 76.83350149280872,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 21.85079108837039,
+    "GBs": 107.97302443002552,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 27.857860853505688,
+    "GBs": 84.69049409093813,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 22.919441378393838,
+    "GBs": 102.9386345438641,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 31.423255454662236,
+    "GBs": 75.08120867374846,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 25.07683842681175,
+    "GBs": 94.08267341538074,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 26.536930439084074,
+    "GBs": 88.90613801079216,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 26.298046112060547,
+    "GBs": 89.71373728476364,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 6) serial",
+   "best_us": 20.257488239643184,
+   "speedup": 0.8847580939120497
+  }
+ ],
+ "flush": [
+  {
+   "mode": "flush",
+   "shape": "4096x128",
+   "name": "KDA f_b/g_b",
+   "MB": 0.294912,
+   "sk": 1,
+   "copies": 3,
+   "rotation_MB": 0.884736,
+   "roof_GBs": 112.96438310014537,
+   "roof_valid": true,
+   "rows": 1,
+   "old_us": 2.82132625579834,
+   "old_GBs": 104.52956278767905,
+   "new (1, 4) serial": {
+    "us": 4.349331061045329,
+    "GBs": 67.80628925707028,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 4.0000081062316895,
+    "GBs": 73.7278505862403,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 3.7439862887064614,
+    "GBs": 78.76951923931628,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 3.9226611455281577,
+    "GBs": 75.18161499526931,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 3.757337729136149,
+    "GBs": 78.48961718642293,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 3.850658734639486,
+    "GBs": 76.58741538091945,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 3.7093361218770347,
+    "GBs": 79.5053320352014,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 4.277348518371582,
+    "GBs": 68.94738615133357,
+    "same_bits": true
+   },
+   "auto serial": true,
+   "best_new": "new (2, 4) serial",
+   "best_us": 3.7093361218770347,
+   "speedup": 0.7606014022721308
+  },
+  {
+   "mode": "flush",
+   "shape": "4096x128",
+   "name": "KDA f_b/g_b",
+   "MB": 0.294912,
+   "sk": 1,
+   "copies": 3,
+   "rotation_MB": 0.884736,
+   "roof_GBs": 112.96438310014537,
+   "roof_valid": true,
+   "rows": 2,
+   "old_us": 3.637333710988363,
+   "old_GBs": 81.07917046738731,
+   "new (1, 4) serial": {
+    "us": 3.4693479537963867,
+    "GBs": 85.00502224842799,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 3.9893190066019693,
+    "GBs": 73.92539917513409,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 3.543992837270101,
+    "GBs": 83.21461513651576,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 4.330654939015706,
+    "GBs": 68.09870658201855,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 3.594676653544108,
+    "GBs": 82.04131509554182,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 4.76535161336263,
+    "GBs": 61.88672398759214,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 2.866665522257487,
+    "GBs": 102.87632013928086,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 5.89066743850708,
+    "GBs": 50.06427592095437,
+    "same_bits": true
+   },
+   "auto serial": true,
+   "best_new": "new (2, 4) serial",
+   "best_us": 2.866665522257487,
+   "speedup": 1.2688378475783872
+  },
+  {
+   "mode": "flush",
+   "shape": "4096x128",
+   "name": "KDA f_b/g_b",
+   "MB": 0.294912,
+   "sk": 1,
+   "copies": 3,
+   "rotation_MB": 0.884736,
+   "roof_GBs": 112.96438310014537,
+   "roof_valid": true,
+   "rows": 4,
+   "old_us": 4.693349202473958,
+   "old_GBs": 62.83615117420754,
+   "new (1, 4) serial": {
+    "us": 4.51199213663737,
+    "GBs": 65.36181603804557,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 4.023989041646321,
+    "GBs": 73.28846996048071,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 4.519999027252197,
+    "GBs": 65.24603174069337,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 3.687997659047445,
+    "GBs": 79.96534359953237,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 4.477341969807942,
+    "GBs": 65.8676513852817,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 4.650672276814778,
+    "GBs": 63.412767541208844,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 4.693329334259033,
+    "GBs": 62.836417177734596,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 4.488011201222737,
+    "GBs": 65.71106594378655,
+    "same_bits": true
+   },
+   "auto serial": true,
+   "best_new": "new (1, 6) serial pdl",
+   "best_us": 3.687997659047445,
+   "speedup": 1.2726009169122359
+  },
+  {
+   "mode": "flush",
+   "shape": "4096x128",
+   "name": "KDA f_b/g_b",
+   "MB": 0.294912,
+   "sk": 1,
+   "copies": 3,
+   "rotation_MB": 0.884736,
+   "roof_GBs": 112.96438310014537,
+   "roof_valid": true,
+   "rows": 8,
+   "old_us": 4.730661710103353,
+   "old_GBs": 62.34053882359662,
+   "new (1, 4) serial": {
+    "us": 4.6293338139851885,
+    "GBs": 63.705062510090045,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 4.658659299214681,
+    "GBs": 63.304049740171784,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 5.453348159790039,
+    "GBs": 54.07907057438902,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 5.200008551279704,
+    "GBs": 56.713752889391536,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 4.866659641265869,
+    "GBs": 60.598443642812526,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 10.986665884653727,
+    "GBs": 26.842720357222813,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 4.978656768798828,
+    "GBs": 59.235254345752324,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 5.472004413604736,
+    "GBs": 53.89469337173357,
+    "same_bits": true
+   },
+   "auto serial": true,
+   "best_new": "new (1, 4) serial",
+   "best_us": 4.6293338139851885,
+   "speedup": 1.0218882241354152
+  },
+  {
+   "mode": "flush",
+   "shape": "4096x128",
+   "name": "KDA f_b/g_b",
+   "MB": 0.294912,
+   "sk": 1,
+   "copies": 3,
+   "rotation_MB": 0.884736,
+   "roof_GBs": 112.96438310014537,
+   "roof_valid": true,
+   "rows": 16,
+   "old_us": 4.786670207977295,
+   "old_GBs": 61.61109647965931,
+   "new (1, 4) serial": {
+    "us": 4.863997300465901,
+    "GBs": 60.63161259808916,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 6.559987862904866,
+    "GBs": 44.95618073741501,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 5.384008089701335,
+    "GBs": 54.77554919802498,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 6.221334139506022,
+    "GBs": 47.40333719214384,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 5.522668361663818,
+    "GBs": 53.40027332569208,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 5.786677201588948,
+    "GBs": 50.963962517041885,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 6.365338961283366,
+    "GBs": 46.330918399440655,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 6.151994069417317,
+    "GBs": 47.93762748668131,
+    "same_bits": true
+   },
+   "auto serial": true,
+   "best_new": "new (1, 4) serial",
+   "best_us": 4.863997300465901,
+   "speedup": 0.9841021514380365
+  },
+  {
+   "mode": "flush",
+   "shape": "8192x512",
+   "name": "DSA kv_b",
+   "MB": 2.359296,
+   "sk": 4,
+   "copies": 3,
+   "rotation_MB": 7.077888,
+   "roof_GBs": 216.15838231484676,
+   "roof_valid": true,
+   "rows": 1,
+   "old_us": 13.210674126942953,
+   "old_GBs": 178.5901292643541,
+   "new (1, 4) split": {
+    "us": 17.61867602666219,
+    "GBs": 133.90881337676552,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 11.666675408681234,
+    "GBs": 202.2252198980727,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 17.079989115397137,
+    "GBs": 138.13217233687578,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 12.346665064493815,
+    "GBs": 191.08771378149683,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 19.591987133026123,
+    "GBs": 120.42147557472337,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 17.22133159637451,
+    "GBs": 136.99846535076802,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 20.373324553171795,
+    "GBs": 115.80319126819664,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 12.952009836832682,
+    "GBs": 182.15674862218515,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 25.02665917078654,
+    "GBs": 94.27131219951208,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 15.170673529307047,
+    "GBs": 155.51689220931814,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 25.19466479619344,
+    "GBs": 93.642682650672,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 14.917333920796713,
+    "GBs": 158.15802022845602,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 24.4026780128479,
+    "GBs": 96.68184773645913,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 17.09600289662679,
+    "GBs": 138.00278429208225,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 24.44531520207723,
+    "GBs": 96.5132165610006,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 15.320003032684326,
+    "GBs": 154.0010139010143,
+    "same_bits": true
+   },
+   "auto serial": true,
+   "best_new": "new (1, 4) serial",
+   "best_us": 11.666675408681234,
+   "speedup": 1.1323426481131738
+  },
+  {
+   "mode": "flush",
+   "shape": "8192x512",
+   "name": "DSA kv_b",
+   "MB": 2.359296,
+   "sk": 4,
+   "copies": 3,
+   "rotation_MB": 7.077888,
+   "roof_GBs": 216.15838231484676,
+   "roof_valid": true,
+   "rows": 2,
+   "old_us": 15.38399855295817,
+   "old_GBs": 153.36038884028196,
+   "new (1, 4) split": {
+    "us": 19.757330417633057,
+    "GBs": 119.41370368004634,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 14.197329680124918,
+    "GBs": 166.1788556831795,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 20.205318927764893,
+    "GBs": 116.76608562500847,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 13.741334279378256,
+    "GBs": 171.69337067511827,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 25.575995445251465,
+    "GBs": 92.24649750389425,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 16.55467351277669,
+    "GBs": 142.5154049809031,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 22.0986803372701,
+    "GBs": 106.76185020971481,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 14.928003152211508,
+    "GBs": 158.04498270423278,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 26.365339756011963,
+    "GBs": 89.48475619253193,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 14.73065217336019,
+    "GBs": 160.16235888501222,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 25.418659051259358,
+    "GBs": 92.81748479501753,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 14.853338400522867,
+    "GBs": 158.83944311919453,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 25.04001061121623,
+    "GBs": 94.22104633386998,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 16.570667425791424,
+    "GBs": 142.3778499306475,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 25.581339995066326,
+    "GBs": 92.22722501851034,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 15.25866985321045,
+    "GBs": 154.62003062498925,
+    "same_bits": true
+   },
+   "auto serial": true,
+   "best_new": "new (1, 4) serial pdl",
+   "best_us": 13.741334279378256,
+   "speedup": 1.119541831978069
+  },
+  {
+   "mode": "flush",
+   "shape": "8192x512",
+   "name": "DSA kv_b",
+   "MB": 2.359296,
+   "sk": 4,
+   "copies": 3,
+   "rotation_MB": 7.077888,
+   "roof_GBs": 216.15838231484676,
+   "roof_valid": true,
+   "rows": 4,
+   "old_us": 17.416000366210938,
+   "old_GBs": 135.4671537890702,
+   "new (1, 4) split": {
+    "us": 23.295998573303223,
+    "GBs": 101.27473147700604,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 14.23734426498413,
+    "GBs": 165.71180383707815,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 22.946655750274658,
+    "GBs": 102.81655094650385,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 14.426668485005697,
+    "GBs": 163.53713280735087,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 26.082674662272137,
+    "GBs": 90.45452702029274,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 16.49067799250285,
+    "GBs": 143.0684657763984,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 31.895995140075684,
+    "GBs": 73.9684085616023,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 14.895995457967123,
+    "GBs": 158.38458105450957,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 30.367990334828693,
+    "GBs": 77.69022493708287,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 15.17866055170695,
+    "GBs": 155.43505910570482,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 30.00799814860026,
+    "GBs": 78.62223892166064,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 14.938652515411377,
+    "GBs": 157.9323166909496,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 29.95733420054118,
+    "GBs": 78.75520512627519,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 18.330673376719158,
+    "GBs": 128.7075467176465,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 31.25600020090739,
+    "GBs": 75.48297878279087,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 15.645325183868408,
+    "GBs": 150.79878316831818,
+    "same_bits": true
+   },
+   "auto serial": true,
+   "best_new": "new (1, 4) serial",
+   "best_us": 14.23734426498413,
+   "speedup": 1.2232618697747244
+  },
+  {
+   "mode": "flush",
+   "shape": "8192x512",
+   "name": "DSA kv_b",
+   "MB": 2.359296,
+   "sk": 4,
+   "copies": 3,
+   "rotation_MB": 7.077888,
+   "roof_GBs": 216.15838231484676,
+   "roof_valid": true,
+   "rows": 8,
+   "old_us": 21.26667896906535,
+   "old_GBs": 110.93861920950832,
+   "new (1, 4) split": {
+    "us": 28.496007124582928,
+    "GBs": 82.79391529084378,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 14.589349428812662,
+    "GBs": 161.71358507190192,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 28.826673825581867,
+    "GBs": 81.84419799089942,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 15.482664108276367,
+    "GBs": 152.38307719527558,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 32.76000420252482,
+    "GBs": 72.0175731790098,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 15.994668006896973,
+    "GBs": 147.5051560296632,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 34.49066480000814,
+    "GBs": 68.40390040842132,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 15.370666980743408,
+    "GBs": 153.49340421959306,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 39.90934292475382,
+    "GBs": 59.116382959455926,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 16.565322875976562,
+    "GBs": 142.42378598134715,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 37.978669007619224,
+    "GBs": 62.12160830403723,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 14.650662740071615,
+    "GBs": 161.03681054284286,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 39.61066404978434,
+    "GBs": 59.5621420795859,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 17.75201161702474,
+    "GBs": 132.90302253618182,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 38.97865613301595,
+    "GBs": 60.52789485478474,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 16.26133918762207,
+    "GBs": 145.08620555654278,
+    "same_bits": true
+   },
+   "auto serial": true,
+   "best_new": "new (1, 4) serial",
+   "best_us": 14.589349428812662,
+   "speedup": 1.4576852157002669
+  },
+  {
+   "mode": "flush",
+   "shape": "8192x512",
+   "name": "DSA kv_b",
+   "MB": 2.359296,
+   "sk": 4,
+   "copies": 3,
+   "rotation_MB": 7.077888,
+   "roof_GBs": 216.15838231484676,
+   "roof_valid": true,
+   "rows": 16,
+   "old_us": 26.167988777160645,
+   "old_GBs": 90.15962289234807,
+   "new (1, 4) split": {
+    "us": 40.66934188206991,
+    "GBs": 58.011659171700394,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 17.016013463338215,
+    "GBs": 138.65151229947082,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 40.687998135884605,
+    "GBs": 57.9850596758465,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 16.207993030548096,
+    "GBs": 145.56373485312494,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 46.82399829228719,
+    "GBs": 50.386470315343004,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 16.3573424021403,
+    "GBs": 144.23467712525812,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 49.93867874145508,
+    "GBs": 47.243861060374876,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 16.866664091746014,
+    "GBs": 139.87923084058815,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 56.701322396596275,
+    "GBs": 41.60918829190528,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 18.10133457183838,
+    "GBs": 130.33823504210213,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 56.336005528767906,
+    "GBs": 41.879007534448434,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 17.119983832041424,
+    "GBs": 137.8094759402978,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 57.448009649912514,
+    "GBs": 41.068367979631006,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 19.26666498184204,
+    "GBs": 122.45482039696697,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 56.62665764490763,
+    "GBs": 41.66405184629802,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 18.103996912638348,
+    "GBs": 130.3190677387369,
+    "same_bits": true
+   },
+   "auto serial": true,
+   "best_new": "new (1, 4) serial pdl",
+   "best_us": 16.207993030548096,
+   "speedup": 1.6145113542337042
+  },
+  {
+   "mode": "flush",
+   "shape": "4096x1024",
+   "name": "shared down",
+   "MB": 2.359296,
+   "sk": 2,
+   "copies": 3,
+   "rotation_MB": 7.077888,
+   "roof_GBs": 212.47247778123148,
+   "roof_valid": true,
+   "rows": 1,
+   "old_us": 14.66133197148641,
+   "old_GBs": 160.91962207720255,
+   "new (1, 4) split": {
+    "us": 13.447999954223633,
+    "GBs": 175.43843010343056,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 11.973341306050619,
+    "GBs": 197.0457485253303,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 14.133334159851074,
+    "GBs": 166.9313109925691,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 13.810654481252035,
+    "GBs": 170.83158536785817,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 13.098676999409994,
+    "GBs": 180.11712176018008,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 15.4800017674764,
+    "GBs": 152.4092849237846,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 15.973329544067383,
+    "GBs": 147.70220532238756,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 15.069325764973959,
+    "GBs": 156.5628108912328,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 18.442670504252117,
+    "GBs": 127.92594214899864,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 13.86400063832601,
+    "GBs": 170.1742564464329,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 15.44266939163208,
+    "GBs": 152.7777316322288,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 14.066676298777262,
+    "GBs": 167.72234960756725,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 17.290671666463215,
+    "GBs": 136.44906603461004,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 13.914664586385092,
+    "GBs": 169.55464397672014,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 16.312003135681152,
+    "GBs": 144.63557788554098,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 14.91999626159668,
+    "GBs": 158.129798334649,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 4) serial",
+   "best_us": 11.973341306050619,
+   "speedup": 1.2244979573143413
+  },
+  {
+   "mode": "flush",
+   "shape": "4096x1024",
+   "name": "shared down",
+   "MB": 2.359296,
+   "sk": 2,
+   "copies": 3,
+   "rotation_MB": 7.077888,
+   "roof_GBs": 212.47247778123148,
+   "roof_valid": true,
+   "rows": 2,
+   "old_us": 15.976011753082275,
+   "old_GBs": 147.6774076324035,
+   "new (1, 4) split": {
+    "us": 14.898677666982016,
+    "GBs": 158.35606707759027,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 11.831998825073242,
+    "GBs": 199.39961412102284,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 14.994680881500244,
+    "GBs": 157.34219478527163,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 13.498663902282715,
+    "GBs": 174.77996467495032,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 14.06399408976237,
+    "GBs": 167.75433670847508,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 14.37598466873169,
+    "GBs": 164.11369755642255,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 16.501327355702717,
+    "GBs": 142.97613453408934,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 14.485339323679606,
+    "GBs": 162.87474854960354,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 16.541322072347004,
+    "GBs": 142.63043725774247,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 15.586674213409424,
+    "GBs": 151.36622269106428,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 16.181329886118572,
+    "GBs": 145.80359071870615,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 15.351990858713785,
+    "GBs": 153.68013319659218,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 17.05867052078247,
+    "GBs": 138.30479914162623,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 14.101346333821615,
+    "GBs": 167.30998190869946,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 17.250657081604004,
+    "GBs": 136.76557297727163,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 14.680008093516031,
+    "GBs": 160.71489776916883,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 4) serial",
+   "best_us": 11.831998825073242,
+   "speedup": 1.350237773792492
+  },
+  {
+   "mode": "flush",
+   "shape": "4096x1024",
+   "name": "shared down",
+   "MB": 2.359296,
+   "sk": 2,
+   "copies": 3,
+   "rotation_MB": 7.077888,
+   "roof_GBs": 212.47247778123148,
+   "roof_valid": true,
+   "rows": 4,
+   "old_us": 17.029325167338055,
+   "old_GBs": 138.54312938513198,
+   "new (1, 4) split": {
+    "us": 15.535990397135416,
+    "GBs": 151.86003207333445,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 13.50398858388265,
+    "GBs": 174.71104817252873,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 14.530658721923828,
+    "GBs": 162.36676155915075,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 14.282663663228353,
+    "GBs": 165.18599440762307,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 15.0453249613444,
+    "GBs": 156.81256510322532,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 12.866655985514322,
+    "GBs": 183.36512631224213,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 17.013331254323322,
+    "GBs": 138.6733711777034,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 18.421332041422527,
+    "GBs": 128.07412594783298,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 18.237332503000896,
+    "GBs": 129.36628751007228,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 14.274656772613525,
+    "GBs": 165.27864995860352,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 17.682671546936035,
+    "GBs": 133.42418275075673,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 16.053318977355957,
+    "GBs": 146.96624438397504,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 19.00800069173177,
+    "GBs": 124.12120760424123,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 14.765342076619467,
+    "GBs": 159.786071176494,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 17.962674299875896,
+    "GBs": 131.34436223765968,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 14.578660329182943,
+    "GBs": 161.83215375950982,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 6) serial",
+   "best_us": 12.866655985514322,
+   "speedup": 1.3235237801111799
+  },
+  {
+   "mode": "flush",
+   "shape": "4096x1024",
+   "name": "shared down",
+   "MB": 2.359296,
+   "sk": 2,
+   "copies": 3,
+   "rotation_MB": 7.077888,
+   "roof_GBs": 212.47247778123148,
+   "roof_valid": true,
+   "rows": 8,
+   "old_us": 18.178661664326984,
+   "old_GBs": 129.78381156792085,
+   "new (1, 4) split": {
+    "us": 17.792006333669026,
+    "GBs": 132.60426934175172,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 14.072000980377197,
+    "GBs": 167.6588854200577,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 16.879995663960774,
+    "GBs": 139.76875628215697,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 14.335989952087402,
+    "GBs": 164.57154391744484,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 17.448008060455322,
+    "GBs": 135.21864454815204,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 13.583997885386148,
+    "GBs": 173.68200583556944,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 17.090678215026855,
+    "GBs": 138.04577971198393,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 16.973336537679035,
+    "GBs": 139.00013086776482,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 22.138675053914387,
+    "GBs": 106.56897913964583,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 15.664001305898031,
+    "GBs": 150.61898642153741,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 23.352007071177166,
+    "GBs": 101.03182963283801,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 15.231986840566,
+    "GBs": 154.8908901179389,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 22.554655869801838,
+    "GBs": 104.60350242624777,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 15.968004862467447,
+    "GBs": 147.75145801373657,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 20.229339599609375,
+    "GBs": 116.6274355315859,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 15.896002451578775,
+    "GBs": 148.42071188569028,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 6) serial",
+   "best_us": 13.583997885386148,
+   "speedup": 1.3382409079939448
+  },
+  {
+   "mode": "flush",
+   "shape": "4096x1024",
+   "name": "shared down",
+   "MB": 2.359296,
+   "sk": 2,
+   "copies": 3,
+   "rotation_MB": 7.077888,
+   "roof_GBs": 212.47247778123148,
+   "roof_valid": true,
+   "rows": 16,
+   "old_us": 19.877334435780842,
+   "old_GBs": 118.69277581570859,
+   "new (1, 4) split": {
+    "us": 21.298666795094807,
+    "GBs": 110.77200383938388,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 14.618674914042154,
+    "GBs": 161.3891829370765,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 21.57066265741984,
+    "GBs": 109.37522121919854,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 15.832006931304932,
+    "GBs": 149.02065229234574,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 21.941343943277996,
+    "GBs": 107.52741518929608,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 15.898664792378744,
+    "GBs": 148.39585781637226,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 21.42133315404256,
+    "GBs": 110.13768298331898,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 18.549323081970215,
+    "GBs": 127.19040956773327,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 32.3866605758667,
+    "GBs": 72.84776997842306,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 15.605330467224121,
+    "GBs": 151.1852635838267,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 25.080005327860516,
+    "GBs": 94.07079341323501,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 17.06133286158244,
+    "GBs": 138.28321732779176,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 26.03733539581299,
+    "GBs": 90.61203706656534,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 16.89066489537557,
+    "GBs": 139.68046933699708,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 26.144007841746014,
+    "GBs": 90.2423229935214,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 16.821324825286865,
+    "GBs": 140.25625356531722,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 4) serial",
+   "best_us": 14.618674914042154,
+   "speedup": 1.3597220372338545
+  },
+  {
+   "mode": "flush",
+   "shape": "4096x1536",
+   "name": "index q_b",
+   "MB": 3.538944,
+   "sk": 2,
+   "copies": 3,
+   "rotation_MB": 10.616832,
+   "roof_GBs": 260.01264686906444,
+   "roof_valid": false,
+   "rows": 1,
+   "old_us": 22.01332648595174,
+   "old_GBs": 160.76370839538725,
+   "new (1, 4) split": {
+    "us": 19.458671410878498,
+    "GBs": 181.86976516914356,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 18.517335255940754,
+    "GBs": 191.11518753027013,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 20.04532019297282,
+    "GBs": 176.5471424717191,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 19.338667392730713,
+    "GBs": 182.99833841344557,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 19.850651423136394,
+    "GBs": 178.27848187769186,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 18.999993801116943,
+    "GBs": 186.26027129503368,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 19.57601308822632,
+    "GBs": 180.77960941538407,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 24.15732542673747,
+    "GBs": 146.49568764276677,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 26.802659034729004,
+    "GBs": 132.03704883961268,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 20.248015721638996,
+    "GBs": 174.77979317340913,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 26.29599968592326,
+    "GBs": 134.58107857730403,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 21.253347396850586,
+    "GBs": 166.51231139827019,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 25.645335515340168,
+    "GBs": 137.9956209924851,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 21.90933624903361,
+    "GBs": 161.5267555244216,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 24.485329786936443,
+    "GBs": 144.53323809786374,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 21.720012029012043,
+    "GBs": 162.93471639301723,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 4) serial",
+   "best_us": 18.517335255940754,
+   "speedup": 1.1887955897374272
+  },
+  {
+   "mode": "flush",
+   "shape": "4096x1536",
+   "name": "index q_b",
+   "MB": 3.538944,
+   "sk": 2,
+   "copies": 3,
+   "rotation_MB": 10.616832,
+   "roof_GBs": 260.01264686906444,
+   "roof_valid": false,
+   "rows": 2,
+   "old_us": 23.1706698735555,
+   "old_GBs": 152.73378021923173,
+   "new (1, 4) split": {
+    "us": 22.210657596588135,
+    "GBs": 159.3353994410157,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 20.733336607615154,
+    "GBs": 170.68859040759412,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 21.33868137995402,
+    "GBs": 165.84642401214884,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 20.280003547668457,
+    "GBs": 174.50411148507237,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 21.498680114746094,
+    "GBs": 164.61215205358647,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 20.570675532023113,
+    "GBs": 172.03829764806696,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 20.85067828496297,
+    "GBs": 169.728003647354,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 23.77067009607951,
+    "GBs": 148.8785964255874,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 24.637341499328613,
+    "GBs": 143.64147203530214,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 20.93064785003662,
+    "GBs": 169.07952517073227,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 23.389339447021484,
+    "GBs": 151.30585487529308,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 21.4000145594279,
+    "GBs": 165.37110244352138,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 26.029328505198162,
+    "GBs": 135.95986539926525,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 21.49065335591634,
+    "GBs": 164.67363469085666,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 24.821341037750244,
+    "GBs": 142.57666395291437,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 21.56531810760498,
+    "GBs": 164.10349164995606,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 4) serial pdl",
+   "best_us": 20.280003547668457,
+   "speedup": 1.142537762337787
+  },
+  {
+   "mode": "flush",
+   "shape": "4096x1536",
+   "name": "index q_b",
+   "MB": 3.538944,
+   "sk": 2,
+   "copies": 3,
+   "rotation_MB": 10.616832,
+   "roof_GBs": 260.01264686906444,
+   "roof_valid": false,
+   "rows": 4,
+   "old_us": 22.78933922449748,
+   "old_GBs": 155.28945201692378,
+   "new (1, 4) split": {
+    "us": 22.76267608006795,
+    "GBs": 155.47135088825794,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 20.90666691462199,
+    "GBs": 169.2734673801535,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 22.325336933135986,
+    "GBs": 158.51693573983133,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 20.389318466186523,
+    "GBs": 173.5685283384511,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 23.49601189295451,
+    "GBs": 150.61892273987075,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 19.866665204366047,
+    "GBs": 178.13477821241258,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 23.47467343012492,
+    "GBs": 150.75583524235495,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 22.093335787455242,
+    "GBs": 160.18151509784403,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 27.613321940104168,
+    "GBs": 128.16074819524775,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 20.592013994852703,
+    "GBs": 171.860023059649,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 25.413334369659424,
+    "GBs": 139.2553983087355,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 23.21334679921468,
+    "GBs": 152.4529845097444,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 26.872018973032635,
+    "GBs": 131.69624521147819,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 22.551993529001873,
+    "GBs": 156.92377684699653,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 26.362677415211994,
+    "GBs": 134.24068975474896,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 22.18933900197347,
+    "GBs": 159.48848227003313,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 6) serial",
+   "best_us": 19.866665204366047,
+   "speedup": 1.1471144749290445
+  },
+  {
+   "mode": "flush",
+   "shape": "4096x1536",
+   "name": "index q_b",
+   "MB": 3.538944,
+   "sk": 2,
+   "copies": 3,
+   "rotation_MB": 10.616832,
+   "roof_GBs": 260.01264686906444,
+   "roof_valid": false,
+   "rows": 8,
+   "old_us": 25.26398499806722,
+   "old_GBs": 140.078613895264,
+   "new (1, 4) split": {
+    "us": 24.90133047103882,
+    "GBs": 142.1186712941272,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 21.482686201731365,
+    "GBs": 164.73470620795942,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 24.930675824483234,
+    "GBs": 141.95138651333997,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 20.802656809488933,
+    "GBs": 170.11980884988424,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 24.237334728240967,
+    "GBs": 146.01209413824193,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 21.493335564931233,
+    "GBs": 164.6530846414635,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 24.002671241760254,
+    "GBs": 147.43958971711805,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 22.367993990580242,
+    "GBs": 158.21463478085445,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 29.920001824696858,
+    "GBs": 118.28020669032348,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 21.709342797597248,
+    "GBs": 163.01479197203906,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 28.66665522257487,
+    "GBs": 123.45158416713703,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 24.728000164031982,
+    "GBs": 143.11484861390278,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 28.98933490117391,
+    "GBs": 122.07744717374293,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 22.97333876291911,
+    "GBs": 154.04569777694445,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 27.640004952748615,
+    "GBs": 128.03702481421138,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 23.482660452524822,
+    "GBs": 150.70455952615444,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 4) serial pdl",
+   "best_us": 20.802656809488933,
+   "speedup": 1.21445953896347
+  },
+  {
+   "mode": "flush",
+   "shape": "4096x1536",
+   "name": "index q_b",
+   "MB": 3.538944,
+   "sk": 2,
+   "copies": 3,
+   "rotation_MB": 10.616832,
+   "roof_GBs": 260.01264686906444,
+   "roof_valid": false,
+   "rows": 16,
+   "old_us": 27.63468027114868,
+   "old_GBs": 128.06169513365958,
+   "new (1, 4) split": {
+    "us": 28.330663839975994,
+    "GBs": 124.91567511405687,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 22.517343362172443,
+    "GBs": 157.1652544920187,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 28.455992539723713,
+    "GBs": 124.36550912992193,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 23.069341977437336,
+    "GBs": 153.40463561818177,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 28.60267957051595,
+    "GBs": 123.72770849231881,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 22.90666103363037,
+    "GBs": 154.4941008558299,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 28.874655564626057,
+    "GBs": 122.56229315287527,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 23.19200833638509,
+    "GBs": 152.5932531874732,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 38.09332847595215,
+    "GBs": 92.90193694242528,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 24.38400189081828,
+    "GBs": 145.13384701354448,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 31.754672527313232,
+    "GBs": 111.44640200449362,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 26.338656743367512,
+    "GBs": 134.36311633056846,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 33.285319805145264,
+    "GBs": 106.32146606123185,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 24.914662043253582,
+    "GBs": 142.04262509586312,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 33.30932060877482,
+    "GBs": 106.24485685450219,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 24.237334728240967,
+    "GBs": 146.01209413824193,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 4) serial",
+   "best_us": 22.517343362172443,
+   "speedup": 1.2272620187323255
+  },
+  {
+   "mode": "flush",
+   "shape": "160x4096",
+   "name": "index k",
+   "MB": 0.434176,
+   "sk": 8,
+   "copies": 3,
+   "rotation_MB": 1.302528,
+   "roof_GBs": 151.5975969618314,
+   "roof_valid": true,
+   "rows": 1,
+   "old_us": 9.6320112546285,
+   "old_GBs": 45.076359290108186,
+   "new (1, 4) split": {
+    "us": 7.272005081176758,
+    "GBs": 59.70512879918691,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 21.050671736399334,
+    "GBs": 20.625280059317706,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 7.703999678293864,
+    "GBs": 56.35721938349731,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 23.197333017985027,
+    "GBs": 18.71663435031005,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 6.354669729868571,
+    "GBs": 68.32392845835275,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 19.133329391479492,
+    "GBs": 22.692130110578063,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 7.815996805826823,
+    "GBs": 55.54966446203278,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 19.421319166819256,
+    "GBs": 22.355638989846618,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 8.925318717956543,
+    "GBs": 48.64543370608112,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 19.65065797170003,
+    "GBs": 22.09473090546282,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 6.925324598948161,
+    "GBs": 62.69395662203963,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 23.117343584696453,
+    "GBs": 18.781396677748994,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 7.10133711496989,
+    "GBs": 61.14003503435155,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 25.688012440999348,
+    "GBs": 16.9018915339294,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 6.760001182556152,
+    "GBs": 64.22720769936691,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 25.68000555038452,
+    "GBs": 16.90716145478009,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 6) split",
+   "best_us": 6.354669729868571,
+   "speedup": 1.5157375070738273
+  },
+  {
+   "mode": "flush",
+   "shape": "160x4096",
+   "name": "index k",
+   "MB": 0.434176,
+   "sk": 8,
+   "copies": 3,
+   "rotation_MB": 1.302528,
+   "roof_GBs": 151.5975969618314,
+   "roof_valid": true,
+   "rows": 2,
+   "old_us": 8.35732618967692,
+   "old_GBs": 51.95154408790457,
+   "new (1, 4) split": {
+    "us": 7.5893402099609375,
+    "GBs": 57.208662148278464,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 20.49066623051961,
+    "GBs": 21.18896453221814,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 8.362670739491781,
+    "GBs": 51.91834206142449,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 21.4959979057312,
+    "GBs": 20.197992291590296,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 7.573326428731282,
+    "GBs": 57.32962973216712,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 19.018669923146565,
+    "GBs": 22.828936079887928,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 8.066674073537191,
+    "GBs": 53.82342165333281,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 21.39999469121297,
+    "GBs": 20.288603163919312,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 8.938650290171305,
+    "GBs": 48.57288135294968,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 21.960000197092693,
+    "GBs": 19.771220223280373,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 6.669342517852783,
+    "GBs": 65.10027020471342,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 21.642665068308514,
+    "GBs": 20.061115330743927,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 7.677336533864339,
+    "GBs": 56.55294620535024,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 25.25333563486735,
+    "GBs": 17.192817862862125,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 7.674654324849446,
+    "GBs": 56.57271085085871,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 25.746663411458332,
+    "GBs": 16.86338897826946,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 8) split pdl",
+   "best_us": 6.669342517852783,
+   "speedup": 1.253095963703419
+  },
+  {
+   "mode": "flush",
+   "shape": "160x4096",
+   "name": "index k",
+   "MB": 0.434176,
+   "sk": 8,
+   "copies": 3,
+   "rotation_MB": 1.302528,
+   "roof_GBs": 151.5975969618314,
+   "roof_valid": true,
+   "rows": 4,
+   "old_us": 8.62133502960205,
+   "old_GBs": 50.36064582912294,
+   "new (1, 4) split": {
+    "us": 8.367995421091715,
+    "GBs": 51.885305637912985,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 20.733336607615154,
+    "GBs": 20.940961323153907,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 9.770671526590982,
+    "GBs": 44.43665911993721,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 21.853327751159668,
+    "GBs": 19.867729297061405,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 7.885336875915527,
+    "GBs": 55.06118594959711,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 18.338680267333984,
+    "GBs": 23.675422313424686,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 8.26666752497355,
+    "GBs": 52.52128486942979,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 20.901342233022053,
+    "GBs": 20.772637238293957,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 8.093337217966715,
+    "GBs": 53.64610275179882,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 21.83733383814494,
+    "GBs": 19.88228064918766,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 9.818673133850098,
+    "GBs": 44.2194168276331,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 20.927985509236652,
+    "GBs": 20.746191734908006,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 8.207996686299643,
+    "GBs": 52.89670751508755,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 24.165332317352295,
+    "GBs": 17.966895480606865,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 8.536001046498617,
+    "GBs": 50.86409873134853,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 27.213335037231445,
+    "GBs": 15.954531093156708,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 6) split",
+   "best_us": 7.885336875915527,
+   "speedup": 1.0933375663295388
+  },
+  {
+   "mode": "flush",
+   "shape": "160x4096",
+   "name": "index k",
+   "MB": 0.434176,
+   "sk": 8,
+   "copies": 3,
+   "rotation_MB": 1.302528,
+   "roof_GBs": 151.5975969618314,
+   "roof_valid": true,
+   "rows": 8,
+   "old_us": 9.349326292673746,
+   "old_GBs": 46.439281976951214,
+   "new (1, 4) split": {
+    "us": 9.22932227452596,
+    "GBs": 47.04310750946231,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 20.922680695851643,
+    "GBs": 20.751451800633006,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 11.67734464009603,
+    "GBs": 37.18105557227345,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 23.738662401835125,
+    "GBs": 18.28982579770105,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 9.911994139353434,
+    "GBs": 43.803092888866615,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 19.525329271952312,
+    "GBs": 22.236552016753127,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 11.02668046951294,
+    "GBs": 39.37504140075785,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 21.39200766881307,
+    "GBs": 20.296178213930595,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 8.706669012705484,
+    "GBs": 49.86706160144767,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 22.912005583445232,
+    "GBs": 18.949716052518255,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 11.970659097035727,
+    "GBs": 36.2700162522809,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 20.954668521881104,
+    "GBs": 20.71977419001539,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 10.261336962381998,
+    "GBs": 42.3118353477414,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 25.352001190185547,
+    "GBs": 17.125906422254406,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 10.783990224202475,
+    "GBs": 40.26116409356346,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 25.165319442749023,
+    "GBs": 17.252950076304348,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 8) split",
+   "best_us": 8.706669012705484,
+   "speedup": 1.073812071991073
+  },
+  {
+   "mode": "flush",
+   "shape": "160x4096",
+   "name": "index k",
+   "MB": 0.434176,
+   "sk": 8,
+   "copies": 3,
+   "rotation_MB": 1.302528,
+   "roof_GBs": 151.5975969618314,
+   "roof_valid": true,
+   "rows": 16,
+   "old_us": 10.405321915944418,
+   "old_GBs": 41.72633999287401,
+   "new (1, 4) split": {
+    "us": 13.559997081756592,
+    "GBs": 32.01888594682175,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 20.778656005859375,
+    "GBs": 20.89528792803378,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 13.919989267985025,
+    "GBs": 31.190828645146556,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 22.42400248845418,
+    "GBs": 19.362109874165036,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 13.301332791646322,
+    "GBs": 32.64154102457138,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 19.8399821917216,
+    "GBs": 21.883890610605672,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 14.800012111663818,
+    "GBs": 29.336192208777177,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 21.824002265930176,
+    "GBs": 19.894426086905224,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 13.839999834696451,
+    "GBs": 31.371098640589157,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 20.79466978708903,
+    "GBs": 20.87919666171235,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 21.808008352915447,
+    "GBs": 19.909016585733117,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 21.439989407857258,
+    "GBs": 20.250756273269637,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 13.927996158599854,
+    "GBs": 31.172897741784457,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 26.25066041946411,
+    "GBs": 16.539621977589217,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 15.829344590504965,
+    "GBs": 27.428551922512007,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 26.455998420715332,
+    "GBs": 16.41124984570741,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 6) split",
+   "best_us": 13.301332791646322,
+   "speedup": 0.7822766394116013
+  },
+  {
+   "mode": "flush",
+   "shape": "1024x4096",
+   "name": "(1,16,8) grid",
+   "MB": 2.359296,
+   "sk": 8,
+   "copies": 3,
+   "rotation_MB": 7.077888,
+   "roof_GBs": 210.7013114349277,
+   "roof_valid": true,
+   "rows": 1,
+   "old_us": 16.43999417622884,
+   "old_GBs": 143.5095398884866,
+   "new (1, 4) split": {
+    "us": 12.664000193277994,
+    "GBs": 186.2994286159523,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 20.927985509236652,
+    "GBs": 112.73402301233031,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 13.986666997273764,
+    "GBs": 168.6817881958487,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 24.3413249651591,
+    "GBs": 96.9255372654107,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 13.061324755350748,
+    "GBs": 180.63221336208508,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 18.946667512257893,
+    "GBs": 124.52300640593445,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 14.824012915293375,
+    "GBs": 159.15366597974312,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 23.754676183064777,
+    "GBs": 99.31922379484983,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 16.83199405670166,
+    "GBs": 140.167349872646,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 19.453346729278564,
+    "GBs": 121.27969715612505,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 20.15465497970581,
+    "GBs": 117.05960743935482,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 30.800004800160725,
+    "GBs": 76.60050754237831,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 17.559985319773357,
+    "GBs": 134.35637655934275,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 25.162657101949055,
+    "GBs": 93.7617990993985,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 17.658670743306477,
+    "GBs": 133.60552638959487,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 35.71200370788574,
+    "GBs": 66.06450926972302,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 4) split",
+   "best_us": 12.664000193277994,
+   "speedup": 1.298167555695011
+  },
+  {
+   "mode": "flush",
+   "shape": "1024x4096",
+   "name": "(1,16,8) grid",
+   "MB": 2.359296,
+   "sk": 8,
+   "copies": 3,
+   "rotation_MB": 7.077888,
+   "roof_GBs": 210.7013114349277,
+   "roof_valid": true,
+   "rows": 2,
+   "old_us": 16.21866226196289,
+   "old_GBs": 145.4679776847676,
+   "new (1, 4) split": {
+    "us": 15.234669049580893,
+    "GBs": 154.86362009714313,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 22.44534095128377,
+    "GBs": 105.11294994897634,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 14.01601235071818,
+    "GBs": 168.32861879428282,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 24.501343568166096,
+    "GBs": 96.29251528334008,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 14.538665612538656,
+    "GBs": 162.27734118633694,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 19.919991493225098,
+    "GBs": 118.43860479571038,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 15.14132817586263,
+    "GBs": 155.81829893635378,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 22.717336813608807,
+    "GBs": 103.85442709933609,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 17.498672008514404,
+    "GBs": 134.82714567437043,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 25.24799108505249,
+    "GBs": 93.44489991509734,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 21.146655082702637,
+    "GBs": 111.56828305814838,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 22.778669993082683,
+    "GBs": 103.57479171156434,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 18.941322962443035,
+    "GBs": 124.55814225215555,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 26.770671208699543,
+    "GBs": 88.12987846316346,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 19.269347190856934,
+    "GBs": 122.43777522050443,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 28.408010800679524,
+    "GBs": 83.05037676004986,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 4) split pdl",
+   "best_us": 14.01601235071818,
+   "speedup": 1.1571523951412506
+  },
+  {
+   "mode": "flush",
+   "shape": "1024x4096",
+   "name": "(1,16,8) grid",
+   "MB": 2.359296,
+   "sk": 8,
+   "copies": 3,
+   "rotation_MB": 7.077888,
+   "roof_GBs": 210.7013114349277,
+   "roof_valid": true,
+   "rows": 4,
+   "old_us": 17.744004726409912,
+   "old_GBs": 132.9629943396295,
+   "new (1, 4) split": {
+    "us": 16.472001870473225,
+    "GBs": 143.23067824738047,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 22.229333718617756,
+    "GBs": 106.1343551662107,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 17.072002092997234,
+    "GBs": 138.19679655309787,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 24.421334266662598,
+    "GBs": 96.60798931943121,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 17.842670281728108,
+    "GBs": 132.2277418540907,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 20.039995511372883,
+    "GBs": 117.72936768678804,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 17.751991748809814,
+    "GBs": 132.90317128263533,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 22.67467975616455,
+    "GBs": 104.04980468835859,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 20.752012729644775,
+    "GBs": 113.68998423124934,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 19.522666931152344,
+    "GBs": 120.84906269825606,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 20.431995391845703,
+    "GBs": 115.47066034194496,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 27.506669362386067,
+    "GBs": 85.77178025145473,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 21.552006403605144,
+    "GBs": 109.46990065877789,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 26.58398946126302,
+    "GBs": 88.74875621801833,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 21.848003069559734,
+    "GBs": 107.98680284364968,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 29.690682888031006,
+    "GBs": 79.46250373887783,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 4) split",
+   "best_us": 16.472001870473225,
+   "speedup": 1.077222117016439
+  },
+  {
+   "mode": "flush",
+   "shape": "1024x4096",
+   "name": "(1,16,8) grid",
+   "MB": 2.359296,
+   "sk": 8,
+   "copies": 3,
+   "rotation_MB": 7.077888,
+   "roof_GBs": 210.7013114349277,
+   "roof_valid": true,
+   "rows": 8,
+   "old_us": 19.781331221262615,
+   "old_GBs": 119.2688183424194,
+   "new (1, 4) split": {
+    "us": 20.087997118632,
+    "GBs": 117.44804552026285,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 23.138682047526043,
+    "GBs": 101.96328361114469,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 20.57333787282308,
+    "GBs": 114.67735642044636,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 26.871999104817707,
+    "GBs": 87.7975617220461,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 21.048009395599365,
+    "GBs": 112.0911700321301,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 20.821332931518555,
+    "GBs": 113.31147759654648,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 20.479996999104817,
+    "GBs": 115.20001688003788,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 24.25066630045573,
+    "GBs": 97.28788358922999,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 24.922668933868408,
+    "GBs": 94.66466076567981,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 20.114680131276447,
+    "GBs": 117.29224549444936,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 24.97599522272746,
+    "GBs": 94.46254209134003,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 30.34398953119914,
+    "GBs": 77.7516745968494,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 28.13599507013957,
+    "GBs": 83.85329874129441,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 24.890661239624023,
+    "GBs": 94.78639306874587,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 26.01333459218343,
+    "GBs": 90.69563887087851,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 27.938663959503174,
+    "GBs": 84.44555557201221,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 4) split",
+   "best_us": 20.087997118632,
+   "speedup": 0.9847338738870614
+  },
+  {
+   "mode": "flush",
+   "shape": "1024x4096",
+   "name": "(1,16,8) grid",
+   "MB": 2.359296,
+   "sk": 8,
+   "copies": 3,
+   "rotation_MB": 7.077888,
+   "roof_GBs": 210.7013114349277,
+   "roof_valid": true,
+   "rows": 16,
+   "old_us": 21.80798848470052,
+   "old_GBs": 108.18494340526516,
+   "new (1, 4) split": {
+    "us": 26.573320229848225,
+    "GBs": 88.78438898839384,
+    "same_bits": true
+   },
+   "new (1, 4) serial": {
+    "us": 23.189345995585125,
+    "GBs": 101.74051482302139,
+    "same_bits": true
+   },
+   "new (1, 4) split pdl": {
+    "us": 24.927993615468342,
+    "GBs": 94.64444015807223,
+    "same_bits": true
+   },
+   "new (1, 4) serial pdl": {
+    "us": 27.189334233601887,
+    "GBs": 86.7728492257184,
+    "same_bits": true
+   },
+   "new (1, 6) split": {
+    "us": 26.301344235738117,
+    "GBs": 89.70248740344617,
+    "same_bits": true
+   },
+   "new (1, 6) serial": {
+    "us": 20.818670590718586,
+    "GBs": 113.32596813611266,
+    "same_bits": true
+   },
+   "new (1, 6) split pdl": {
+    "us": 26.181340217590332,
+    "GBs": 90.1136450766898,
+    "same_bits": true
+   },
+   "new (1, 6) serial pdl": {
+    "us": 23.365318775177002,
+    "GBs": 100.97426971578423,
+    "same_bits": true
+   },
+   "new (1, 8) split": {
+    "us": 34.973323345184326,
+    "GBs": 67.45987439380322,
+    "same_bits": true
+   },
+   "new (1, 8) serial": {
+    "us": 20.05600929260254,
+    "GBs": 117.63536631737615,
+    "same_bits": true
+   },
+   "new (1, 8) split pdl": {
+    "us": 33.49334001541138,
+    "GBs": 70.44075027794813,
+    "same_bits": true
+   },
+   "new (1, 8) serial pdl": {
+    "us": 33.40266148249308,
+    "GBs": 70.63197647398691,
+    "same_bits": true
+   },
+   "new (2, 4) split": {
+    "us": 35.38399934768677,
+    "GBs": 66.67691734948664,
+    "same_bits": true
+   },
+   "new (2, 4) serial": {
+    "us": 25.24799108505249,
+    "GBs": 93.44489991509734,
+    "same_bits": true
+   },
+   "new (2, 4) split pdl": {
+    "us": 36.7706815401713,
+    "GBs": 64.16242237507923,
+    "same_bits": true
+   },
+   "new (2, 4) serial pdl": {
+    "us": 29.501338799794514,
+    "GBs": 79.97250619746224,
+    "same_bits": true
+   },
+   "auto serial": false,
+   "best_new": "new (1, 8) serial",
+   "best_us": 20.05600929260254,
+   "speedup": 1.087354326902121
+  }
+ ],
+ "gate": {
+  "modes": [
+   "rotate",
+   "flush"
+  ],
+  "per_shape": {
+   "4096x4096": {
+    "name": "KDA o",
+    "modes": {
+     "rotate": {
+      "rows": 0,
+      "valid": 0,
+      "geomean": null,
+      "min": null,
+      "pass": false,
+      "mb": null
+     },
+     "flush": {
+      "rows": 0,
+      "valid": 0,
+      "geomean": null,
+      "min": null,
+      "pass": false,
+      "mb": null
+     }
+    },
+    "measured": false,
+    "pass": false
+   },
+   "2048x4096": {
+    "name": "shared gate/up",
+    "modes": {
+     "rotate": {
+      "rows": 0,
+      "valid": 0,
+      "geomean": null,
+      "min": null,
+      "pass": false,
+      "mb": null
+     },
+     "flush": {
+      "rows": 0,
+      "valid": 0,
+      "geomean": null,
+      "min": null,
+      "pass": false,
+      "mb": null
+     }
+    },
+    "measured": false,
+    "pass": false
+   },
+   "4096x1024": {
+    "name": "shared down",
+    "modes": {
+     "rotate": {
+      "rows": 5,
+      "valid": 5,
+      "geomean": 1.4964736440588566,
+      "min": 1.4836228076483249,
+      "pass": true,
+      "mb": 2.359296
+     },
+     "flush": {
+      "rows": 5,
+      "valid": 5,
+      "geomean": 1.3183080408380266,
+      "min": 1.2244979573143413,
+      "pass": true,
+      "mb": 2.359296
+     }
+    },
+    "measured": true,
+    "pass": true
+   },
+   "8192x1536": {
+    "name": "DSA q_b",
+    "modes": {
+     "rotate": {
+      "rows": 0,
+      "valid": 0,
+      "geomean": null,
+      "min": null,
+      "pass": false,
+      "mb": null
+     },
+     "flush": {
+      "rows": 0,
+      "valid": 0,
+      "geomean": null,
+      "min": null,
+      "pass": false,
+      "mb": null
+     }
+    },
+    "measured": false,
+    "pass": false
+   },
+   "8192x512": {
+    "name": "DSA kv_b",
+    "modes": {
+     "rotate": {
+      "rows": 5,
+      "valid": 5,
+      "geomean": 1.3351235560676595,
+      "min": 1.2840860208205458,
+      "pass": true,
+      "mb": 2.359296
+     },
+     "flush": {
+      "rows": 5,
+      "valid": 5,
+      "geomean": 1.2955330491144534,
+      "min": 1.119541831978069,
+      "pass": true,
+      "mb": 2.359296
+     }
+    },
+    "measured": true,
+    "pass": true
+   },
+   "4096x1536": {
+    "name": "index q_b",
+    "modes": {
+     "rotate": {
+      "rows": 5,
+      "valid": 5,
+      "geomean": 1.3682427834485689,
+      "min": 1.3402487473941342,
+      "pass": true,
+      "mb": 3.538944
+     },
+     "flush": {
+      "rows": 5,
+      "valid": 0,
+      "geomean": null,
+      "min": null,
+      "pass": false,
+      "mb": 3.538944
+     }
+    },
+    "measured": false,
+    "pass": false
+   },
+   "160x4096": {
+    "name": "index k",
+    "modes": {
+     "rotate": {
+      "rows": 5,
+      "valid": 5,
+      "geomean": 1.227410229928952,
+      "min": 0.7744152587419648,
+      "pass": true,
+      "mb": 0.434176
+     },
+     "flush": {
+      "rows": 5,
+      "valid": 5,
+      "geomean": 1.117712861762327,
+      "min": 0.7822766394116013,
+      "pass": true,
+      "mb": 0.434176
+     }
+    },
+    "measured": true,
+    "pass": true
+   }
+  },
+  "passing": [
+   "4096x1024",
+   "8192x512",
+   "160x4096"
+  ],
+  "failing": [],
+  "unmeasured": [
+   "4096x4096",
+   "2048x4096",
+   "8192x1536",
+   "4096x1536"
+  ],
+  "line": "GATE item7: new >= 1.10x old cold on shapes < 8 MB (KDA o, shared gate/up/down, DSA q_b/kv, index) [rotate+flush]: passing ['4096x1024 (shared down)', '8192x512 (DSA kv_b)', '160x4096 (index k)']; failing none; not measured / invalid ['4096x4096 (KDA o)', '2048x4096 (shared gate/up)', '8192x1536 (DSA q_b)', '4096x1536 (index q_b)']",
+  "suggest_max_mb": null
+ }
+}

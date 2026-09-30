@@ -66,10 +66,16 @@ what upstream serves (plus the GLM tool-call parser, which only adds a format up
 | 0500 `glm-vision` | `GLM53_TF_VISION=0\|1` (rank 0; rank 1 follows the data); `GLM53_TF_VISION_MAX_IMAGES`, `_MAX_TOKENS`, `_LOW_TOKENS`, `_FETCH`, `_FETCH_TIMEOUT`, `_MAX_BYTES`, `_MAX_PIXELS`, `_CACHE_MB`, `_PREP_MB` | `0`; `8`, `0` (processor's 8,000), `0` (detail ignored), `1`, `10` s, 20 MiB, 64 M px, `256`, `256` | Image input: OpenAI `image_url` parts (`data:` and http(s) URLs) on chat completions and `/tokenize`. The LM is NoPE throughout (no M-RoPE: `qk_rope_head_dim` 0, transformers passes plain `arange` positions no layer reads), so an image is only its rows: rank 0 preprocesses exactly as transformers' `Glm5NextImageProcessor` (bit for bit on CPU), runs the BF16 tower (`vision.py`: 24 blocks, 2D axial RoPE, full attention, 2x2 merge + merger; 1.13 GB on rank 0; ~5.4 TFLOP / est. 75-90 ms for a 1024x768 screenshot = 1,036 rows), and ships the rows to rank 1 after the prompt; `glue.embed` substitutes them inside the prefill. Each image row is a **virtual token id** >= 2^24 derived from the preprocessed pixels, so every token-keyed cache (snapshots, session store, prefix share, NVMe tier) tells images apart unchanged, and shares state past an image only for the same pixels. The checkpoint's template renders images as a "cannot see" reminder; parts are rendered as the vision template's `<\|begin_of_image\|><\|image\|><\|end_of_image\|>` (prompt ids == `Glm5NextProcessor` with the vLLM kit's template). Text requests: same bits, same protocol. `docs/VISION.md` **W14: works on the GPU, one bug fixed (MTP head graphs in the prefill absorb); W15: adopted (`GLM53_TF_VISION=1`, 64 / 64 MB caches, image b7).** |
 | 0510 `glm-batch-graphs-lone` | `GLM53_TF_BATCH_GRAPHS=1\|0\|lone`; `GLM53_TF_VERIFY_SPLIT=0\|2..8` (+ `_FIRST=L`); `GLM53_TF_GRAPH_PROBE=N`; `GLM53_TF_RESIDENT_REPORT=N` | `1`; `0`; `0`; `0` | THEORY-2 ideas 1 and 2. `lone`: the batcher's CUDA graphs (0120 / 0200 rounds, 0450's resident rounds and batched MTP head passes) only for rounds with ONE active slot; rounds of 2+ slots run eagerly, exactly `0`'s path (W11 / W12: `0` is +1.9-2.6% at 4 streams but -2.7% for lone requests in slots 1-3); policy checked equal on both ranks. `VERIFY_SPLIT=N`: the engine's main graphs (the lone verify / serial step; 0050's long-context main graphs too) captured as N graphs over layer ranges and replayed back to back (`vsplit.py`), so the GPU starts on the first ~1/N of the ~1,650 nodes while the host launches the rest (W11: 1.1 ms a round inside `cudaGraphLaunch`, nsys-inflated). `GRAPH_PROBE=N`: every main-graph replay timed without per-node tracing (host `replay()` us per piece; first-node delay from a `%globaltimer` stamp captured as node 0 vs an eager stamp), one stderr line per key every N replays. `RESIDENT_REPORT=N`: 0450's resident rounds / entries / drains by reason every N drains. **Same bits** (same kernels in the same order; stamps write only the probe's buffer). CPU tests (`tests/test_batch_graphs_lone.py`, 44) + GPU test `tests/cuda/test_batch_graphs_lone_patches.py`; W13 (results/THEORY2-SESSION). **W16 (image b8): not adopted: `BATCH_GRAPHS=lone` 4 streams +0.4% (bar +0.7%), `VERIFY_SPLIT=4` 1 stream -0.5% (the real verify graph launch is ~11-14 us host; splitting only adds host time); same bits (RESULTS W16).** |
 | 0520 `glm-hc-fused` | `GLM53_TF_HC_CUDA=0\|1` (load-time, both ranks); `GLM53_TF_HC_CUDA_ROWS=1..64`; `GLM53_TF_HC_CUDA_RG=1\|2\|4\|8`; `GLM53_TF_HC_CUDA_PDL=0\|1` | `0`; `16`; `4`; `0` | THEORY-2 idea 3: a hyper-connection boundary (`glue.hc_post` + the next `glue.hc_pre` = Triton `_hc_post`, `_hc_partial`, `_hc_finish`) in one CUDA launch (`hc_fused.cu`) with the Triton kernels' bits on every output (x, normed, xs, post, comb, partials), in `layer_forward` / `compute_multi` (both boundaries of a layer; the next layer's first hc_pre skipped), windows of 1-16 rows, not fast chunks; used only after a load-time bitwise self-check passed on both ranks (Triton 3.7.1 arithmetic; under 3.8 it stays off). Microbenchmark: `tests/cuda/bench_hc_fused.py` (gate: <= 50% of the three kernels, cold). docs/HC-FUSED.md. **W16: not adopted: the microbenchmark gate failed (fused / Triton 0.58x at 1 row, 0.92-0.98x at 2-4, 1.1-1.4x at 6-16, same bits), so no server load (RESULTS W16).** |
-| 0530 `glm-http-pin` | `GLM53_TF_CPU_PIN=http[=cpus][;engine=cpus\|fast]`; `GLM53_TF_ROCE_TRACE_DUMP=<prefix>` (+ `_EVERY=N`, needs 0460's `GLM53_TF_ROCE_TRACE`) | off; off (`16 x` the ring) | THEORY-2 idea 6. `http`: 0370's pinning reduced to rank 0's HTTP request threads (`tf-http`: tokenize, stream, detokenize) on the non-fast cores (GB10: the A725s 0-4, 10-14); nothing else moves (`engine=` also keeps every other thread on the given / fast cores); without batching the request thread decodes on the engine's cpus and goes back. `ROCE_TRACE_DUMP`: each rank appends 0460's exchange trace ring (`Runtime.trace_rows`) to `<prefix>-r<rank>.jsonl` every N exchanges, checked once a round (`cpupin.tick`), so transport vs skew is measured in a running server without nsys (`results/THEORY2-SESSION/rocetrace.py`). Host scheduling / reads only: **same bits**. CPU tests `tests/test_http_pin.py`. **W16: not adopted: `CPU_PIN=http` with locked clocks 4 streams +0.7%, inside the noise band (a trace-only load +1.1%) and confounded with the clock lock; RoCE skew 42.6 -> 29.1 us an exchange, not a clean A/B (RESULTS W16).** |
+| 0530 `glm-http-pin` | `GLM53_TF_CPU_PIN=http[=cpus][;engine=cpus\|fast]`; `GLM53_TF_ROCE_TRACE_DUMP=<prefix>` (+ `_EVERY=N`, needs 0460's `GLM53_TF_ROCE_TRACE`) | off; off (`16 x` the ring) | THEORY-2 idea 6. `http`: 0370's pinning reduced to rank 0's HTTP request threads (`tf-http`: tokenize, stream, detokenize) on the non-fast cores (GB10: the A725s 0-4, 10-14); nothing else moves (`engine=` also keeps every other thread on the given / fast cores); without batching the request thread decodes on the engine's cpus and goes back. `ROCE_TRACE_DUMP`: each rank appends 0460's exchange trace ring (`Runtime.trace_rows`) to `<prefix>-r<rank>.jsonl` every N exchanges, checked once a round (`cpupin.tick`), so transport vs skew is measured in a running server without nsys (`results/THEORY2-SESSION/rocetrace.py`). Host scheduling / reads only: **same bits**. CPU tests `tests/test_http_pin.py`. **W16: not adopted: `CPU_PIN=http` with locked clocks 4 streams +0.7%, inside the noise band (a trace-only load +1.1%) and confounded with the clock lock; RoCE skew 42.6 -> 29.1 us an exchange, not a clean A/B (RESULTS W16).** **W19 (image b10): adopted (`GLM53_TF_CPU_PIN=http`): no measurable GPU-idle change (within noise), no cost, every gate passed with it on (RESULTS W19).** |
 | 0540 `glm-replay-ttft` | `GLM53_TF_SNAPSHOT_BEFORE_END=1\|0` (load-time, both ranks, checked); `GLM53_TF_EMIT_FIRST=1\|0` (rank 0) | `1`; `1` | RigMark W13 fixes (docs/REPLAY-TTFT.md). A whole prompt's snapshot sits at its last grid point **strictly before** its end ((n - 1) // G * G; was n for a prompt ending on the grid, and n for every exact prompt), replacing the one at n: an identical prompt sent again (regenerate, retry, RigMark's immediate replay) resumes all but <= 64 tokens (W13: 0 / 16,384 / 49,152 of 8K / 32K / 64K). Off-grid prompts unchanged; one more chunk on a cold on-grid prompt (~0.2 s). A prompt's first token leaves when its batch piece ends instead of after the round's other pieces and verify launch (0370 `emit` held it): C4 TTFT est. 1.91 -> ~1.2 s. Same bits (a cut / snapshot on the 64-grid; scheduling). Multi-slot prefill analysed, not implemented (now 0560). **W15: adopted (image b7, both knobs default on): an identical 8K / 32K / 64K prompt resent resumes at n - 64, TTFT 0.21-0.26 s, byte-identical output (RESULTS W15 §6); C4 first tokens median 1.46 -> 0.93 s without thinking, unchanged with thinking; cold grid-aligned 8K -1.8%.** |
-| 0550 `glm-memory-safety` | `GLM53_TF_SELECT_SCRATCH=grow\|max\|off`; `GLM53_TF_ALLOC_TRIM_GB=N` (+ `_S`); `GLM53_TF_ADMIT_MEM=available\|free` (+ `GLM53_TF_ADMIT_CACHE_KEEP_GB`, `GLM53_TF_ADMIT_FREE_FLOOR_GB`); `GLM53_TF_DROP_OWN_CACHE=1\|0` | `grow`; `2` (10 s); `available` (2, 1); `1` | W15 memory findings (docs/MEMORY-SAFETY.md). **The needle dip**: 0065's prefill key blocks (~512 B a prompt position, <= `SELECT_MB`) grow every 512-row sub-block, so torch's caching allocator took a new segment every ~4k tokens and kept the old ones: reserved memory grew quadratically (bound 5.8 GiB at 314k, measured 4.5; 16 GiB at 1M) until the next CUDA graph capture emptied the cache (the MTP head's new pool bucket right after the prompt). Now one scratch per device / stream, grown before a prefill to its largest block (<= 256 MiB), plus a trim of the unused cache before a batch piece over 2 GiB (at most every 10 s). **Page cache**: admission and the session store count MemAvailable - MemFree less Dirty / Writeback / max(Mapped, 2 GiB), keep a 1 GiB free-now floor, reserve the prompt's scratch growth and log waits (W15: C4 serialized during a 36 GB copy). Same bits (views with the same shape / strides / alignment, every element written before read; trims and admission change addresses and scheduling only). CPU tests `tests/test_memory_safety.py`; **W17 (image b9): built into production, not adopted (knobs set off in `config/prod.env.example`: `GLM53_TF_ADMIT_MEM=free`, `GLM53_TF_SELECT_SCRATCH=off`, `GLM53_TF_ALLOC_TRIM_GB=0`; `DROP_OWN_CACHE` stays on).** GPU tests 25/25 on both nodes, the page-cache probe passed, the 314k needle's dip 1.7 instead of 4.0 GiB, same bits; but the first long prefill after a burst of short requests ran 1,454 / 1,550 tok/s (-9.8% / -3.5%) and 1,512 / 1,541 after the needle, in 2 of 4 prefill pairs, never with it off. Next: the same sequence with `GLM53_TF_ALLOC_TRIM_GB=0` only (RESULTS W17) |
+| 0550 `glm-memory-safety` | `GLM53_TF_SELECT_SCRATCH=grow\|max\|off`; `GLM53_TF_ALLOC_TRIM_GB=N` (+ `_S`); `GLM53_TF_ADMIT_MEM=available\|free` (+ `GLM53_TF_ADMIT_CACHE_KEEP_GB`, `GLM53_TF_ADMIT_FREE_FLOOR_GB`); `GLM53_TF_DROP_OWN_CACHE=1\|0` | `grow`; `2` (10 s); `available` (2, 1); `1` | W15 memory findings (docs/MEMORY-SAFETY.md). **The needle dip**: 0065's prefill key blocks (~512 B a prompt position, <= `SELECT_MB`) grow every 512-row sub-block, so torch's caching allocator took a new segment every ~4k tokens and kept the old ones: reserved memory grew quadratically (bound 5.8 GiB at 314k, measured 4.5; 16 GiB at 1M) until the next CUDA graph capture emptied the cache (the MTP head's new pool bucket right after the prompt). Now one scratch per device / stream, grown before a prefill to its largest block (<= 256 MiB), plus a trim of the unused cache before a batch piece over 2 GiB (at most every 10 s). **Page cache**: admission and the session store count MemAvailable - MemFree less Dirty / Writeback / max(Mapped, 2 GiB), keep a 1 GiB free-now floor, reserve the prompt's scratch growth and log waits (W15: C4 serialized during a 36 GB copy). Same bits (views with the same shape / strides / alignment, every element written before read; trims and admission change addresses and scheduling only). CPU tests `tests/test_memory_safety.py`; **W17 (image b9): built into production, not adopted (knobs set off in `config/prod.env.example`: `GLM53_TF_ADMIT_MEM=free`, `GLM53_TF_SELECT_SCRATCH=off`, `GLM53_TF_ALLOC_TRIM_GB=0`; `DROP_OWN_CACHE` stays on).** GPU tests 25/25 on both nodes, the page-cache probe passed, the 314k needle's dip 1.7 instead of 4.0 GiB, same bits; but the first long prefill after a burst of short requests ran 1,454 / 1,550 tok/s (-9.8% / -3.5%) and 1,512 / 1,541 after the needle, in 2 of 4 prefill pairs, never with it off. Next: the same sequence with `GLM53_TF_ALLOC_TRIM_GB=0` only (RESULTS W17) **W18: the slow prefills came from the trim (`ALLOC_TRIM_GB=2`); scratch only was as fast as off. W19 (image b10): scratch adopted (`GLM53_TF_SELECT_SCRATCH=grow`, trim 0, admission `free`): 314k needle minimum 6.58 / 6.31 -> 8.68 / 8.51 GiB, stress minimum 7.75 / 7.61 -> 8.34 / 8.09 GiB with the NCCL change; 0550 v2 (planned trims) proposed in MEMORY-SAFETY.md §6.** |
 | 0560 `glm-multi-prefill` | `GLM53_TF_MULTI_PREFILL=0\|1` (load-time, both ranks, checked); `GLM53_TF_MULTI_PREFILL_ROWS=N` (checked); `GLM53_TF_MULTI_PREFILL_WAIT_MS=ms` (rank 0) | `0`; the lean rows; `10` | RigMark C4 / agent bursts (docs/MULTI-PREFILL.md). A round's prefill pieces (fast lean, same knobs, <= ROWS piece rows) go through ONE forward: each member's rows contiguous and cut into its own lone sub-blocks (KDA / DSA / carries / commit / snapshots / marks / MTP absorb / taps / head / sample per member, in the lone order), the router and routed experts once over every row (the ~74 GB expert read paid once), in 0082's, 0084's and 0320's loops; each piece then ends in `Batcher._piece` as alone. Rank 0 takes more pieces a round when the fair share allows one (fewest left first) and, idle, waits <= 10 ms for more arrivals. **Same bits** a member as alone (0085's row-independent fast kernels; groups not formed under FAST_EXPERTS auto / once+min rows). Est. C4 first tokens ~0.6-0.8 s (thinking off / on; b7 0.93 / 1.9 s), bursts of short prompts 1.7-2.8x prefill tok/s. **W17 (image b9): adopted (`GLM53_TF_MULTI_PREFILL=1`).** 92/92 grouped replies == the same request alone on the real model, batchexact, transcripts, N1, 13/13 glmbench hashes; C4 per-stream first tokens (RigMark shape, thinking low) 1.64 -> 0.82 s, thinking off 0.92 -> 0.63, C2 0.69 -> 0.57; prefill and decode unchanged; -0.5 GiB on the worker in the 4 x 250k stress. RigMark (3 runs): C4 aggregate 91.0 tok/s, C4 TTFT 0.89 s. The GPU test's 4 `cached > 0` failures are its own expectation (same `cached` with the knob off; RESULTS W17) |
+| 0570 `glm-dense-size-switch` | `GLM53_TF_DEC_QMM_MAXMB=X` (MiB; `GLM53_TF_DEC_QMM_MAX_MB` is the same knob); `GLM53_TF_DEC_QMM_TABLE=1\|0`; `GLM53_TF_DEC_QMM_EXCLUDE=NxK,...` | `0` (off); `1`; none | THEORY-2 item 7 / W16 (0440's dense kernel wins cold on every shape up to 3.54 MB, loses 10-18% from 14 MB up): 0440's `q4_stream.cu` only for 4-bit matrices of <= X MiB (`Q4.nbytes`), `_qmm` + `_reduce` for every larger one; the size knob turns 0440's dense hook on by itself and keeps its Triton 3.7.x guard. At 3.5: KDA f_b / g_b, index k (<= 4 rows), shared down, index q_b, the (1,16,8) 1024 x 4096 grid, DSA kv_b (PDL column only); shared gate/up (4.72 MB) and everything larger stay on `_qmm`. `TABLE`: W16's cold placement per shape (groups a stage, stages, whole-tile / split, row cap; with and without `GLM53_TF_DEC_PDL`). **Same bits** (q4_stream == `_qmm` for every shape and row count; the switch picks by (shape, rows) only). Est. -0.15 to -0.23 ms a 1-stream round (+0.3-0.4%), 4 streams +0.15-0.25%: below one A/B's noise, adopt on an in-situ trace. CPU tests `tests/test_decode_size_switch.py` (16); `docs/DECODE-KERNELS-2.md` §4. **W19 (image b10): not adopted (off): the cold bench passed (every switched shape 1.0-1.7x faster), but in situ the switched shapes took 1.7x `_qmm` + `_reduce`'s time (dense decode +3-5%); removing it gave +1.2% 1 stream (RESULTS W19 §3).** |
+| 0580 `glm-expert-loads` | `GLM53_TF_DEC_EXPERT_LOADS=0\|1`; `GLM53_TF_DEC_EXPERT_LOADS_CFG=ld,nt,pd[/ld,nt,pd]` (ld `nc`\|`w32`\|`cpa`, nt 8\|4, pd 1\|2\|4); `GLM53_TF_DEC_EXPERT_LOADS_PDL=0\|1` | `0`; `nc,8,2`; `0` | THEORY-2 item 8 / W16 (`littles.cu`: `ld.global.nc.v4` into registers reaches 232.7 GB/s at 4 KB an SM in flight; cp.async needs 6 KB, TMA bulk 8-16 KB; E1's own ring shape alone reaches 234, so 0440's E1 lost in its persistent walk, not its loads). The two grouped launches of every <= 16-row routed window (decode, verify, MTP, DFlash2, 4-slot) through `exl3_ld.cu`'s `ld_kernel`: exl3.cu's grid, work items, per-warp K ranges, mma chain, warp sum order and Z rows, with a new load path -- the prologue in one round trip (grouping via `ld.global.cg`) with the first k steps of trellis words issued before the member rows land, a PD-deep register ring of 128-bit no_allocate loads a warp (lane-major v4 -> a warp staging area in the warp's own slice of `red` -> word `lane` of each tile), the A fragments PD steps ahead; `w32` / `cpa` are grouped_kernel's 32-bit loads made deeper / a cp.async ring. Default: 163 registers, 3 CTAs an SM (as today), 24 KB an SM in flight, 0 spills. `PDL`: the prologue before `griddepcontrol.wait` overlaps rot_in's / gateup_epilogue's tail (plain launches; X / Xd read, Z written after it). **Same bits** as exl3.cu for every row count and setting. rot_in / epilogues / grouped_loop unchanged. Est. 203 -> 220-230 GB/s in the 1-stream windows: -2.0 to -3.1 ms a round (+4.0-6.2%), 4 streams +0.4-3.1%; gate: probe 3 (load path alone) >= 220 GB/s and one config >= 1.05x grouped_kernel cold on U 8-22. CPU emulator + host tests (58), sm_121 compile / PTX / SASS (5); `docs/DECODE-KERNELS-2.md`. **W19 (image b10): adopted (`GLM53_TF_DEC_EXPERT_LOADS=1`, `_CFG=nc,8,1`): same bits; load probe 226-231 GB/s; the strict 1.05x kernel bar missed on some windows, but in situ the routed experts' decode time fell 4.1-4.6% (1 stream) / 2.9-3.1% (4 streams), the bulk of W19's +3.3% / +3.0% (RESULTS W19).** |
+| 0590 `glm-expert-prefill-v2` | `GLM53_TF_FAST_EXPERTS=fat2`; `GLM53_TF_FAT2_CFG=gu,dn` (0 = 128 members / 4 stages, 1 = 64 / 4, 2 = 128 / 3); `GLM53_TF_FAT2_TICKET=1\|0`; `GLM53_TF_FAT2_CTAS=N` | off (`fat`); `0,0`; `1`; `0` (every SM) | KINDLING-AUDIT adoption #2 / ROOFLINE gap 1: the fast-prefill routed experts as one persistent software-pipelined kernel a projection (`exl3_fat2.cu`): 256-thread CTAs (one an SM, 168 registers, 82 KB), 128-member items of the expert-sorted member lists from a device plan, claimed by ticket one item ahead, a 4-stage `cp.async` ring (member rows gathered by pair index, trellis words) that runs ACROSS items, the epilogue in its own buffer. **Same bits as fat** (fat's mma chain, K order and epilogue; emulator + PTX + SASS proofs), row-independent, shares snapshots. Expected 0.77-0.86x fat at 2,048 / 4,096 rows (DRAM-bound; the 0.75x gate sits on the DRAM floor), 0.65-0.76x at 8,192. **W19 (image b10): not adopted (off): same bits, but fat2 is 1.16x / 1.19x slower than fat at 2,048 / 4,096 rows (contended makespan 1.07x / 1.09x) (RESULTS W19 §1).** |
+| 0600 `glm-upstream-ports` | `GLM53_TF_DISCONNECT=0\|1`; `GLM53_TF_DISCONNECT_POLL_MS=N`; `GLM53_TF_VISION_FETCH_HTTP=0\|1`, `_FETCH_PRIVATE=0\|1` (local testing only), `_FETCH_TOTAL_S`, `_PREP_SLOTS`, `_PREP_WAITERS`, `_PREP_WAIT_S` (rank 0) | `1`; `250`; `0`, `0`, `30`, `16`, `128`, `60` | Host-only ports from upstream TensorFold (MIT; docs/UPSTREAM-050-AUDIT.md ranks 1-4, 6, 9; docs/UPSTREAM-PORTS.md). **Client disconnect** (24afe5e on our batcher): a socket check on every completion, streamed or not; the HTTP thread waiting in `Batcher._collect` polls it while queued / prefilling / decoding silently, so a departed client's request is dropped from the queue or cancelled through the round plan rank 1 receives (a non-streamed request no longer runs to `max_tokens`); a callback exception cancels the slot and is raised after; nothing more is written to a departed client. **Request hardening** (2bc35c4): `check` / `tokenize` exceptions are 400s (template refusals say so), strict sampling / length fields and `chat_template_kwargs` before a stream's headers, non-UTF-8 bodies, redacted tracebacks for 400 / 500. **`kill -USR1`** stacks on both CUDA ranks (a586f3d). **Image URLs** (391713e) for 0500: HTTPS on 443 to public addresses only (private / loopback / link-local / CGNAT / metadata / IPv6 equivalents refused), each redirect re-checked, the connection pinned to the checked address, declared JPEG / PNG / WebP / GIF, bounded size and time, <= 16 preparations at once then 503. **Small bundle**: `return_token_ids` (e6be5ff), `completion_tokens` exact at a stop string (88407d1, our 0160 scope), GLM tool arguments one bracket short closed (c30a1a9, #87). **`/health`** gains upstream's live totals (51b098d / c4bf25f) beside 0150's fields. **Same bits**; malformed requests that were accepted by accident are now 400s, image URLs that are not public HTTPS are 400s (UPSTREAM-PORTS.md 1.2, 1.4). Host tests (177). **W19 (image b10): on by default in production; every check passed (a departed client's slot freed 0.18 s after the close, 400s, USR1, image URL hardening, /health totals; RESULTS W19 §2).** |
+| 0610 `glm-structured-output` | `GLM53_TF_GRAMMAR=0\|1` (load-time, both ranks, checked); `GLM53_TF_GRAMMAR_THREADS=N` (rank-local, 0-64) | `0`; `4` | Structured output (docs/STRUCTURED-OUTPUT.md): OpenAI `response_format` (`json_object`, `json_schema`), vLLM `guided_json` / `_regex` / `_choice` / `_grammar` / `structured_outputs`, and tool calls (`tool_choice` required / a named function, or `strict` tools: GLM's `<tool_call>` markup, arguments held to each schema) enforced with xgrammar 0.2.8 token masks (Apache-2.0; the Dockerfile installs it, torch pinned) on the batcher (prod) and the lone loops. Drafts the grammar rejects are cut before the forward; each kept row is masked by its own path (-inf on this rank's vocabulary half before the keyed top-k; the RoCE candidate gather unchanged); the masks are filled on worker threads while the forward runs (only the ~1-2 us-a-draft cut precedes it). Thinking: the grammar starts after `</think>` (the reasoning is the unconstrained reply's). 400s before any header; a mid-reply grammar failure ends only its request (500). **Exact**: constrained drafted == `"draft": false`, a slot among 4 == alone, 2 ranks == 1; unconstrained requests take today's path (knob on == off; no header byte changes). Est. ~0.1-0.3% of a constrained round, 0 otherwise. CPU tests (129) + microbench; **W19 (image b10): adopted (`GLM53_TF_GRAMMAR=1`): unconstrained replies unchanged (hashes), schemas 32/32 and tools 6/6 valid, drafted == undrafted == 4 concurrent; a 50-object `response_format` task -0.4% tok/s (RESULTS W19 §2).** **W20: `GLM53_TF_GRAMMAR_THREADS=8` not adopted (exposed mask wait 0.67 vs 0.65 ms a window: no gain; stays 4).** |
+| 0620 `glm-tool-calling` | `GLM53_TF_TOOL_FIXES=` comma list of `history`, `reasoning`, `choice`, `args`, `thinkcalls`, `grammar` (`all` = every one but `grammar`); `GLM53_TF_KEEP_REASONING_ENTRIES=N`, `GLM53_TF_KEEP_REASONING_MB=N` (rank 0) | empty (off); `1024`, `32` | Tool-calling fixes for multi-step chains (docs/TOOL-CALLING.md). `history`: `content: null` no longer renders as the text `None` before an assistant turn's calls (or in a null tool result), `reasoning` is read as `reasoning_content`, empty `arguments` render as `{}` instead of a 400. `reasoning`: the reasoning of each reply that called tools is kept (by our call ids, and by a signature of the calls + last user message for clients that renumber ids) and put back into a later request's assistant turn sent without it, so GLM's interleaved thinking sees its own earlier steps. `choice`: `tool_choice` `none` offers no tools, a named function only that tool (unknown: 400), `parallel_tool_calls: false` keeps the first call (upstream 0.5.0's rules). `args`: argument values typed by the whole schema (type lists, anyOf / oneOf, enum, quoted numbers). `thinkcalls`: complete calls at the end of an unclosed think block, in a reply that ends on `<\|observation\|>`, are returned as calls. `grammar` (with 0610 on): every auto tools request held to its schemas. **Host only, same bits**: no engine, kernel or token change; requests without tools, or with the knob off, render and parse exactly as before. Host tests: `tests/test_tool_fixes.py` (46). **W20 (image b11): adopted (`GLM53_TF_TOOL_FIXES=all`): every W20 gate passed with it on (tool-free replies and hashes unchanged); tool-eval-bench on production, thinking off, one run: 90, multi-step chains 8/8 (results/tooleval/20260930-teb-off-fixes-PARTIAL; spark-bench not finished).** |
 
 ## 0001 — EXL3 non-expert weights in 4 bits
 
@@ -3382,6 +3388,11 @@ host threads (HTTP, streaming) share cores (and LPDDR5x) with the engine's launc
 Same bits: affinity and a host read of the trace ring only. Tests: `tests/test_http_pin.py` (plans on a fake GB10
 sysfs, errors, classify by name, real affinity calls on this host's threads, the dump on a fake runtime).
 
+**W19 (2026-09-30, image b10): adopted** (`GLM53_TF_CPU_PIN=http`). Boot line `http: HTTP threads on 0-4,10-14`;
+during a streamed reply the request's HTTP thread ran on cpu 1 and the round loop stayed on 0-19. GPU idle changed
+-0.05 / +0.05 / +0.08 ms a token (prose / code / 4 streams): within noise, kept because it costs nothing and every gate
+passed with it (docs/RESULTS.md "W19").
+
 ## 0540 — warm replay and multi-arrival TTFT (`GLM53_TF_SNAPSHOT_BEFORE_END`, `GLM53_TF_EMIT_FIRST`; `pfgrid.py`, `decode.py`, `engine.py`, `batch.py`)
 
 Why (RigMark W13, `docs/REPLAY-TTFT.md`): the immediate replays resumed only 0 / 16,384 / 49,152 of 8,192 / 32,768 /
@@ -3456,6 +3467,13 @@ admitted together. Offline only (CPU tests; no GPU run): the GPU plan (unit test
 `bench/pagecache_probe.py`, gates with reply sha 8794a3463259cc2f, stress + needle 314k, ~900k with 3 busy slots, C4
 during a 36 GB copy) is MEMORY-SAFETY.md §5.
 
+**W18 (2026-09-30, image b9):** loads A (off) / T (trim off) / S (scratch only) after W17's heavy warm-up all
+prefilled at 1,600-1,613 tok/s; every slow prefill in W17 had `GLM53_TF_ALLOC_TRIM_GB=2`, so the trim is the cause.
+**W19 (image b10): the scratch adopted** (`GLM53_TF_SELECT_SCRATCH=grow`, `GLM53_TF_ALLOC_TRIM_GB=0`,
+`GLM53_TF_ADMIT_MEM=free`): 314k needle minimum 6.58 / 6.31 -> 8.68 / 8.51 GiB and its lone prefill +1.6%; the 4 x 250k
+stress minimum 7.75 / 7.61 -> 8.34 / 8.09 GiB together with the NCCL change. 0550 v2 (trims only as planned rounds at
+idle or under pressure, one `empty_cache` after the boot warm-up) is proposed in MEMORY-SAFETY.md §6.
+
 ## 0560 — multi-slot prefill: a round's pieces in one forward (`GLM53_TF_MULTI_PREFILL`, `_ROWS`, `_WAIT_MS`; `mpf.py`, `batch.py`, `reqlog.py`)
 
 Why (RigMark W13 / W15, `docs/MULTI-PREFILL.md`, `docs/REPLAY-TTFT.md` §2): a short prompt's prefill is weight-read
@@ -3492,6 +3510,306 @@ first tokens ~0.6-0.7 s (thinking off) / ~0.7-0.8 s (on), C2 ~0.5 / ~0.6 s; burs
 4 x 1,000 tokens ~1.7x prefill tok/s; lone requests unchanged (<= 10 ms wait when idle). Limits: attention / shared /
 dense weights are still read once a member sub-block (~15 ms a member; sharing them is the follow-up). Offline only:
 the GPU plan in MULTI-PREFILL.md §9.
+
+## 0570 — the dense size switch (`GLM53_TF_DEC_QMM_MAXMB`, `_TABLE`, `_EXCLUDE`; `decode_stream.py`)
+
+Why (THEORY-2 item 7, RESULTS W16 §1, `results/W16/probes-head/cold.log`): 0440's `q4_stream.cu` lost -3.9% end to
+end (W12) because it is 9-18% slower cold on the large dense shapes that carry a round's bytes, while it is 1.1-1.5x
+faster cold on the small, latency-bound ones. W16's cold bench: every shape up to index q_b (3.54 MB) wins in both cold
+modes; the gate's "candidate 3.5" is 3.54 MB rounded.
+
+- `GLM53_TF_DEC_QMM_MAXMB=X` (MiB, so 3.5 = 3.67 MB takes index q_b and leaves shared gate/up's 4.5 MiB out;
+  `GLM53_TF_DEC_QMM_MAX_MB` reads the same): 0440's dense hook, turned on by the size knob alone, sends a 4-bit matmul
+  of <= 64 rows to `q4_stream.cu` only if `Q4.nbytes()` <= X MiB (cached on the matrix); `qmm.matmul` runs `_qmm` +
+  `_reduce` otherwise. 0440's Triton guard stays (3.7.x only).
+- `SMALL_PLACE` (`GLM53_TF_DEC_QMM_TABLE=1`): per switched shape and PDL setting, W16's best cold placement (groups a
+  stage, stages, whole-tile or split items; the best geomean over 1-16 rows in flush AND rotate with no window below
+  ~0.95x) and a row cap: index k <= 4 rows (0.76 / 0.72x at 16 rows), DSA kv_b only with PDL (0.93-0.98x at 1-2 rows
+  without; it has no decode call anyway). Unmeasured shapes (the (1,16,8) 1024 x 4096 grid) get 0440's CFG / auto.
+- `GLM53_TF_DEC_QMM_EXCLUDE="NxK,..."` keeps shapes on `_qmm`; the NVMe compat hash already skips `GLM53_TF_DEC_QMM*`.
+
+Same bits: no new kernel; `q4_stream.cu` gives `_qmm`'s bits for every shape and row count (0440's emulator, W12's
+GPU bitwise), so a choice by (shape, rows) cannot change a row. Estimate (DECODE-KERNELS-2.md §4, W11 calls a round x
+in-situ µs x W16 cold speed-ups): 1 stream -0.15 to -0.23 ms a round (+0.3-0.4%; up to -0.37 ms with
+`GLM53_TF_DEC_PDL=1`), 4 streams -0.17 to -0.30 ms (+0.15-0.25%). Offline results: `tests/test_decode_size_switch.py`
+(16 passed: knobs, the Triton guard, which of 15 per-rank shapes switch at 3.5, row caps, the table off, exclude, the
+dispatch with / without PDL, the compat hash); 0440's `test_decode_kernels_emulator.py` (61) and
+`test_theory2_probes.py` (19) pass with it (updated for the new CFG keys and the extra cold shape). GPU plan:
+DECODE-KERNELS-2.md §7 (bitwise on 15 shapes x 19 row counts, `bench_decode_cold.py` on the switched shapes + 1024 x
+4096, then loads).
+
+**W19 (2026-09-30, image b10): not adopted** (`GLM53_TF_DEC_QMM_MAXMB` unset). Bitwise equal to `_qmm` per shape and the
+cold gate passed (geomean 1.04-1.70x per switched shape), but the traces showed the switched shapes at 0.44 ms a token
+in situ where `_qmm` + `_reduce` took 0.26 (dense decode +3-5%); the same config without it ran +1.2% at 1 stream and
++0.7% at 4 streams (docs/RESULTS.md "W19" §3).
+
+## 0580 — the routed experts' load path, same bits (`GLM53_TF_DEC_EXPERT_LOADS`, `_CFG`, `_PDL`; `exl3_ld.cu`, `exl3_ld.cpp`, `expert_loads.py`, `exl3_mm.py`, `forward.py`, `sessdisk.py`)
+
+Why (THEORY-2 item 8, RESULTS W16 §1, `results/W16/probes-head/littles.log`): the routed experts are 27.8 of a 53.3 ms
+1-stream round (W11) and stream at 203 GB/s in the 1-stream windows (U 8-22) against a 233-237 plain read. `littles.cu`
+answers how many bytes must be in flight on GB10: **`ld.global.nc.v4` into registers, 4 KB an SM -> 232.7 GB/s**
+(cp.async 6 KB, TMA bulk 8-16 KB). It also ran 0440 E1's exact ring shape alone at 234 GB/s: E1's ~158 was its
+persistent walk (per-item fences, tickets, barriers and fused epilogues, all CTAs at once), not the memory system.
+grouped_kernel holds 1 KB a warp only at the top of each k step (0 during the decode / mma) and starts every CTA behind
+three dependent round trips; short launches (3.6 waves at U 8) are ramp and tail.
+
+- `ld_kernel<NT, PD, LD, PROBE>` replaces `ext.grouped` in `exl3_mm.routed` (not `grouped_loop`) when
+  `GLM53_TF_DEC_EXPERT_LOADS=1` (`exl3_mm.LOADS`, installed by `expert_loads.configure`). Kept: grouped_kernel's grid,
+  work item, W = 4 warps and K splits (so each warp's k range), the mma chain per accumulator from +0.0 on
+  `decode_tile` (verbatim) / `load_pair`'s values, `red` and the warp-order sum, the Z rows and the three early exits.
+- Changed: ucount / uids / member codes / the tile's first code in one round trip (`ld.global.cg`); the first PD k
+  steps of trellis words issued before the rows reach shared memory; a PD-deep register ring a warp: `nc` = NT / 4
+  `ld.global.nc.L1::no_allocate.v4` a lane a step, stored to a 1-KB warp staging area (in the warp's own slice of
+  `red`, written with partials only after the last step) and read back as word `lane` of each tile; `w32` = 32-bit
+  loads straight into the ring; `cpa` = a cp.async ring of PD + 1 steps in the same slice. The A fragments ride PD
+  steps ahead. Settings (`_CFG`, gate/up / down): nc 8,1 / 8,2 / 8,4 / 4,2 / 4,4, w32 8,2 / 4,4, cpa 8,2 / 4,4; probes
+  at 8,2: nc 1 (no decode) / 2 (no mma) / 3 (load path alone), w32 3, cpa 3.
+- `GLM53_TF_DEC_EXPERT_LOADS_PDL=1` (sm_90+): programmatic dependent launch; the prologue (grouping reads + the first
+  weights) before `griddepcontrol.wait`, X / Xd reads and Z writes after it. Safe because the launch before each grouped
+  launch (rot_in / gateup_epilogue) is a plain launch and the grouping is written before `routed`.
+- The NVMe compat hash skips `GLM53_TF_DEC_EXPERT_LOADS*` (same bits). No new buffers.
+
+Same bits: every mma sees the same operands in the same chain position, the warps are summed in the same order, the
+same rows are stored; only when the bytes arrive changes. So Z, Xd and Y are exl3.cu's for every row count, setting
+and window (drafted == serial, batched == alone, resumed == fresh; ranks may differ).
+
+**Offline results** (no GPU; stack = b9's list + 0570 + 0580; nvcc 13.4, torch 2.14 CPU, Triton 3.8 for the host tests):
+- `tests/test_decode_loads_emulator.py` (58 passed, ~4.5 min): a lane-level port of `ld_kernel` (v4 lane mapping,
+  staging store / read-back, register ring and refill order, cp.async ring slots with copies landing at random before
+  their wait, NaN shared memory aliased with `red`, A fragments ahead, prologue exits, warp-order reduction) == the
+  matrix-level grouped_kernel model with the order-sensitive mma model: Z bit for bit (never-stored elements too) for
+  all 9 settings on gate/up-like (1-4 K splits) and down-like layers, 1-16-row windows, 4-slot mixes, 20 / 40-row
+  skewed windows with 2-3 member tiles, stale slots past ucount; routed Xd / Y; the real K ranges (4,096 / 4 splits,
+  1,024 / 1 split) at PD 2 / 4; rows alone == in the window; 8 negative controls caught (staging read lane-major, slot
+  refilled before read x2, cp.async slot / wait off by one, wrong-k A fragments, reversed warp order, rotated k order);
+  host: knobs, `fits` at the real shapes, the hook dispatch (<= 16 rows -> ld_kernel, 17+ -> grouped_loop), the compat
+  hash, the bench gate logic.
+- `tests/test_decode_loads_compile.py` (5 passed): 14 instantiations for sm_121, 0 spills; default nc,8,2 163 registers
+  (grouped_kernel<8,4>: 109), 32,832 B static shared memory (= grouped_kernel's), 3 CTAs an SM, 24 KB an SM in flight
+  (nominal); nt 4 settings 103-126 registers, 4 CTAs an SM; the PTX has the v4 / u32 no_allocate loads, cp.async +
+  wait_group, the f16 mma, no atomics; PDL prologue clean (only `ld.global.cg` and trellis loads before the wait); the
+  shared helpers are exl3.cu's text; SASS: the 128-bit refills sit between the HMMAs of the step being computed.
+- `exl3_ld.cu` compiles host + device against torch's headers; `exl3_ld.cpp` passes a syntax check.
+- Estimate (DECODE-KERNELS-2.md §5, W11 round): 203 -> 220 / 225 / 230 GB/s in situ = -2.0 / -2.6 / -3.1 ms a
+  1-stream prose round (+4.0 / +5.1 / +6.2%); code +3.2-5.8%; 4 streams (already 219 GB/s) +0.4-3.1%.
+- GPU plan: DECODE-KERNELS-2.md §7 -- bitwise + PDL race (`tests/cuda/test_decode_loads_patches.py`), the engine
+  suites with the knobs, `bench_decode_kernels.py --loads` with its two GATE lines (probe 3 >= 220 GB/s; one config
+  >= 1.05x grouped_kernel cold on U 8-22), loads C / E / EQ (/ EQP), one nsys capture, the adoption gates.
+
+**W19 (2026-09-30, image b10): adopted** (`GLM53_TF_DEC_EXPERT_LOADS=1`, `GLM53_TF_DEC_EXPERT_LOADS_CFG=nc,8,1`).
+Bitwise tests 20/20; probe 3 (load path alone) 226-231 GB/s (gate >= 220); the kernel against `grouped_kernel` 1.03-1.19x
+flush, 0.98-1.09x rotate (the strict 1.05x on every window missed, so the in-situ trace decided): routed-expert decode
+-4.1..-4.6% a token at 1 stream, -2.9..-3.1% at 4 streams, the bulk of W19's +3.3% / +3.0% decode (docs/RESULTS.md
+"W19").
+
+## 0590 — routed experts in prefill, v2: one pipelined kernel, same bits (`GLM53_TF_FAST_EXPERTS=fat2`; `exl3_fat2.cu`, `exl3_fat2.cpp`, `exl3_mm.py`)
+
+Why (ROOFLINE gap 1, KINDLING-AUDIT adoption #2): at 4,096-8,192-row chunks `fat` costs about the SUM of its MMA and
+DRAM roofs (1.36x the DRAM floor at 2,048 / 4,096 rows, 1.76x at 8,192; W8). Its pipeline drains at every
+(expert, 64-member pass, 128-column block) item, and each trellis tile is decoded per 64 members. The audited fused
+prefill MoE kernel (NVFP4) reaches ~84% of the bf16 roof with 256 threads, a 4-stage `cp.async` ring, expert-sorted
+128-row tiles from a device list and the gather inside the A loads. 0590 re-implements that structure for EXL3 x fp16 with
+fat's arithmetic (no code taken: that repository has no licence).
+
+- **Kernel** (`fat2::expert_kernel<KIND, NG, NSA, PROBE>`, `__maxnreg__(168)`):
+  - 8 warps, one CTA an SM, a persistent grid;
+  - items (expert, 128-member pass, column block; down: a pair of column blocks) from fast2's device plan, claimed by
+    ticket NSA stages before the current item ends, into a second item buffer;
+  - the ring (NSA stages of 2 k tiles: 8 KB of swizzled member rows, gathered by pair index, zero-filled only to the
+    last member's 16-row group; 4 KB of trellis words) keeps loading the next item's first stages under the current
+    item's tail and epilogue;
+  - a warp holds 2 column tiles x 128 members, so each decoded tile feeds 16 mma;
+  - the epilogue is fat's code in its own 33 KB buffer;
+  - block-uniform barriers only (no mbarriers, nothing to hang on).
+- **Configurations** (`GLM53_TF_FAT2_CFG`): 0 = 128 members / 4 stages (82.0 KB), 1 = 64 / 4 (65.5 KB), 2 = 128 / 3
+  (70.0 KB). Probes: 1 = no decode, 2 = no mma. The same bits every way.
+- **Dispatch.** Inside the fat family (`fat_experts = 1`). Needs gate / up sharing their sign vector and K >= 128
+  (fat otherwise). Its own extension, built at first use for the device's architecture. Nothing picks by the call's
+  rows, so 0560's groups stay allowed.
+- **Combine fusion (adoption #6) is not in 0590.** Inside the expert kernel it needs cross-CTA ordering to keep the
+  bits (a row's 8 slots come from 8 items), and it saves at most 1/8 of Y's write. The audit's exact form
+  (`_combine_s` into 0084's send buffer) is independent of this kernel: its own patch.
+
+Same bits: every stored element is fat's chain of m16n8k16 mma (the same `decode_tile` A fragment, the same fp16 B
+values at the same k, ascending k tiles from +0.0, all of K in one warp, the same tile position), then fat's
+epilogue. Only which CTA / warp / item holds it, and when bytes arrive, change. So fat2 == fat == fast2 == v1:
+row-independent (0085), deterministic, snapshots shared.
+
+**Offline results** (no GPU; stack = b9's list + 0590, which also applies on b9 + 0570 + 0580 and in the full sorted
+list; nvcc 13.4, torch 2.14 CPU, cuobjdump 13.1):
+
+- `tests/test_fat2_emulator.py` (49 passed, ~8.5 min): lane-level ports of fat and fat2 (plan, ticket / stride under
+  random CTA interleavings, NaN-initialised ring with copies landing at random before their `wait_group` and between
+  warps, swizzle, `ldmatrix.x4`, `decode_tile`, fat2's claim-ahead and cross-item stages, epilogue rounds) with an
+  order-sensitive mma model. Results:
+  - fat == the matrix-level reference;
+  - fat2 == the reference with every output written once (3 configurations, 1-7 CTAs, 1-4,096-row windows with 1-43
+    passes, odd block counts, stale grouping entries, the real per-rank shapes);
+  - fat2 == fat under a position-sensitive mma model;
+  - rows alone == rows in the window;
+  - 12 planted mutations caught, and the neutral one (no zero-fill past the last member) keeps the bits.
+- `tests/test_fat2_compile.py` (21 passed, 17 s):
+  - every instantiation at 168 registers, 0 spills, <= 82.0 KB, one CTA an SM, leaving 22,528 registers and 16-32 KB
+    for an overlap-stream CTA (fat's gate/up leaves ~3.5 K registers);
+  - 11 helpers verbatim, and the epilogue lines are fat's;
+  - **PTX:** every stored value's expression tree == fat's (opcodes with rounding modifiers, fma contractions,
+    constants, operand order), and every mma's A / B operand trees == fat's; the atomics are the ticket and the member
+    count only;
+  - **SASS:** the epilogue's FP instruction census at 2 rounds == fat's exactly, and at 4 rounds == 2 + fat's per-round
+    delta; no local memory;
+  - 3 planted source changes caught.
+- `tests/test_fat2_bench.py` (3 passed): the bench's GATE line logic and the DRAM floor numbers.
+- `exl3_fat2.cu` compiles host + device against torch's headers; `exl3_fat2.cpp` passes a syntax check.
+- `tests/cuda/test_fat2_patches.py`, host part: 6 passed (env switch, dispatch with fake extensions,
+  `mpf.kernels_ok`).
+- Regression host suites (tc / auto / once / multi-prefill / lean / solo): green, except 3 solo-piece tests that fail
+  identically on b9 without 0590.
+
+**Expected** (EXPERT-PREFILL-V2.md section 6; not timed):
+
+- 2,048 rows: 10.2-11.4 ms against fat's 13.18 (0.77-0.87x). The DRAM floor is 9.71 ms at 235 GB/s.
+- 4,096 rows: 12.3-13.8 ms against 15.96 (floor 11.71).
+- 8,192 rows: 18-21 ms against 27.70.
+- **The 0.75x gate at 2,048 / 4,096 needs ~98% of the DRAM peak**: expect FAIL on the letter there. A floor-based gate
+  is proposed for the user.
+- End to end: +4-7% prefill at kernel value, +2-4% after the W5 / W8 transfer discount.
+
+GPU plan: EXPERT-PREFILL-V2.md section 7:
+
+- `test_fat2_patches.py` under `timeout`;
+- `bench_experts.py 2048 4096 8192 --fat2 --contend` (bits, isolated / contended / makespan, the GATE line);
+- the engine tests;
+- load A (b10, knob off) vs load B (`fat2`) with ab.py 24.5k / 98k x2, exact / batchexact, 4-stream decode, one nsys
+  capture;
+- adopt at >= +2% prefill, same sha, decode not lower.
+
+**W19 (2026-09-30, image b10): not adopted** (stays `fat`). Bitwise 22/22 and every bench cell same bits, but fat2 is slower
+than fat: isolated 1.16x / 1.19x, contended 1.12x / 1.20x, makespan 1.07x / 1.09x at 2,048 / 4,096 rows (1.76x /
+1.88x the DRAM floor); both the floor gate and the letter gate fail (docs/RESULTS.md "W19" §1).
+
+## 0600 — upstream ports: client disconnect, request hardening, USR1, image URL hardening, small bundle, /health totals (`GLM53_TF_DISCONNECT`, `GLM53_TF_VISION_FETCH_*`, `GLM53_TF_VISION_PREP_*`; `server/cancellation.py`, `cuda/server.py`, `cuda/health.py`, `cli.py`, `batch.py`, `app.py`, `vision_prep.py`, `image_fetch.py`, `engine.py`)
+
+Why: docs/UPSTREAM-050-AUDIT.md's ranked port list. Items 1-4, 6 and 9 are host-side fixes and small features that
+keep every reply's bits; this patch takes them in one go. Full description, behaviour changes, knobs and the GPU check
+plan: **docs/UPSTREAM-PORTS.md**. Upstream TensorFold is MIT-licensed; the ported code says where it came from
+(`server/cancellation.py`, `image_fetch.py`, `closed_json`, `parse_numbers`, the `/health` totals) and NOTICE lists it.
+
+- **Client disconnect** (upstream 24afe5e; ours on the batcher). `server/cancellation.py` (upstream's
+  `socket_cancellation`, `poll` instead of `select`); the handler passes `cancelled=` to `App.run` for every
+  completion (`GLM53_TF_DISCONNECT=0`: off). `App.run`: a request whose client left while it waited raises
+  `RequestCancelled` without an engine call; the callback checks the socket every call, never raises into the engine
+  (a failure is raised after `generate`), and a stopped request writes nothing more. `Batcher._collect`: the HTTP
+  thread polls `on_tokens.cancelled` every `GLM53_TF_DISCONNECT_POLL_MS` (250) while no token arrives and between
+  tokens, and on a departed client or a callback exception sets `job.cancel` and wakes the loop: `_plan` drops a
+  queued job, and cancels an admitted one (prefilling or decoding) through the plan rank 1 receives, 0370's riders
+  included, as every cancel since 0120. 0300 logs it `cancelled`. The lone path (`BATCH=1`) refuses requests whose
+  client left while they waited for the lock and no longer lets a callback failure desync rank 1; a running lone
+  request still decodes on unheard (0160's design). Half-closed client sockets count as gone (upstream's rule).
+- **Request hardening** (2bc35c4). `do_POST` catches `check` / `tokenize` exceptions: template refusals are 400 "the
+  chat template rejected the request: ...", anything else a 400 with its message and a redacted traceback in the log;
+  `App.check` refuses non-object `chat_template_kwargs` and malformed `temperature` / `top_p` / `top_k` / `seed` /
+  `max_tokens` / `max_completion_tokens` (booleans, non-finite, non-integral) before a stream's headers;
+  `sampling_for` reads the same values unclamped (the same `Sampling` as before for every valid request); non-UTF-8
+  bodies are "not JSON"; 500s and stream error events are logged. `Problem.status` (503 for capacity).
+- **`kill -USR1`** (a586f3d): `faulthandler.register` before `cmd_serve` hands over to `_serve_cuda` (both ranks).
+- **Image URL hardening** (391713e, 05cbb54, b4042e8): `image_fetch.py` (upstream's `images_http.py`) replaces
+  0500's `urllib` fetch: HTTPS on 443, no credentials / fragments / control characters, every resolved address public
+  (plus NAT64 / IPv4-compatible refused), the connection pinned to the checked address with TLS verified, each redirect
+  re-checked (<= 3), identity encoding, a declared JPEG / PNG / WebP / GIF, `GLM53_TF_VISION_MAX_BYTES`, per-download
+  and per-request deadlines; `vision_prep.Host.request` holds one of `GLM53_TF_VISION_PREP_SLOTS` (16) with
+  `_PREP_WAITERS` (128) waiting up to `_PREP_WAIT_S` (60 s), then `VisionBusy` = HTTP 503. `GLM53_TF_VISION_FETCH_HTTP`
+  / `_FETCH_PRIVATE` for local testing only. Messages carry no URL.
+- **Small bundle**: `return_token_ids` (e6be5ff: the counted reply ids in the `tensorfold` block); the token that
+  completes a stop string found per token (88407d1's rule on 0160's visible-answer scope), so `completion_tokens` is
+  the same drafted or serial; `closed_json` (c30a1a9 / #87) in 0002's GLM parser for `array` / `object`-typed
+  arguments that only stop short of their closing brackets.
+- **`/health`** (51b098d, c4bf25f): upstream's `backend`, `busy`, `requests_running`, `requests_total`,
+  `prompt_tokens_total`, `completion_tokens_total` (live), `prefill_seconds_total`, `decode_seconds_total`,
+  `cached_tokens_total`, `rounds_total`, `drafted_total`, `accepted_total`, `streams`, `context_length` beside 0150's
+  fields (unchanged, as is `/metrics`); the batch and lone stats now carry `drafted` / `accepted`.
+
+Tests (host): `tests/test_upstream_ports.py` (169) and `tests/cuda/test_disconnect_patches.py` (8: queued /
+prefilling / decoding / callback failure on both ranks in lockstep, 0370 riders off and on); `tests/test_vision_prep.py`
+and `tests/test_vision_server.py` use the local-testing knobs for their `http://127.0.0.1` image servers. **Offline
+only: GPU check plan in docs/UPSTREAM-PORTS.md §4** (exact 10/10, batchexact, reply sha `8794a3463259cc2f`, canary, a
+non-streamed long request freeing its slot, errors / USR1 smoke, an image URL over https, `/health`).
+
+**W19 (2026-09-30, image b10): in production (on by default).** Host suites 169 + 8 passed in the image. A
+non-streamed 32k request whose client closed freed its slot 0.18 s after the close; four at once 0.26-0.31 s; a queued
+~100k request whose client left never ran; bad `temperature` / `chat_template_kwargs` and a non-UTF-8 body: 400s;
+`USR1` stacks on both ranks; an https image URL equals the same image as `data:`; `http://`, loopback and metadata
+addresses refused; `/health` token totals grow during a reply (docs/RESULTS.md "W19" §2).
+
+## 0610 — structured output, exact under drafting and batching (`GLM53_TF_GRAMMAR`, `_THREADS`; `grammar.py`, `batch.py`, `decode.py`, `engine.py`, `app.py`, `resident.py`)
+
+Why (docs/UPSTREAM-050-AUDIT.md 2.1): a request's `response_format` was silently ignored. Upstream TensorFold 0.5.0
+(98fb8f9 / 7ae9da2 / 1da4b7e) enforces it with xgrammar on GLM's one-request loops only; production runs the batcher.
+
+- `grammar.py` (new; request fields, compile rules, the cut with rollback, the bitmask unpacking and `advance` ported
+  from upstream's `engine/grammar.py`, MIT, attributed): `request_spec` (400s: malformed, not compiling, an output
+  format beside a required call); two xgrammar compilers built at load on both ranks from `tokenizer.json` through
+  `tokenizers` (text view: every added token excluded, upstream lets them spell text inside JSON; tools view: the six
+  tool markup tokens kept; logits width from `config.json`, checked against the head); tool calls through xgrammar's
+  `glm_4_7` structural tag (`glm_xml` arguments: our 0002 parser's reading); the think state read from the prompt (the
+  last of `<think>` / `</think>`). `Constraint.cut` (a chain window: rejected / stop-token / added-token drafts dropped
+  with the rest) before the forward; `Constraint.fill` (accept along the kept chain, fill, roll back) on
+  `GLM53_TF_GRAMMAR_THREADS` worker threads while the forward runs (the fill releases the GIL); `apply` (-inf on the
+  rank's columns only, a new tensor); `advance`; `pack` / `split` (the grammar in front of the header: a negative first
+  int no header has).
+- Batcher: `_admit` a fresh constraint per admission (both ranks); `_piece` the last piece's first token under
+  `first_token` (also 0560's group finish); `_verify` `_grammar_cut` before the forward, `_grammar_masks` right after
+  its launch (the bits staged on the device behind the forward from pinned memory: no host wait), `sample_multi(..., masks=)`, `advance` after `accept`, `_grammar_fail` ends a failing slot alone (both
+  ranks at the same point: the same walk); `_header` / `follow` carry the grammar; `Batcher.generate` reads
+  `request.grammar_bound` and raises a GrammarError itself. `sample_multi`: masks, and a masked round draws on the
+  host. `resident.eligible`: `"grammar"`.
+- Lone path: `decode.serial_decode` / `mtp_decode` / `dflash_decode` / `auto_decode` through `grammar.lone(e)` (cut,
+  masks after the launch, masked host draw, advance); `sample_rows(host=True)`; `engine.generate` packs the grammar in
+  front of the header, `follow` compiles it and ends a failing reply as rank 0 does; `engine._run`'s prefill under
+  `first_token`.
+- App: `GlmApp.check` answers the 400s (knob on), `run` hands `(spec, compiled)` to the engine; knob off: every field
+  ignored as before.
+- Dockerfile: `pip install -c torch==<base image's> xgrammar==0.2.8` (apache-tvm-ffi, pydantic, transformers).
+
+Same bits for everything else: no forward, kernel, graph, collective, drafter or snapshot changes; an unconstrained
+request creates no grammar object and its header is unchanged. Constrained requests: drafted == serial, batched ==
+alone, 2 ranks == 1, resumed == fresh (docs/STRUCTURED-OUTPUT.md §3). Cost (§5): *measured* on a laptop core with GLM's
+154,880-column vocabulary, a row's fill is ~13-80 us (p50; up to ~0.3 ms inside JSON strings), the cut ~1.5-2 us a
+draft, a 4 x 16-row round 1.2-2.8 ms on 4 threads (3-7 ms inline), all during a 60-120 ms forward: est. ~0.1-0.3% of a
+constrained round (the GPU mask), 0 for other rounds. Not done: masking the drafters' own logits (acceptance on JSON),
+`thinking_budget`. Tests: `tests/cuda/test_grammar_patches.py` (129 CPU), `bench/grammar_bench.py`; the GPU gates:
+`bench/structured.py` (docs/STRUCTURED-OUTPUT.md §8).
+
+**W19 (2026-09-30, image b10): adopted** (`GLM53_TF_GRAMMAR=1`). The image installs xgrammar 0.2.8 with `--no-deps`
+(docker/Dockerfile). Unconstrained replies' hashes equal the knob-off reference; schemas 32/32 (8 schemas x greedy /
+sampled x thinking on / off; drafted == `"draft": false` == 4 concurrent), tools 6/6; a 50-object `response_format`
+task 71.9 vs 72.2 tok/s unconstrained (-0.4%). The exposed mask wait was ~0.7 ms a round, above the 0.3 ms estimate
+(follow-up: `GLM53_TF_GRAMMAR_THREADS=8`) (docs/RESULTS.md "W19" §2).
+
+## 0620 — tool-calling fixes for multi-step chains (`GLM53_TF_TOOL_FIXES`; `toolfix.py`, `cuda/server.py`, `app.py`, `grammar.py`)
+
+Why: an independent tester's tool-eval-bench (multi-step chains 75%) and spark-bench (agentic 82.6) runs (issue #6);
+the audit of our request path is **docs/TOOL-CALLING.md**, which also has the benchmark notes and the test plan.
+
+- `cuda/server.py`: `tool_fixes()` (the knob, validated at load), `schema_types` / `typed_value` (the `args` reading,
+  used by 0002's `_glm_call` when on), `App.reply_hook` (identity; called with a finished chat reply that had tools,
+  before `finish_reason` is chosen, with the reply's last token).
+- `glm5_next/cuda/toolfix.py` (new): `ToolFixes.prepare` (the request, in place and idempotent: `GlmApp.check`,
+  `tokenize` and `run` all call it before rendering; a bad named `tool_choice` is a 400), `ToolFixes.reply` (the
+  reply: `thinkcalls`, `parallel_tool_calls`, the reasoning memory), `ReasoningMemory` (LRU by entries and
+  characters, thread-safe), `trailing_calls`, `signature`.
+- `app.py`: builds `ToolFixes` at load (prints one `[tensorfold] tool calling (patches/0620)` line when on) and
+  overrides `reply_hook`. `grammar.py`: `_tool_spec` treats auto tool requests as strict ones with `grammar`.
+
+Exactness: host only. Off (default), every request renders, parses and answers as before; on, requests without
+tools are untouched (no GPU gate changes: exact, batchexact, reply sha, glmbench hashes are tool-free), and tool
+requests render a different prompt only where the fix says so. Streaming: `thinkcalls` has already streamed the
+calls' text as reasoning before it returns them as calls; `parallel_tool_calls: false` drops the later calls.
+Tests (host): `tests/test_tool_fixes.py` (46; the real chat template and xgrammar with `$GLM53_TF_TOKENIZER_DIR`).
+
+**W20 (2026-09-30, image b11): adopted** (`GLM53_TF_TOOL_FIXES=all`; `grammar` stays off). Host tests 46 (42 without
+a tokenizer dir). With it on, W20's gates passed: exact, batchexact, reply sha, all 13 glmbench hashes equal to b10's, structured
+schemas / tools. tool-eval-bench against production (thinking off, temperature 0, one run): final score 90, category C
+(multi-step chains) 8/8; spark-bench was stopped early and is not a score (docs/RESULTS.md "W20").
 
 ## Tests
 
@@ -3557,7 +3875,15 @@ the GPU plan in MULTI-PREFILL.md §9.
 | `tests/test_health.py`, `tests/test_effort.py` | 0150, host only: `/health` modes (fatal, stalls with the prefill allowance), `/metrics` counters, JSON 500 / SSE error events, 503 refusals in `strict`, the engine wrapper's transparency; `reasoning_effort` mapping and the default effort |
 | `tests/test_serve_ops.py` | host only (fake docker / ssh / nvidia-smi / journalctl, a fake OpenAI server): `serve.sh` start (preflight, memory gate, canary warn / strict, retries, log rotation, NCCL passthrough, the start lock), parallel stop, `xid`, `watch` (absent, loading grace, bad ticks, alert, heal, unreachable worker, drafter rate alert); `canary.py` (degenerate replies, dead drafter, warmup); `xid.py` classes |
 | `tests/test_glm_tool_calls.py` | GLM tool calls: schema-typed values, a string that looks like JSON stays text, two calls plus an unknown tool, a call without arguments, the Qwen format still parses |
+| `tests/test_decode_size_switch.py` | 0570, CPU (`PYTHONPATH=<tree>/src`, torch CPU): the size knob (default off, MiB, the `_MAX_MB` alias, bad values refuse, the Triton guard), which of 15 per-rank decode shapes switch at 3.5 MiB, `SMALL_PLACE`'s row caps and PDL columns, the table off, the exclude list, `qmm.matmul`'s dispatch through the hook, the compat hash |
+| `tests/test_decode_loads_emulator.py` (+ `tests/decode_loads_emu.py`), `tests/test_decode_loads_compile.py`, `tests/cuda/test_decode_loads_patches.py`, `tests/cuda/bench_decode_kernels.py --loads` | 0580. CPU: a lane-level port of `ld_kernel` (every setting, cp.async copies landing at random, NaN shared memory) == the matrix-level grouped_kernel model, Z / Xd / Y bit for bit, real K ranges, rows alone, 8 negative controls; knobs, `fits`, the hook dispatch, the compat hash, the bench gate. Compile (no GPU): 14 sm_121 instantiations (spills, registers, shared memory, CTAs, in-flight KB), PTX (loads, cp.async, mma, no atomics), the PDL prologue, verbatim helpers, SASS loads between HMMAs. GPU: on == off bitwise (real / synthetic, every setting, graphs, rows alone, raw Z, probes), the PDL late-writer race, 0570 == `_qmm` on 15 shapes x 19 row counts; bench: grouped_kernel vs every setting cold (rotate / flush), probes, whole routed layer, two GATE lines |
+| `tests/test_fat2_emulator.py` (+ `tests/fat2_emu.py`), `tests/test_fat2_compile.py` (+ `tests/fat2_ptx.py`), `tests/test_fat2_bench.py`, `tests/cuda/test_fat2_patches.py`, `tests/cuda/bench_experts.py --fat2` | 0590. CPU: lane-level ports of fat and fat2 == the matrix reference with an order-sensitive mma model (and fat2 == fat under a position-sensitive one), every output written once, rows alone == in the window, 12 planted mutations caught; sm_121 compile (168 registers, 0 spills, 82 KB, one CTA an SM), helpers verbatim, PTX dataflow of every stored value and mma operand == fat's, SASS epilogue census, 3 planted source changes caught; the bench's GATE logic. GPU: fat2 == fat == fast2 bit for bit (64-8,192 rows, cfgs 0-2, ticket / stride, CTA caps), odd shapes, row subsets, repeatability, probes; engine state fat2 == fat, drafted == serial, resumed == fresh, shared snapshots. Bench: isolated / contended / makespan and the GATE line (docs/EXPERT-PREFILL-V2.md) |
+| `tests/test_upstream_ports.py` | 0600, host only (`PYTHONPATH=<tree>/src`; torch CPU for the batcher cases): the socket check; `App.run` refusing a request whose client left, stopping at the next round with nothing more written, a callback failure raised after `generate`; over HTTP a non-streamed request whose client closes stopping within a few rounds, a request cancelled while prefilling through the real `Batcher._collect` (streamed and not), a half-closed stream without a final chunk; `_collect`'s poll, interval check and failure path; `GLM53_TF_DISCONNECT`; 68 malformed-field 400s before headers (App / GlmApp, streamed / not), valid fields == the 0.3.4 `Sampling`, template refusals (check, run, `/tokenize`), a redacted 400 log, non-UTF-8, 500 / stream error; `cmd_serve` registers USR1 before `_serve_cuda`; `check_url`, 28 blocked / 5 public addresses, mixed DNS answers, a DNS-rebinding-style redirect to a private address never connected, same-host rebinding, 6 refused redirect targets, redirect limits, a local image host (types, gzip, sizes, redirects, 404, a stalled server's deadline), no URL in messages, the knobs, the 503 bound; `closed_json`, the #87 repair, the stop count with 5 chunkings, `return_token_ids`, `/health` live totals, failed requests, `streams` |
+| `tests/test_tool_fixes.py` | 0620, host only (`PYTHONPATH=<tree>/src`; `GLM53_TF_TOKENIZER_DIR` for the real template and the xgrammar case): the knob; off changes nothing; `history` (the checkpoint template renders `None` before, not after; empty arguments render instead of raising; idempotent); the reasoning memory by server ids and by signature when ids are renumbered, not for other arguments / another user message, never over a client's own reasoning, bounds; `tool_choice` none / named / required, `parallel_tool_calls: false` through the real `App.run`; `thinkcalls` only on `<\|observation\|>` with trailing calls; `typed_value` over 25 schema / value cases; 0610's auto tool grammar (free text free, bad argument types and unknown names rejected) |
+| `tests/cuda/test_disconnect_patches.py` | 0600 (`PYTHONPATH=<tree>/src:<tree>/tests/cuda:tests/cuda`, torch CPU): 0180's hostile fake model under the real `_plan` / `_execute` / `_finish` / `follow`, every HTTP thread in the real `_collect`, rank 0's message stream replayed on rank 1 (0370 riders off / on): a client gone while queued (never admitted on either rank), prefilling (cancelled before a token), decoding, a callback that raises; rank 1's log / trace / slot states == rank 0's, the other replies == fresh prefill + serial |
 | `/src/TensorFold/tests/cuda/test_glm_*.py` | upstream's own GLM CUDA tests, run against the patched tree |
+| `tests/cuda/test_grammar_patches.py` | 0610 (`PYTHONPATH=<tree>/src:<tree>/tests/cuda:tests/cuda`, xgrammar 0.2.8, torch CPU, jsonschema; `GLM53_TF_TOKENIZER_DIR` for the real-tokenizer part): request fields and 400s; `cut` / `fill` == a fresh xgrammar matcher per row on random paths and corrupted draft chains (stop tokens, `</think>`, invalid ids), the think gate, threads == inline; `apply` on a vocabulary half == the whole row sliced; a masked keyed draw == the rule over the allowed tokens only; two ranks exchanging candidates == one rank (`sample_multi`, `sample_rows`); the real `Batcher` / `Stepper` / `sample_multi` / `prefill` on a hostile float-logit fake model with fake MTP / DFlash2 drafters drafting the constrained continuation with corruptions, and lookup: drafted == `"draft": false` == an independent serial reference (6 policies, greedy / sampled), 4 mixed slots == alone, plain requests knob on == off, random nested schemas valid (jsonschema), thinking on / off, stop / EOS / `ignore_eos` / `max_tokens`, a failure ends only its slot, a follower compiles and decides the same, the lone loops, sessions resumed == fresh, `Batcher.generate`'s thread path; the lone engine's header and rank 1's follow; `setup`; the app; GLM's real tokenizer (no added token inside JSON, stop tokens only at the end, tool markup and calls that parse and validate) |
+| `bench/grammar_bench.py`, `bench/structured.py` | 0610: the mask computation microbenchmark on GLM's real vocabulary (build, compile, cut / fill / advance per row, 16-row windows, 4 x 16-row rounds inline and on 2 / 4 / 8 threads, `apply`); the GPU gates against a running server (schemas drafted == serial == 4 concurrent and valid, RigMark-like 50-object array with and without a schema, tool calls, unconstrained hashes vs knob off) |
 
 Run inside the image (needs one GPU; does not load the real checkpoint):
 

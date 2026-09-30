@@ -1,0 +1,1513 @@
+diff --git a/src/tensorfold/families/glm5_next/cuda/app.py b/src/tensorfold/families/glm5_next/cuda/app.py
+index 3b4122e..946bb87 100644
+--- a/src/tensorfold/families/glm5_next/cuda/app.py
++++ b/src/tensorfold/families/glm5_next/cuda/app.py
+@@ -35,6 +35,9 @@ token-keyed cache tells images apart), and the engine gets the preprocessed imag
+ image problem (fetch, size, decode, count) is an HTTP 400 before anything streams. ``usage.prompt_tokens`` counts the
+ image rows, as vLLM does; ``/tokenize`` returns them as ``<|image|>`` ids.
+ 
++patches/0610: GLM53_TF_GRAMMAR=1 enforces ``response_format`` (json_object / json_schema), vLLM's ``guided_*`` /
++``structured_outputs`` and strict / required tool calls (``grammar.py``); off, those fields are ignored as before.
++
+ patches/0490: a request past the context gets HTTP 400 with OpenAI's ``context_length_exceeded`` code and wording
+ ("This model's maximum context length is N tokens. However, you requested ..."), which agent clients recognise and
+ answer by compacting; ``/v1/models`` reports the limit as ``max_model_len`` / ``context_length``; the load prints one
+@@ -206,6 +209,10 @@ class GlmApp(App):
+ 
+         problem = apply_effort(body, field=self.effort_field, default=self.default_effort,
+                                default_thinking=self.default_thinking) or super().check(body)   # patches/0150
++        if not problem and getattr(self.engine, "grammar_on", False):
++            from . import grammar as grammar_mod    # patches/0610: a malformed / non-compiling grammar is a 400
++
++            problem = grammar_mod.check(self.engine, body)
+         limit = getattr(self.engine, "limit", None)
+         self._vis.ready = None
+         if problem:
+@@ -332,6 +339,10 @@ class GlmApp(App):
+         self.engine.request.policy = body.get("tf_policy") or (model.split("@", 1)[1] if "@" in model else None)
+         self.engine.request.stop_eos = not bool(body.get("ignore_eos", False))
+         self.engine.request.knobs = body.get("tf_knobs")     # patches/0090: validated by ``check``
++        if getattr(self.engine, "grammar_on", False):
++            from . import grammar as grammar_mod    # patches/0610: the request's compiled grammar (None: plain)
++
++            self.engine.request.grammar = grammar_mod.for_request(self.engine, body)
+         # patches/0120: with GLM53_TF_BATCH, a background request (``"priority": "background"``, or a client's
+         # session-title request) is admitted after every waiting request and steps aside for one when every slot is
+         # busy; it then runs again from the start and its caller receives the same tokens
+diff --git a/src/tensorfold/families/glm5_next/cuda/batch.py b/src/tensorfold/families/glm5_next/cuda/batch.py
+index b4b1d4b..f1b10b3 100644
+--- a/src/tensorfold/families/glm5_next/cuda/batch.py
++++ b/src/tensorfold/families/glm5_next/cuda/batch.py
+@@ -148,6 +148,7 @@ from .attention import attention, kv_write
+ from . import l2pf                                                           # patches/0460
+ from . import vision as vision_mod                                           # patches/0500
+ from . import mpf                                                            # patches/0560
++from . import grammar as grammar_mod                                         # patches/0610
+ from .forward import State, _join, check_room, chunks_for, commit, mlp_block, moe_block, out_proj
+ 
+ BACKLOG = 32                     # committed rows a drafter may lag behind before they are taken early
+@@ -372,19 +373,26 @@ def stage_multi(w, sts: Sequence[State], b, windows: Sequence[Sequence[int]]) ->
+ 
+ 
+ def sample_multi(w, logits: torch.Tensor, specs: Sequence[tuple[int, int, Sequence[int], Any]],
+-                 rider: torch.Tensor | None = None):
++                 rider: torch.Tensor | None = None, masks: Sequence[Any] | None = None):
+     """``decode.sample_rows`` for several sequences' rows (specs: (row offset, rows, positions, sampling)) with ONE
+     all-gather of every row's candidates: each sequence's top-k is the call ``sample_rows`` makes, and the draw is
+     the same keyed rule on the same gathered candidates.
+ 
+     patches/0370: ``rider`` (int32 [P] on the device, the same P on both ranks) travels at the end of the exchange;
+-    then -> (tokens, rank 0's P words)."""
++    then -> (tokens, rank 0's P words).
++
++    patches/0610: ``masks`` (per spec a ``grammar.Window`` with its rows' bits, or None): a constrained row's
++    disallowed columns of this rank's vocabulary half are -inf before its top-k; the exchange is unchanged. A round
++    with masks draws on the host."""
+ 
+     parts, ks = [], []
+-    for off, R, _, sampling in specs:
++    for i, (off, R, _, sampling) in enumerate(specs):
+         greedy = sampling is None or sampling.temperature <= 0
+         k = 1 if greedy else min(logits.shape[1], int(sampling.top_k) + MARGIN)
+-        vals, ids = torch.topk(logits[off:off + R].float(), k, dim=-1)
++        rows = logits[off:off + R].float()
++        if masks is not None and masks[i] is not None:          # patches/0610
++            rows = grammar_mod.apply(rows, masks[i], w.vocab_offset)
++        vals, ids = torch.topk(rows, k, dim=-1)
+         ids = (ids + w.vocab_offset).to(torch.int32)
+         parts.append(torch.cat([vals, ids.view(torch.float32)], dim=1).reshape(-1))
+         ks.append(k)
+@@ -392,7 +400,7 @@ def sample_multi(w, logits: torch.Tensor, specs: Sequence[tuple[int, int, Sequen
+         parts.append(rider.view(torch.float32))
+     flat = torch.cat(parts).contiguous()
+     world = 1 if w.comm is None else w.world
+-    if gpuround.sample_on(w) and all(gpusample.fits(k, world, sp[3]) for sp, k in zip(specs, ks)):
++    if gpuround.sample_on(w) and masks is None and all(gpusample.fits(k, world, sp[3]) for sp, k in zip(specs, ks)):
+         return _sample_multi_device(w, flat, specs, ks, world, rider)       # patches/0450
+     if w.comm is None:
+         got = flat.view(1, -1).cpu()
+@@ -732,6 +740,7 @@ class Job:
+     stats: dict = field(default_factory=dict)
+     vision: Any = None                            # patches/0500: the prompt's image rows (``vision.Table``) or None
+     sess: Any = None                              # patches/0180: the admission's ``sessions.Plan`` (store on)
++    gram: Any = None                              # patches/0610: the request's ``grammar.Bound`` (None: plain)
+ 
+ 
+ class Always:
+@@ -987,6 +996,7 @@ class Seq:
+     emitted: int = 0                              # tokens produced by this run (a rerun re-produces the sent ones)
+     marks: tuple = ()                             # patches/0180: the session store's marks for this prompt
+     kinds: collections.Counter = field(default_factory=collections.Counter)   # patches/0200: its rounds by kind
++    con: Any = None                               # patches/0610: the reply's ``grammar.Constraint`` (None: plain)
+ 
+ 
+ class Batcher:
+@@ -1607,10 +1617,16 @@ class Batcher:
+                         bool(getattr(req, "stop_eos", True)), getattr(req, "knobs", None),
+                         bool(getattr(req, "background", False)))
+         job.vision = vis
++        job.gram = getattr(req, "grammar_bound", None)     # patches/0610: the grammar bound to the prompt (``engine``)
+         if vis is not None and self.g.vision is not None:
+             job.stats["vision"] = dict(self.g.vision.last)
+         self._submit([job])
+-        self._collect(job, on_tokens)
++        try:
++            self._collect(job, on_tokens)
++        except RuntimeError as exc:             # patches/0610: its grammar's failure is the request's own error
++            if job.gram is not None and isinstance(exc.__cause__, grammar_mod.GrammarError):
++                raise exc.__cause__ from None
++            raise
+         job.stats.update(policy=job.spec, drafts=job.draft, tf_knobs=job.echo)
+         return job.stats
+ 
+@@ -1620,6 +1636,8 @@ class Batcher:
+ 
+         jobs = [self._job(r["prompt"], r["max_tokens"], r.get("sampling"), r.get("draft", True), r.get("policy"),
+                           r.get("stop_eos", False), r.get("knobs"), r.get("background", False)) for r in requests]
++        for r, job in zip(requests, jobs):          # patches/0610: a ``grammar.Bound`` per request (or none)
++            job.gram = r.get("grammar")
+         self._submit(jobs)
+         out = []
+         for r, job in zip(requests, jobs):
+@@ -1690,7 +1708,12 @@ class Batcher:
+                     self._spills = list(got[1:1 + got[0]])
+                 jobs = []
+                 for slot, cached, header in admits:
++                    gram = None
++                    if getattr(self.g, "grammar_on", False):    # patches/0610: rank 0's grammar, compiled here
++                        packed, header = grammar_mod.split(header)
++                        gram = grammar_mod.follow(self.g, packed) if packed is not None else None
+                     job = self._job_from(header, self.g._share(None))
++                    job.gram = gram
+                     job.vision = vision_mod.exchange(self.g, job.prompt, None)     # patches/0500: rank 0's image rows
+                     if self.store is not None:          # patches/0180: rank 0's session plan, after its digest check
+                         job.sess = self.store.follow(self.g._share(None))
+@@ -1805,9 +1828,12 @@ class Batcher:
+     @staticmethod
+     def _header(job: Job) -> list[int]:
+         s = job.sampling
+-        return batchplan.encode_header(batchplan.Header(
++        header = batchplan.encode_header(batchplan.Header(
+             job.max_tokens, job.stop_eos, job.draft, s.seed if s else 0, s.temperature if s else 0.0,
+             int(s.top_k) if s else 0, s.top_p if s else 1.0, job.cost, job.values, job.code))
++        if job.gram is not None:                # patches/0610: the grammar in front (rank 1 compiles the same)
++            return grammar_mod.pack(job.gram) + header
++        return header
+ 
+     @staticmethod
+     def _job_from(ints: list[int], prompt: list[int]) -> Job:
+@@ -2022,6 +2048,8 @@ class Batcher:
+         self.seqs[slot] = Seq(job, slot, self.round, resume=hit, done=cached, grid=self._grid(job.values),
+                               t0=time.perf_counter(), marks=tuple(sess.marks) if sess is not None and job.draft
+                               else ())
++        if job.gram is not None:                # patches/0610: a fresh grammar state for this run (both ranks)
++            self.seqs[slot].con = grammar_mod.fresh(self.g, job.gram)
+         job.stats.update(cached=cached, slot=slot, queued_s=round(time.perf_counter() - job.submitted, 3)
+                          if job.submitted else 0.0)
+         job.stats["marks"] = len(self.seqs[slot].marks)          # patches/0300: the store's checkpoints it takes
+@@ -2066,8 +2094,15 @@ class Batcher:
+                 e.checkpoints = seq.marks           # patches/0180: the store's marks inside this piece
+                 try:
+                     with vision_mod.active(job.vision):     # patches/0500: the prompt's image rows (None: none)
+-                        first = (mpf.take(self, slot) or prefill)(e, job.prompt[:end], job.sampling, mtp=use_mtp,
+-                                                                  drafter=drafter, resume=seq.resume)   # 0560
++                        if seq.con is None or end < n:
++                            first = (mpf.take(self, slot) or prefill)(e, job.prompt[:end], job.sampling, mtp=use_mtp,
++                                                                      drafter=drafter, resume=seq.resume)   # 0560
++                        else:                       # patches/0610: the first token under the reply's grammar
++                            with grammar_mod.first_token(e, seq.con):
++                                first = (mpf.take(self, slot) or prefill)(e, job.prompt[:end], job.sampling,
++                                                                          mtp=use_mtp, drafter=drafter,
++                                                                          resume=seq.resume)
++                            seq.con.advance([first])
+                 finally:
+                     e.checkpoints = ()
+                 saves = list(getattr(e, "mark_snaps", ()) or ()) if job.draft else []
+@@ -2101,7 +2136,7 @@ class Batcher:
+                     saves.append(snap)
+                 self._save(slot, saves)             # patches/0180: marks, then the prompt snapshot
+                 last_hidden = e.last_hidden
+-        except ValueError as exc:                   # the request's own problem (the same on both ranks)
++        except (ValueError, grammar_mod.GrammarError) as exc:   # the request's own problem (the same on both ranks)
+             self.seqs[slot] = None
+             self.caches[slot] = []
+             if self.store is not None:
+@@ -2295,12 +2330,21 @@ class Batcher:
+         w = g.w
+         seqs = [self.seqs[s] for s in active]
+         t_round = time.perf_counter()
++        fills = None
++        if getattr(g, "grammar_on", False) and any(q.con is not None for q in seqs):
++            active, seqs, fills = self._grammar_cut(active, seqs)     # patches/0610: cut, then fills start
++            if not active:
++                return
+         windows = [q.stepper.window() for q in seqs]
+         self.last_rows = [len(x) for x in windows]
+         logits = self._forward(active, windows)
+         ov = self.overlap
+         if ov.emit:                             # patches/0370: the GPU is busy now; the HTTP threads may run
+             self._flush()
++        extra = {}
++        failed: dict[int, BaseException] = {}
++        if fills is not None:                   # patches/0610: the masks, computed while the forward runs
++            extra["masks"], failed = self._grammar_masks(active, seqs, fills, logits)
+         ran = list(self.last_rows)              # patches/0200: rows per slot in the forward (padded or not)
+         # patches/0280: tied padded rows read no experts of their own; the depth model prices the real rows
+         priced = [len(x) for x in windows] if self.tie else ran
+@@ -2315,18 +2359,26 @@ class Batcher:
+             q.kinds[self.last_kind] += 1
+             q.kinds["pad_rows"] += n - len(win)
+         if ov.plan:                             # patches/0370: the next round's plan rides on this exchange
+-            sampled, words = sample_multi(w, logits, specs, rider=self._rider())
++            sampled, words = sample_multi(w, logits, specs, rider=self._rider(), **extra)
+             self._ahead = dover.rider_decode(words)
+         else:
+-            sampled = sample_multi(w, logits, specs)
++            sampled = sample_multi(w, logits, specs, **extra)
+         shared = len(active) > 1
+         tokens = 0
+         from . import dump as dump_mod          # patches/0430
+         dumped = [] if dump_mod.DUMP is not None else None
+         for s, q, (off, R, _, _), rows, n, win in zip(active, seqs, specs, sampled, ran, windows):
++            if s in failed:                     # patches/0610: its grammar failed; nothing of this round is kept
++                continue
+             pos = self.states[s].pos
+             with self._on(s) as e:
+                 keep = q.stepper.accept(e, rows, off, shared, n) if n != R else q.stepper.accept(e, rows, off, shared)
++            if q.con is not None:               # patches/0610: the grammar follows the kept tokens
++                try:
++                    q.con.advance(rows[:keep])
++                except grammar_mod.GrammarError as exc:
++                    failed[s] = exc
++                    continue
+             if dumped is not None:
+                 dumped.append((self.states[s], off, keep, win[:keep], pos))
+             tokens += keep
+@@ -2340,7 +2392,9 @@ class Batcher:
+             q.kinds["verify_ms"] += verify_ms
+         going = []
+         for s, q in zip(active, seqs):
+-            if q.stepper.done(self.eos):
++            if s in failed:                     # patches/0610: that request ends with its grammar's error
++                self._grammar_fail(s, failed[s])
++            elif q.stepper.done(self.eos):
+                 self._finish(s)
+             else:
+                 going.append((s, q))
+@@ -2377,6 +2431,58 @@ class Batcher:
+                 else:
+                     self.counts[f"resident_no_{why}"] += 1
+ 
++    # -- patches/0610: structured output --------------------------------------------------------------------------
++    def _grammar_cut(self, active: list[int], seqs: list):
++        """Before the forward (both ranks alike): each constrained slot's window cut to the drafts its grammar
++        allows, then its rows' mask fills started (``grammar.Filler``: while the forward runs). A slot whose grammar
++        fails ends here. -> (active, seqs, pending fills)."""
++
++        keep_a, keep_q, items = [], [], []
++        for s, q in zip(active, seqs):
++            if q.con is not None:
++                st = q.stepper
++                try:
++                    win = q.con.cut(st.window())
++                except grammar_mod.GrammarError as exc:
++                    self._grammar_fail(s, exc)
++                    continue
++                st.drafts = list(win.tokens[1:])
++                q.kinds["grammar_cut"] += win.cut
++                items.append((s, q.con, win))
++            keep_a.append(s)
++            keep_q.append(q)
++        pending = self.g.filler.start([(c, win) for _, c, win in items]) if items else None
++        return keep_a, keep_q, (items, pending)
++
++    def _grammar_masks(self, active: list[int], seqs: list, fills, logits) -> tuple[list, dict]:
++        """Right after the forward's launch: the fills' masks per slot (None: unconstrained), staged on the device
++        behind the forward; slots whose fill failed."""
++
++        items, pending = fills
++        errors = pending.wait() if pending is not None else []
++        by_slot = {s: (win, err) for (s, _, win), err in zip(items, errors)}
++        masks, failed = [], {}
++        for s in active:
++            win, err = by_slot.get(s, (None, None))
++            if err is not None:
++                failed[s] = err
++                win = None
++            if win is not None and win.rows:
++                grammar_mod.stage(win, logits.shape[1], logits.device, self.g.w.vocab_offset)
++            masks.append(win if win is not None and win.rows else None)
++        return masks, failed
++
++    def _grammar_fail(self, slot: int, exc: BaseException) -> None:
++        """A reply whose grammar failed ends now with that error (both ranks at the same point: the same walk)."""
++
++        self._flush()                           # patches/0370: its tokens before the error
++        job = self.seqs[slot].job
++        job.cancel = True                       # not a background request stepping aside: it is not run again
++        job.stats["grammar_error"] = str(exc)
++        if job.out is not None:
++            job.out.put(exc)
++        self._finish(slot, cancelled=True)
++
+     def _finish(self, slot: int, *, cancelled: bool = False) -> None:
+         from .decode import take_snapshot
+ 
+@@ -2417,6 +2523,8 @@ class Batcher:
+             if getattr(st, "adapt", None) is not None:  # patches/0340
+                 job.stats["adapt"] = dict(serial=st.adapt.serial, probes=st.adapt.probes)
+         job.stats.update(cancelled=cancelled)
++        if q.con is not None:                       # patches/0610: drafts cut, rows masked, fill / exposed wait ms
++            job.stats["grammar"] = grammar_mod.report(q.con)
+         if self.store is not None:                  # patches/0180
+             job.stats["sessions"] = self.store.describe()
+         if job.out is not None:
+diff --git a/src/tensorfold/families/glm5_next/cuda/decode.py b/src/tensorfold/families/glm5_next/cuda/decode.py
+index 48a7c5a..5f4a623 100644
+--- a/src/tensorfold/families/glm5_next/cuda/decode.py
++++ b/src/tensorfold/families/glm5_next/cuda/decode.py
+@@ -25,16 +25,18 @@ from . import decode_overlap as dover                                       # pa
+ from . import vsplit                                                        # patches/0510
+ from . import gpuround, gpusample                                            # patches/0450
+ from . import dump as dump_mod                                               # patches/0430
++from . import grammar as grammar_mod                                         # patches/0610
+ from .forward import Buffers, State, chunks_for, commit, compute, stage
+ from .mtp import mtp_compute, mtp_stage
+ from .weights import Weights
+ 
+ 
+ def sample_rows(w: Weights, logits: torch.Tensor, positions: Sequence[int], sampling: Sampling | None,
+-                offset: int | None = None, probs: list[float] | None = None, draft: bool = False) -> list[int]:
++                offset: int | None = None, probs: list[float] | None = None, draft: bool = False,
++                host: bool = False) -> list[int]:
+     """Rows of (this rank's vocabulary slice of) logits at their absolute positions -> tokens, same on all ranks.
+     patches/0420: ``draft`` logits over the listed rows (``draftvocab``) map their columns through the list; the
+-    target's rows (``draft`` False) never do."""
++    target's rows (``draft`` False) never do. patches/0610: ``host`` draws on the host (rows a grammar masked)."""
+ 
+     R = logits.shape[0]
+     greedy = sampling is None or sampling.temperature <= 0
+@@ -47,7 +49,7 @@ def sample_rows(w: Weights, logits: torch.Tensor, positions: Sequence[int], samp
+     else:
+         ids = (ids + (w.vocab_offset if offset is None else offset)).to(torch.int32)
+     world = 1 if w.comm is None else w.world
+-    if gpuround.sample_on(w) and gpusample.fits(k, world, sampling, probs is not None):
++    if not host and gpuround.sample_on(w) and gpusample.fits(k, world, sampling, probs is not None):
+         return _sample_device(w, vals, ids, positions, sampling, k, world, probs)      # patches/0450
+     if w.comm is None:
+         values = vals.cpu().numpy().astype(np.float32)
+@@ -637,14 +639,18 @@ def serial_decode(e: Engine, pending: int, count: int, sampling: Sampling | None
+     w, st, b = e.w, e.st, e.buf
+     out = [pending]
+     stages = dict(forward=0.0, sample=0.0, commit=0.0)
++    gram = grammar_mod.lone(e)              # patches/0610: the reply's grammar (None: as before)
+     _sync(w)
+     start = time.perf_counter()
+     while len(out) < count and not (stop_eos and out[-1] in w.cfg.eos):
+         t0 = time.perf_counter()
+-        logits = e.forward([out[-1]])
++        logits = e.forward([out[-1]]) if gram is None else gram.forward(gram.cut([out[-1]]))
+         _forward_sync()                     # patches/0370
+         t1 = time.perf_counter()
+-        tok = e.sample(logits[:1], [st.pos + 1], sampling)[0]
++        tok = (e.sample(logits[:1], [st.pos + 1], sampling) if gram is None
++               else gram.sample(logits[:1], [st.pos + 1], sampling))[0]
++        if gram is not None:
++            gram.advance([tok])
+         t2 = time.perf_counter()
+         commit(w, st, b, 1, 1)
+         t3 = time.perf_counter()
+@@ -689,6 +695,7 @@ def mtp_decode(e: Engine, pending: int, count: int, sampling: Sampling | None, *
+     rounds = drafted = accepted = 0
+     depths: list[int] = []
+     keeps: list[int] = []
++    gram = grammar_mod.lone(e)              # patches/0610: the reply's grammar (None: as before)
+     _sync(w)
+     start = time.perf_counter()
+     t0 = time.perf_counter()
+@@ -700,16 +707,23 @@ def mtp_decode(e: Engine, pending: int, count: int, sampling: Sampling | None, *
+     while len(out) < count and not (stop_eos and out[-1] in w.cfg.eos):
+         t0 = time.perf_counter()
+         tokens = [out[-1]] + drafts
++        if gram is not None:                # patches/0610: drafts the grammar rejects, cut before the forward
++            tokens = gram.cut(tokens)
++            drafts = tokens[1:]
+         R = len(tokens)
+-        logits = e.forward(tokens)
++        logits = e.forward(tokens) if gram is None else gram.forward(tokens)
+         _forward_sync()                     # patches/0370
+         t1 = time.perf_counter()
+-        sampled = e.sample(logits[:R], [st.pos + 1 + r for r in range(R)], sampling)
++        positions = [st.pos + 1 + r for r in range(R)]
++        sampled = (e.sample(logits[:R], positions, sampling) if gram is None
++                   else gram.sample(logits[:R], positions, sampling))
+         keep = 1
+         for i, d in enumerate(drafts):
+             if sampled[i] != d or (stop_eos and sampled[i] in w.cfg.eos):
+                 break
+             keep += 1
++        if gram is not None:
++            gram.advance(sampled[:keep])
+         t2 = time.perf_counter()
+         commit(w, st, b, R, keep)
+         t3 = time.perf_counter()
+@@ -748,6 +762,7 @@ def dflash_decode(e: Engine, drafter, pending: int, count: int, sampling: Sampli
+     w, st, b = e.w, e.st, e.buf
+     policy = policy or DepthPolicy(3, fixed=True)
+     opt = getattr(e, "depth", None)         # patches/0071 (``of``): cost-derived depths, up to policy.most
++    gram = grammar_mod.lone(e)              # patches/0610: the reply's grammar (None: as before)
+     backlog = 0
+     out = [pending]
+     stages = dict(draft=0.0, forward=0.0, sample=0.0, commit=0.0)
+@@ -768,16 +783,23 @@ def dflash_decode(e: Engine, drafter, pending: int, count: int, sampling: Sampli
+             drafts = drafter.propose(out[-1], depth, sampling, policy.confidence) if depth > 0 else []
+         t1 = time.perf_counter()
+         tokens = [out[-1]] + drafts
++        if gram is not None:                # patches/0610: drafts the grammar rejects, cut before the forward
++            tokens = gram.cut(tokens)
++            drafts = tokens[1:]
+         R = len(tokens)
+-        logits = e.forward(tokens)
++        logits = e.forward(tokens) if gram is None else gram.forward(tokens)
+         _forward_sync()                     # patches/0370
+         t2 = time.perf_counter()
+-        sampled = e.sample(logits[:R], [st.pos + 1 + r for r in range(R)], sampling)
++        positions = [st.pos + 1 + r for r in range(R)]
++        sampled = (e.sample(logits[:R], positions, sampling) if gram is None
++                   else gram.sample(logits[:R], positions, sampling))
+         keep = 1
+         for i, d in enumerate(drafts):
+             if sampled[i] != d or (stop_eos and sampled[i] in w.cfg.eos):
+                 break
+             keep += 1
++        if gram is not None:
++            gram.advance(sampled[:keep])
+         t3 = time.perf_counter()
+         commit(w, st, b, R, keep)
+         t4 = time.perf_counter()
+@@ -895,6 +917,7 @@ def auto_decode(e: Engine, drafter, pending: int, count: int, sampling: Sampling
+     # the forward's time from two CUDA events once the sampler's readback has synchronized
+     no_sync = dover.env().sync
+     fwd_timer = dover.ForwardTimer() if no_sync and timer is not None else None
++    gram = grammar_mod.lone(e)              # patches/0610: the reply's grammar (None: as before)
+     _sync(w)
+     start = time.perf_counter()
+     while len(out) < count and not (stop_eos and out[-1] in w.cfg.eos):
+@@ -926,18 +949,25 @@ def auto_decode(e: Engine, drafter, pending: int, count: int, sampling: Sampling
+             steps = 0
+         t1 = time.perf_counter()
+         tokens = [out[-1]] + drafts
++        if gram is not None:                # patches/0610: drafts the grammar rejects, cut before the forward
++            tokens = gram.cut(tokens)
++            drafts = tokens[1:]
+         R = len(tokens)
+         if fwd_timer is not None:
+             fwd_timer.start()
+         logits = e.forward(tokens)
+         if fwd_timer is not None:
+             fwd_timer.stop()
++        if gram is not None:                # patches/0610: the masks, filled while the forward runs
++            gram.settle(logits)
+         if not no_sync:
+             torch.cuda.synchronize()
+         t2 = time.perf_counter()
+         if timer is not None and fwd_timer is None:
+             timer(R, (t2 - t1) * 1e3)
+-        sampled = e.sample(logits[:R], [st.pos + 1 + r for r in range(R)], sampling)
++        positions = [st.pos + 1 + r for r in range(R)]
++        sampled = (e.sample(logits[:R], positions, sampling) if gram is None
++                   else gram.sample(logits[:R], positions, sampling))
+         if fwd_timer is not None:           # patches/0370: after the readback, the events are done
+             timer(R, fwd_timer.ms())
+         keep = 1
+@@ -945,6 +975,8 @@ def auto_decode(e: Engine, drafter, pending: int, count: int, sampling: Sampling
+             if sampled[i] != d or (stop_eos and sampled[i] in w.cfg.eos):
+                 break
+             keep += 1
++        if gram is not None:
++            gram.advance(sampled[:keep])
+         t3 = time.perf_counter()
+         commit(w, st, b, R, keep)
+         t4 = time.perf_counter()
+diff --git a/src/tensorfold/families/glm5_next/cuda/engine.py b/src/tensorfold/families/glm5_next/cuda/engine.py
+index 4f1b1a3..40a3e32 100644
+--- a/src/tensorfold/families/glm5_next/cuda/engine.py
++++ b/src/tensorfold/families/glm5_next/cuda/engine.py
+@@ -460,6 +460,11 @@ class GlmEngine:
+         self.eos = tuple(w.cfg.eos)
+         self.request = threading.local()    # the calling request's policy and stop-at-EOS (``app.GlmApp``)
+         self.cache: list = []               # decode.Snapshot entries, each a prefix of the next
++        # patches/0610 (GLM53_TF_GRAMMAR): structured output; both ranks agree, and build the compilers now
++        from . import grammar as grammar_mod
++
++        grammar_mod.setup(self)
++        self.e.grammar_filler = self.filler
+         # GLM53_TF_BATCH=N (patches/0030, 0120): up to N requests decode together, one forward a round over all their
+         # verify windows (``batch.py``, built below once the knob defaults exist); 1 (default) serves one request at
+         # a time as upstream. Both ranks must agree.
+@@ -999,9 +1004,17 @@ class GlmEngine:
+             self.e.checkpoints = sess.marks if sess is not None and draft else ()
+         from . import vision as vision_mod
+ 
++        con = getattr(self.e, "constraint", None)    # patches/0610: the reply's grammar (None: as before)
+         try:
+             with vision_mod.active(vis):            # patches/0500: the prompt's image rows (None: none)
+-                first = prefill(self.e, prompt, sampling, mtp=use_mtp, drafter=drafter, resume=hit)
++                if con is None:
++                    first = prefill(self.e, prompt, sampling, mtp=use_mtp, drafter=drafter, resume=hit)
++                else:
++                    from . import grammar as grammar_mod
++
++                    with grammar_mod.first_token(self.e, con):
++                        first = prefill(self.e, prompt, sampling, mtp=use_mtp, drafter=drafter, resume=hit)
++                    con.advance([first])
+         finally:
+             self.e.checkpoints = ()
+         prefill_s = time.perf_counter() - t0
+@@ -1119,6 +1132,12 @@ class GlmEngine:
+         prefill, the reference drafted replies must equal."""
+ 
+         vis = self._vision_table(prompt)     # patches/0500: the request's images encoded (rank 0), or None
++        gram = None
++        if getattr(self, "grammar_on", False):   # patches/0610: the request's grammar (``app``), bound to its prompt
++            from . import grammar as grammar_mod
++
++            gram = grammar_mod.bound_for(self, prompt)
++            self.request.grammar_bound = gram       # ``Batcher.generate`` reads it (this thread's request)
+         if self.batch is not None:          # patches/0120: the request's knobs, policy and priority travel with it
+             return self.batch.generate(prompt, max_tokens, sampling, on_tokens, draft, vis=vis)
+         # patches/0090: the request's knobs (validated), everything else at this rank's current (load-time) values
+@@ -1178,6 +1197,8 @@ class GlmEngine:
+                   *_f64_ints(sampling.temperature if sampling else 0.0), int(sampling.top_k) if sampling else 0,
+                   *_f64_ints(sampling.top_p if sampling else 1.0), len(table), *table, cost,
+                   *knobs_mod.encode(values)] + code          # patches/0090: the knobs rank 1 applies
++        if gram is not None:                # patches/0610: the grammar in front (rank 1 compiles the same)
++            header = grammar_mod.pack(gram) + header
+         self._share(header)
+         self._share(list(prompt))
+         from . import vision as vision_mod
+@@ -1194,8 +1215,17 @@ class GlmEngine:
+         emitter = decode_overlap.Emitter(on_tokens) if decode_overlap.env().emit else None
+         try:
+             with cpupin.serving_request(), self._knobs(values):
+-                stats = self._run(list(prompt), max_tokens, sampling, stop_eos, emitter or on_tokens, code, hit,
+-                                  draft, sess, vis)
++                if gram is None:
++                    stats = self._run(list(prompt), max_tokens, sampling, stop_eos, emitter or on_tokens, code, hit,
++                                      draft, sess, vis)
++                else:                       # patches/0610: the reply's grammar on ``e`` (both ranks walk the same rows)
++                    self.e.constraint = grammar_mod.fresh(self, gram)
++                    try:
++                        stats = self._run(list(prompt), max_tokens, sampling, stop_eos, emitter or on_tokens, code,
++                                          hit, draft, sess, vis)
++                        stats["grammar"] = grammar_mod.report(self.e.constraint)
++                    finally:
++                        self.e.constraint = None
+         except BaseException:
+             if emitter is not None:
+                 emitter.close(raise_error=False)
+@@ -1227,8 +1257,14 @@ class GlmEngine:
+         cpupin.serving()                    # patches/0370 (GLM53_TF_CPU_PIN)
+         while True:
+             cpupin.tick()
+-            max_tokens, stop_eos, draft, cached, s_lo, s_hi, s_top, t_lo, t_hi, top_k, p_lo, p_hi, n, *rest = \
+-                self._share(None)
++            header = self._share(None)
++            gram = None
++            if getattr(self, "grammar_on", False):      # patches/0610: rank 0's grammar in front of the header
++                from . import grammar as grammar_mod
++
++                packed, header = grammar_mod.split(header)
++                gram = grammar_mod.follow(self, packed) if packed is not None else None
++            max_tokens, stop_eos, draft, cached, s_lo, s_hi, s_top, t_lo, t_hi, top_k, p_lo, p_hi, n, *rest = header
+             table, code = rest[:n], rest[n:]            # patches/0070: rank 0's cost table, then the policy code
+             self.depth_cost, code = code[0], code[1:]  # patches/0071: rank 0's cost-depth flag
+             values, code = knobs_mod.decode(code)       # patches/0090: rank 0's knobs for this request
+@@ -1256,5 +1292,15 @@ class GlmEngine:
+                 if hit is None:
+                     raise RuntimeError(f"rank 1 has no snapshot of the {cached} tokens rank 0 resumes from")
+             with self._knobs(values):
+-                self._run(prompt, max_tokens, sampling, bool(stop_eos), lambda new: None, code, hit, bool(draft),
+-                          sess, vis)
++                if gram is None:
++                    self._run(prompt, max_tokens, sampling, bool(stop_eos), lambda new: None, code, hit, bool(draft),
++                              sess, vis)
++                    continue
++                self.e.constraint = grammar_mod.fresh(self, gram)     # patches/0610: as on rank 0
++                try:
++                    self._run(prompt, max_tokens, sampling, bool(stop_eos), lambda new: None, code, hit, bool(draft),
++                              sess, vis)
++                except grammar_mod.GrammarError:
++                    pass                    # the reply ends here, as on rank 0 (the same walk)
++                finally:
++                    self.e.constraint = None
+diff --git a/src/tensorfold/families/glm5_next/cuda/grammar.py b/src/tensorfold/families/glm5_next/cuda/grammar.py
+new file mode 100644
+index 0000000..480bcc2
+--- /dev/null
++++ b/src/tensorfold/families/glm5_next/cuda/grammar.py
+@@ -0,0 +1,891 @@
++"""patches/0610 (GLM53_TF_GRAMMAR=1, off by default): structured output for GLM-5.3-Flash, exact under drafting and
++batching.
++
++What a request gets (only with the knob on; off, every field below is ignored as before):
++
++- OpenAI ``response_format`` ``{"type": "json_object"}`` (any JSON object) and ``{"type": "json_schema",
++  "json_schema": {"schema": {...}}}``; vLLM's ``guided_json`` / ``guided_regex`` / ``guided_choice`` /
++  ``guided_grammar`` and ``structured_outputs`` (as TensorFold 0.5.0 reads them);
++- tool calls: with ``tools`` and ``tool_choice`` ``"required"`` or a named function, or any tool marked
++  ``"strict": true`` (OpenAI's strict function calling), the answer follows GLM's tool-call markup
++  (``<tool_call>name<arg_key>k</arg_key><arg_value>v</arg_value>...</tool_call>``) with the arguments held to each
++  tool's parameter schema (xgrammar's ``glm_4_7`` structural tag, ``glm_xml`` style: a string value raw, any other
++  value JSON, as ``server._glm_call`` reads them). Other tool requests are not constrained.
++
++A request that asks for none of these runs exactly as before (no grammar object exists for it).
++
++The grammar engine is xgrammar (Apache-2.0; ``xgrammar==0.2.8`` in the image), as upstream TensorFold 0.5.0 uses.
++Its token masks are computed from the checkpoint's ``tokenizer.json`` (the ``tokenizers`` library, no transformers
++tokenizer object) with the logits' width from ``config.json`` (154,880). GLM's added tokens (``<|user|>``,
++``<think>``, ``</think>``, image markers, ...) are never allowed inside a grammar (upstream lets them spell their text
++inside JSON strings); the stop tokens (the engine's eos ids) are allowed where the grammar may end. Tool grammars keep
++the six tool-call markup tokens, which the model emits as single tokens.
++
++Thinking. The grammar applies to the visible answer only: when the prompt ends inside an open ``<think>`` block
++(the chat template with thinking on), rows are unconstrained until ``</think>`` has been chosen, and the grammar
++starts at the row after it. With thinking off (``<think></think>`` in the prompt) or a raw completion prompt it starts
++at the first token. Reasoning tokens are therefore the unconstrained reply's tokens, bit for bit.
++
++The exactness argument (docs/UPSTREAM-050-AUDIT.md 2.1, docs/STRUCTURED-OUTPUT.md):
++
++- a verify window is a chain: row 0 the pending token, rows 1.. drafts. Before the forward, ``Constraint.cut`` walks
++  the drafts on the matcher (accept, then roll back): a draft the grammar rejects, or one that ends it (its stop
++  token), is dropped with every row after it; the parent row's masked distribution could never choose it. Only R
++  changes, and every kernel is row-count invariant;
++- a kept row's mask depends only on its own path (committed tokens + the drafts above it), which for every row that
++  is kept is the serial prefix at that position, so it is the serial step's mask;
++- ``apply`` sets the disallowed columns of a constrained row to -inf before the sampler's top-k; the keyed draw
++  (seed, position, token) then chooses among the allowed tokens exactly as the unmasked rule chooses among all of
++  them. Each rank masks its own vocabulary half (``w.vocab_offset``); the candidates' all-gather (RoCE) is unchanged;
++- ``advance`` follows the chosen tokens (the kept ones and the correction), so the next window starts at the reply's
++  committed state.
++
++So a constrained drafted reply equals the same request with ``"draft": false``, and a constrained slot among four
++equals itself alone.
++
++Overlap. Only the cut must precede the forward. The masks (``Constraint.fill``: accept along the kept chain, fill a
++row, roll back) are computed while the forward runs: on ``GLM53_TF_GRAMMAR_THREADS`` worker threads (default 4; the
++fill is C++ that releases the GIL) started right after the cut, and waited for just before the sampler
++(``Filler``); 0 fills on the round's thread after the forward's launch. Same masks either way.
++
++Two ranks. Both compile the same grammar: rank 0 sends (kind, think state, text) in front of the request header
++(``pack``: a negative first int, which no header has) and rank 1 compiles it (``Grammars.follow``). Both walk and fill
++the same rows (the same tokens, a deterministic matcher), so both cut the same drafts and end a request on a grammar
++failure at the same point without a message.
++
++Parts ported from TensorFold 0.5.0 (``src/tensorfold/engine/grammar.py``, commits 98fb8f9 and 1da4b7e by the
++TensorFold contributors, MIT License): ``request_spec``'s field handling, the compile rules (json_object as
++``{"type": "object"}``, at most 32 blanks between JSON tokens, choice / EBNF), the depth-first cut with rollback,
++the bitmask unpacking and the ``advance`` rule. Our own: chain windows with fills after the cut (off the critical
++path), the tool-call grammars, the added-token policy, the think state read from the prompt, the batcher and
++two-rank wiring.
++"""
++
++from __future__ import annotations
++
++import json
++import os
++import re
++import threading
++import time
++from concurrent.futures import ThreadPoolExecutor
++from contextlib import contextmanager
++from dataclasses import dataclass, field
++from pathlib import Path
++from typing import Any, Sequence
++
++import numpy as np
++
++ENV = "GLM53_TF_GRAMMAR"
++KINDS = ("json", "json_schema", "regex", "choice", "grammar", "tools")
++OBJECT = '{"type": "object"}'             # json_object: any JSON object (OpenAI's contract), not an array
++BLANKS = 32                               # the most blank characters between JSON tokens (upstream 1da4b7e)
++CACHE_BYTES = 128 << 20                   # compiled grammars kept per tokenizer view, by their text
++THINK_OPEN, THINK_END = "<think>", "</think>"
++TOOL_TOKENS = ("<tool_call>", "</tool_call>", "<arg_key>", "</arg_key>", "<arg_value>", "</arg_value>")
++FIELDS = ("response_format", "guided_json", "guided_regex", "guided_choice", "guided_grammar", "structured_outputs")
++MARK = -1                                 # ``pack``: the first int of a header that carries a grammar
++EXTRA = "xgrammar==0.2.8"
++
++
++def enabled() -> bool:
++    """GLM53_TF_GRAMMAR: 0 (default: request grammar fields are ignored, as before) or 1."""
++
++    v = os.environ.get(ENV, "0").strip() or "0"
++    if v not in ("0", "1"):
++        raise ValueError(f"{ENV}={v!r}: expected 0 or 1")
++    return v == "1"
++
++
++def threads() -> int:
++    """GLM53_TF_GRAMMAR_THREADS: mask-fill worker threads (default 4; 0: fill on the round's thread after the forward
++    is launched). Rank-local: the masks are the same either way."""
++
++    v = os.environ.get("GLM53_TF_GRAMMAR_THREADS", "").strip()
++    n = int(v) if v else 4
++    if not 0 <= n <= 64:
++        raise ValueError(f"GLM53_TF_GRAMMAR_THREADS={n}: expected 0..64")
++    return n
++
++
++class GrammarError(RuntimeError):
++    """A reply's grammar failed mid-reply: that request ends with this error (HTTP 500 / a stream error event), the
++    server and the other requests go on."""
++
++
++# -- request fields -----------------------------------------------------------------------------------------------
++@dataclass(frozen=True)
++class Spec:
++    """A request's structured output: ``kind`` (``KINDS``) and its canonical text."""
++
++    kind: str
++    text: str = ""
++    field: str = "response_format"        # the request field it came from, for error messages
++
++
++def _schema_text(value: Any, where: str) -> str:
++    if isinstance(value, str):
++        try:
++            value = json.loads(value)
++        except json.JSONDecodeError as exc:
++            raise ValueError(f"{where} is not valid JSON: {exc.msg}") from None
++    if isinstance(value, bool):
++        value = {} if value else None
++    if not isinstance(value, dict):
++        raise ValueError(f"{where} must be a JSON schema object")
++    return json.dumps(value, ensure_ascii=False)
++
++
++def _text(value: Any, where: str) -> str:
++    if not isinstance(value, str) or not value:
++        raise ValueError(f"{where} must be a non-empty string")
++    return value
++
++
++def _choices(value: Any, where: str) -> str:
++    if not isinstance(value, list) or not value or not all(isinstance(v, str) and v for v in value):
++        raise ValueError(f"{where} must be a non-empty list of non-empty strings")
++    return json.dumps(value, ensure_ascii=False)
++
++
++def _output_spec(body: dict[str, Any]) -> Spec | None:
++    """``response_format`` / ``guided_*`` / ``structured_outputs`` (upstream 98fb8f9's rules)."""
++
++    rf = body.get("response_format")
++    if rf is not None:
++        if not isinstance(rf, dict):
++            raise ValueError('response_format must be an object such as {"type": "json_object"}')
++        kind = rf.get("type")
++        if kind == "json_object":
++            return Spec("json")
++        if kind == "json_schema":
++            js = rf.get("json_schema")
++            if not isinstance(js, dict) or js.get("schema") is None:
++                raise ValueError("response_format json_schema needs json_schema.schema (a JSON schema object)")
++            return Spec("json_schema", _schema_text(js["schema"], "response_format json_schema.schema"))
++        if kind != "text":
++            raise ValueError(f"response_format type must be text, json_object or json_schema, not {kind!r}")
++    guided = {"guided_json": ("json_schema", _schema_text), "guided_regex": ("regex", _text),
++              "guided_choice": ("choice", _choices), "guided_grammar": ("grammar", _text)}
++    for name, (kind, read) in guided.items():
++        if body.get(name) is not None:
++            return Spec(kind, read(body[name], name), name)
++    so = body.get("structured_outputs")
++    if so is not None:
++        if not isinstance(so, dict):
++            raise ValueError('structured_outputs must be an object such as {"json": {...}}')
++        given = sorted(k for k, v in so.items() if v is not None and v is not False)
++        known = {"json": ("json_schema", _schema_text), "regex": ("regex", _text), "choice": ("choice", _choices),
++                 "grammar": ("grammar", _text)}
++        other = [k for k in given if k not in known and k != "json_object"]
++        if other:
++            raise ValueError(f"structured_outputs {', '.join(other)} is not supported: use json, json_object, regex, "
++                             "choice or grammar")
++        for name in given:
++            if name in known:
++                kind, read = known[name]
++                return Spec(kind, read(so[name], f"structured_outputs.{name}"), "structured_outputs")
++        if so.get("json_object"):
++            return Spec("json", field="structured_outputs")
++    return None
++
++
++def _function(tool: Any) -> dict | None:
++    if not isinstance(tool, dict) or tool.get("type", "function") != "function":
++        return None
++    fn = tool.get("function")
++    return fn if isinstance(fn, dict) else None
++
++
++def _tool_spec(body: dict[str, Any]) -> Spec | None:
++    """Tool calls held to their schemas: ``tools`` with ``tool_choice`` ``"required"`` / a named function, or any
++    function marked ``"strict": true``. ``tool_choice`` ``"none"`` and plain ``"auto"`` requests are not
++    constrained."""
++
++    tools = body.get("tools")
++    if not tools:
++        return None
++    if not isinstance(tools, list):
++        raise ValueError("tools must be a list")
++    fns = [_function(t) for t in tools]
++    choice = body.get("tool_choice")
++    if choice is None or choice == "auto":
++        if not any(fn is not None and fn.get("strict") is True for fn in fns):
++            return None
++        choice = "auto"
++    elif choice == "none":
++        return None
++    elif choice != "required":
++        if not (isinstance(choice, dict) and choice.get("type") == "function"
++                and isinstance(choice.get("function"), dict) and isinstance(choice["function"].get("name"), str)):
++            raise ValueError('tool_choice must be "none", "auto", "required" or {"type": "function", "function": '
++                             '{"name": ...}}')
++        choice = {"type": "function", "function": {"name": choice["function"]["name"]}}
++    kept = []
++    for fn in fns:
++        if fn is None:
++            continue
++        if not isinstance(fn.get("name"), str) or not fn["name"]:
++            raise ValueError("every function tool needs a name")
++        entry = {"name": fn["name"]}
++        if fn.get("parameters") is not None:
++            if not isinstance(fn["parameters"], dict):
++                raise ValueError(f"tool {fn['name']}: parameters must be a JSON schema object")
++            entry["parameters"] = fn["parameters"]
++        if "strict" in fn:
++            entry["strict"] = bool(fn["strict"])
++        kept.append({"type": "function", "function": entry})
++    if not kept:
++        return None
++    parallel = body.get("parallel_tool_calls", True) is not False
++    return Spec("tools", json.dumps({"tools": kept, "tool_choice": choice, "parallel_tool_calls": parallel},
++                                    ensure_ascii=False), "tools")
++
++
++def request_spec(body: dict[str, Any]) -> Spec | None:
++    """The body's structured output, None for plain text; ValueError (HTTP 400) when it is malformed. An output format
++    wins over strict tools (the reply is then JSON, so no call can be made); with a required / named tool call it is
++    refused (upstream's rule)."""
++
++    out = _output_spec(body)
++    tools = _tool_spec(body)
++    if out is not None and tools is not None:
++        choice = body.get("tool_choice")
++        if choice == "required" or isinstance(choice, dict):
++            raise ValueError(f'{out.field} cannot be combined with tool_choice "required" or a named function: '
++                             "send one")
++        return out
++    return out if out is not None else tools
++
++
++def _message(exc: Exception) -> str:
++    """xgrammar's error without its timestamp and source location (upstream)."""
++
++    text = str(exc).strip().splitlines()[0] if str(exc).strip() else type(exc).__name__
++    return re.sub(r"^\[[^\]]*\]\s*\S+:\d+:\s*", "", text)
++
++
++# -- the compiler -------------------------------------------------------------------------------------------------
++@dataclass
++class Bound:
++    """A request's compiled grammar and where it starts: ``active`` from the first token (thinking off, a raw
++    prompt), else after ``think_end`` is chosen."""
++
++    spec: Spec
++    compiled: Any
++    think_end: int
++    active: bool
++
++
++def think_active(prompt: Sequence[int], open_id: int, end_id: int) -> bool:
++    """False when ``prompt`` ends inside an open think block (its last ``<think>`` after its last ``</think>``)."""
++
++    for t in reversed(prompt):
++        if t == end_id:
++            return True
++        if t == open_id:
++            return False
++    return True
++
++
++def _vocab(tokenizer_json: Path, vocab_size: int, keep: Sequence[str]) -> tuple[list[str], dict, int, int]:
++    """(encoded vocabulary of ``vocab_size`` entries, backend metadata, <think> id, </think> id): every added token
++    empty (never allowed but as a stop token) except ``keep``; padded rows empty."""
++
++    from tokenizers import Tokenizer
++
++    tok = Tokenizer.from_file(str(tokenizer_json))
++    vocab = tok.get_vocab(with_added_tokens=True)
++    if max(vocab.values()) >= vocab_size:
++        raise ValueError(f"tokenizer ids reach {max(vocab.values())}, the logits have {vocab_size} columns")
++    enc = [""] * vocab_size
++    for s, i in vocab.items():
++        enc[i] = s
++    added = json.loads(Path(tokenizer_json).read_text()).get("added_tokens") or []
++    for a in added:
++        if a.get("content") not in keep and 0 <= int(a["id"]) < vocab_size:
++            enc[int(a["id"])] = ""
++    backend = tok.to_str()
++    open_id, end_id = tok.token_to_id(THINK_OPEN), tok.token_to_id(THINK_END)
++    return enc, backend, -1 if open_id is None else int(open_id), -1 if end_id is None else int(end_id)
++
++
++class Grammars:
++    """xgrammar compilers for one checkpoint: ``text`` (JSON, regex, choice, EBNF: every added token excluded) and
++    ``tools`` (the tool-call markup tokens kept), compiled grammars cached by their text."""
++
++    def __init__(self, xgr, text_info, tools_info, vocab_size: int, stop_ids: Sequence[int], think_open: int,
++                 think_end: int) -> None:
++        self.xgr = xgr
++        self.vocab_size = int(vocab_size)
++        self.stop_ids = tuple(int(t) for t in stop_ids)
++        self.think_open, self.think_end = int(think_open), int(think_end)
++        self.compilers = {"text": xgr.GrammarCompiler(text_info, max_threads=8, cache_limit_bytes=CACHE_BYTES),
++                          "tools": xgr.GrammarCompiler(tools_info, max_threads=8, cache_limit_bytes=CACHE_BYTES)}
++        # tokens no grammar takes (added / padded, not a stop token): a draft of one is cut without asking the matcher
++        # (which would log a warning for each)
++        self.special = {k: frozenset(int(t) for t in info.special_token_ids) - frozenset(self.stop_ids)
++                        for k, info in (("text", text_info), ("tools", tools_info))}
++        self.lock = threading.Lock()              # requests compile on their HTTP threads, rank 1 on its loop
++
++    @classmethod
++    def from_model(cls, model_dir: str | Path, vocab_size: int, stop_ids: Sequence[int]) -> "Grammars":
++        import xgrammar as xgr
++
++        path = Path(model_dir) / "tokenizer.json"
++        infos = []
++        for keep in ((), TOOL_TOKENS):
++            enc, backend, t_open, t_end = _vocab(path, vocab_size, keep)
++            meta = xgr.TokenizerInfo._detect_metadata_from_hf(backend)   # as ``TokenizerInfo.from_huggingface``
++            infos.append(xgr.TokenizerInfo(enc, meta["vocab_type"], vocab_size=vocab_size,
++                                           stop_token_ids=list(stop_ids), add_prefix_space=meta["add_prefix_space"]))
++        return cls(xgr, infos[0], infos[1], vocab_size, stop_ids, t_open, t_end)
++
++    def compile(self, spec: Spec):
++        """The compiled grammar, or ValueError naming what the request's grammar gets wrong (HTTP 400)."""
++
++        try:
++            with self.lock:
++                if spec.kind == "tools":
++                    d = json.loads(spec.text)
++                    tag = self.xgr.get_model_structural_tag("glm_4_7", tools=d["tools"], tool_choice=d["tool_choice"],
++                                                             reasoning="disabled", max_whitespace_cnt=BLANKS,
++                                                             parallel_tool_calls=bool(d["parallel_tool_calls"]))
++                    return self.compilers["tools"].compile_structural_tag(tag)
++                c = self.compilers["text"]
++                if spec.kind in ("json", "json_schema"):
++                    return c.compile_json_schema(OBJECT if spec.kind == "json" else spec.text,
++                                                 max_whitespace_cnt=BLANKS)
++                if spec.kind == "regex":
++                    return c.compile_regex(spec.text)
++                if spec.kind == "choice":
++                    options = " | ".join(json.dumps(v, ensure_ascii=False) for v in json.loads(spec.text))
++                    return c.compile_grammar("root ::= " + options)
++                return c.compile_grammar(spec.text)
++        except (RuntimeError, ValueError, TypeError, KeyError) as exc:
++            raise ValueError(f"{spec.field}: the grammar cannot be enforced: {_message(exc)}") from None
++
++    def bind(self, spec: Spec, compiled, prompt: Sequence[int]) -> Bound:
++        return Bound(spec, compiled, self.think_end, think_active(prompt, self.think_open, self.think_end))
++
++    def constraint(self, bound: Bound) -> "Constraint":
++        view = "tools" if bound.spec.kind == "tools" else "text"
++        return Constraint(self.xgr.GrammarMatcher(bound.compiled), self.vocab_size, think_end=bound.think_end,
++                          active=bound.active, never=self.special[view])
++
++    def follow(self, payload: Sequence[int]) -> Bound:
++        """The grammar another rank ``pack``ed, compiled here: both ranks then walk and mask the same rows."""
++
++        kind, end1, active, n = (int(v) for v in payload[:4])
++        text = _unpack_bytes(payload[4:], n).decode()
++        spec = Spec(KINDS[kind], text)
++        return Bound(spec, self.compile(spec), end1 - 1, bool(active))
++
++
++def _pack_bytes(data: bytes) -> list[int]:
++    """3 bytes an int (non-negative int32 words through the all-gather)."""
++
++    data = data + b"\0" * (-len(data) % 3)
++    return [data[i] | data[i + 1] << 8 | data[i + 2] << 16 for i in range(0, len(data), 3)]
++
++
++def _unpack_bytes(words: Sequence[int], n: int) -> bytes:
++    out = bytearray()
++    for v in words:
++        v = int(v)
++        out += bytes((v & 255, v >> 8 & 255, v >> 16 & 255))
++    return bytes(out[:n])
++
++
++def pack(bound: Bound) -> list[int]:
++    """A request's grammar for the other rank, in front of its header: [MARK, n, kind, think_end + 1, active, bytes,
++    *3-byte words]."""
++
++    data = bound.spec.text.encode()
++    body = [KINDS.index(bound.spec.kind), int(bound.think_end) + 1, int(bound.active), len(data), *_pack_bytes(data)]
++    return [MARK, len(body), *body]
++
++
++def split(ints: Sequence[int]) -> tuple[list[int] | None, list[int]]:
++    """``pack``'s prefix off a header: (the packed grammar or None, the header as it was)."""
++
++    ints = [int(v) for v in ints]
++    if ints and ints[0] == MARK:
++        n = ints[1]
++        return ints[2:2 + n], ints[2 + n:]
++    return None, ints
++
++
++# -- one reply's grammar state --------------------------------------------------------------------------------------
++@dataclass
++class Window:
++    """A verify window the grammar keeps: its tokens (row 0 the pending token), the rows it constrains (in order) and,
++    after ``Constraint.fill``, their allowed-token bits ([len(rows), vocab / 32] int32, xgrammar's layout)."""
++
++    tokens: list[int]
++    rows: list[int] = field(default_factory=list)
++    bits: Any = None
++    cut: int = 0                                      # drafts dropped
++    ok: Any = None                                    # ``stage``: (allowed columns on the device, width, offset)
++    pinned: Any = None                                # the pinned host copy an asynchronous upload reads
++
++
++class Constraint:
++    """One reply's grammar at its chosen tokens (xgrammar's matcher): cuts verify windows, fills their rows' masks,
++    follows the chosen tokens."""
++
++    def __init__(self, matcher, vocab_size: int, *, think_end: int, active: bool, never=frozenset()) -> None:
++        self.m = matcher
++        self.never = never                            # tokens the grammar never takes (drafts of them: cut)
++        self.vocab = int(vocab_size)
++        self.words = (self.vocab + 31) // 32
++        self.think_end = int(think_end)
++        self.active = bool(active)
++        self.stats = {"windows": 0, "cut": 0, "rows": 0, "fill_ms": 0.0, "wait_ms": 0.0}
++
++    @property
++    def finished(self) -> bool:
++        """The grammar has taken its stop token: the reply is complete (anything after is not constrained)."""
++
++        return self.active and self.m.is_terminated()
++
++    def cut(self, tokens: Sequence[int]) -> Window:
++        """The rows an accepted path can use of a chain window (row 0 the pending token, already followed), and the
++        rows the grammar constrains. The matcher ends where it started."""
++
++        tokens = [int(t) for t in tokens]
++        try:
++            return self._cut(tokens)
++        except GrammarError:
++            raise
++        except Exception as exc:                      # noqa: BLE001  (xgrammar's failure ends this reply only)
++            raise GrammarError(f"the reply's grammar failed: {_message(exc)}") from None
++
++    def _cut(self, tokens: list[int]) -> Window:
++        self.stats["windows"] += 1
++        if self.finished:
++            return Window(tokens)
++        m = self.m
++        active = self.active
++        rows = [0] if active else []
++        keep, accepted = 1, 0
++        try:
++            for r in range(1, len(tokens)):
++                t = tokens[r]
++                if active:
++                    if t in self.never or not m.accept_token(t):    # the parent row's masked draw could never choose it
++                        break
++                    accepted += 1
++                    if m.is_terminated():                 # its stop token: nothing is verified after it
++                        break
++                else:
++                    active = t == self.think_end          # the grammar starts at the row after </think>
++                keep += 1
++                if active:
++                    rows.append(r)
++        finally:
++            if accepted:
++                m.rollback(accepted)
++        win = Window(tokens[:keep], rows, cut=len(tokens) - keep)
++        self.stats["cut"] += win.cut
++        self.stats["rows"] += len(rows)
++        return win
++
++    def fill(self, win: Window) -> Window:
++        """Each constrained row's allowed tokens (the kept path accepted row by row, then rolled back). Raises
++        GrammarError when a row allows no token at all."""
++
++        t0 = time.perf_counter()
++        try:
++            self._fill(win)
++        except GrammarError:
++            raise
++        except Exception as exc:                      # noqa: BLE001
++            raise GrammarError(f"the reply's grammar failed: {_message(exc)}") from None
++        finally:
++            self.stats["fill_ms"] += (time.perf_counter() - t0) * 1e3
++        return win
++
++    def _fill(self, win: Window) -> None:
++        if not win.rows:
++            win.bits = None
++            return
++        m = self.m
++        bits = np.empty((len(win.rows), self.words), dtype=np.int32)
++        active, accepted, j = self.active, 0, 0
++        try:
++            for r, t in enumerate(win.tokens):
++                if r:
++                    if active:
++                        if not m.accept_token(t):
++                            raise GrammarError(f"the reply's grammar rejected kept draft {t}")
++                        accepted += 1
++                    else:
++                        active = t == self.think_end
++                if active:
++                    if j >= len(win.rows) or win.rows[j] != r:
++                        raise GrammarError("a window's rows changed between its cut and its fill")
++                    m.fill_next_token_bitmask(bits, j)
++                    if not bits[j].any():
++                        raise GrammarError("the reply's grammar allows no token here")
++                    j += 1
++        finally:
++            if accepted:
++                m.rollback(accepted)
++        if j != len(win.rows):
++            raise GrammarError("a window's rows changed between its cut and its fill")
++        win.bits = bits
++
++    def advance(self, tokens: Sequence[int]) -> None:
++        """Follow chosen tokens (each chosen under this grammar's mask); after the stop token, nothing follows."""
++
++        try:
++            for t in tokens:
++                t = int(t)
++                if not self.active:
++                    self.active = t == self.think_end
++                    continue
++                if self.m.is_terminated():
++                    return
++                if not self.m.accept_token(t):
++                    raise GrammarError(f"the reply's grammar rejected chosen token {t}")
++        except GrammarError:
++            raise
++        except Exception as exc:                      # noqa: BLE001
++            raise GrammarError(f"the reply's grammar failed: {_message(exc)}") from None
++
++
++# -- masks on the logits ------------------------------------------------------------------------------------------
++_SHIFTS: dict[Any, Any] = {}
++
++
++def allowed(win: Window, width: int, device, offset: int = 0):
++    """The constrained rows' allowed columns [len(rows), width] (bool, on ``device``) for logits whose column 0 is
++    token ``offset`` (this rank's vocabulary half). Only the words covering those columns travel to the device; on a
++    GPU from pinned memory without a host wait (the copy is ordered after the forward on the stream)."""
++
++    import torch
++
++    device = torch.device(device)
++
++    words = win.bits.shape[1]
++    w0 = max(0, offset // 32)
++    w1 = min(words, -(-(offset + width) // 32))
++    n = len(win.rows)
++    if w1 <= w0:
++        return torch.zeros((n, width), dtype=torch.bool, device=device)
++    shifts = _SHIFTS.get(device)
++    if shifts is None:
++        shifts = _SHIFTS[device] = torch.arange(8, dtype=torch.uint8, device=device)
++    host = torch.from_numpy(np.ascontiguousarray(win.bits[:, w0:w1]))
++    if device.type == "cuda":
++        host = host.pin_memory()
++        win.pinned = host                             # alive until the copy has run
++        packed = host.to(device, non_blocking=True)
++    else:
++        packed = host.to(device)
++    packed = packed.view(torch.uint8)                 # token t: bit t % 8 of byte t // 8
++    bits = ((packed.unsqueeze(-1) >> shifts) & 1).view(n, -1)
++    s = offset - w0 * 32
++    got = bits[:, s:s + width].bool()
++    if got.shape[1] < width:                          # columns past the grammar's vocabulary: never allowed
++        got = torch.nn.functional.pad(got, (0, width - got.shape[1]), value=False)
++    return got
++
++
++def stage(win: Window | None, width: int, device, offset: int = 0) -> None:
++    """Right after the forward's launch (the fills done): the window's allowed columns queued on the device, so the
++    sampler's ``apply`` finds them there (the host never waits for the forward to upload them)."""
++
++    if win is not None and win.rows and win.bits is not None:
++        win.ok = (allowed(win, width, device, offset), int(width), int(offset))
++
++
++def apply(x, win: Window | None, offset: int = 0):
++    """``x`` (float logits rows [R, width], columns from token ``offset``) with each constrained row's disallowed
++    columns -inf: a new tensor (the forward's logits are not written). Rows the window does not constrain keep their
++    values."""
++
++    if win is None or not win.rows:
++        return x
++    import torch
++
++    staged = getattr(win, "ok", None)
++    if staged is not None and staged[1] == x.shape[-1] and staged[2] == offset and staged[0].device == x.device:
++        ok = staged[0]
++    else:
++        ok = allowed(win, x.shape[-1], x.device, offset)
++    if win.rows == list(range(x.shape[0])):
++        return x.masked_fill(~ok, float("-inf"))
++    out = x.clone()
++    idx = torch.tensor(win.rows, device=x.device)
++    out[idx] = out[idx].masked_fill(~ok, float("-inf"))
++    return out
++
++
++# -- fills while the forward runs ---------------------------------------------------------------------------------
++class Pending:
++    """Fills started for a round: ``wait`` -> per item None or the GrammarError it raised."""
++
++    def __init__(self, items, futures) -> None:
++        self.items, self.futures = items, futures
++
++    def wait(self) -> list[BaseException | None]:
++        out: list[BaseException | None] = []
++        for i, (con, win) in enumerate(self.items):
++            t0 = time.perf_counter()
++            try:
++                if self.futures is None:
++                    con.fill(win)
++                else:
++                    self.futures[i].result()
++            except GrammarError as exc:
++                out.append(exc)
++            else:
++                out.append(None)
++            con.stats["wait_ms"] += (time.perf_counter() - t0) * 1e3
++        return out
++
++
++class Filler:
++    """Mask fills for a round's constrained windows: on the worker node threads from ``start`` (right after the cut, before
++    the forward), or (``threads`` 0) on the calling thread in ``wait`` (after the forward's launch)."""
++
++    def __init__(self, n: int | None = None) -> None:
++        self.n = threads() if n is None else int(n)
++        self.pool = ThreadPoolExecutor(self.n, thread_name_prefix="glm-grammar") if self.n > 0 else None
++        if self.pool is not None:               # every worker made now, by the loading thread: they inherit its cpus
++            gate = threading.Barrier(self.n + 1)  # (patches/0370's ``rest``), not the round loop's single core
++            for _ in range(self.n):
++                self.pool.submit(gate.wait)
++            gate.wait()
++
++    def start(self, items: Sequence[tuple[Constraint, Window]]) -> Pending:
++        items = [(c, w) for c, w in items]
++        if self.pool is None:
++            return Pending(items, None)
++        return Pending(items, [self.pool.submit(c.fill, w) for c, w in items])
++
++
++# -- the engine's side ----------------------------------------------------------------------------------------------
++def vocab_size(model_dir: str | Path) -> int | None:
++    """The checkpoint's logits width from ``config.json`` (``text_config`` first), or None (upstream)."""
++
++    path = Path(model_dir) / "config.json"
++    if not path.is_file():
++        return None
++    config = json.loads(path.read_text())
++    for part in (config.get("text_config") or {}, config):
++        if isinstance(part.get("vocab_size"), int):
++            return int(part["vocab_size"])
++    return None
++
++
++def setup(g) -> None:
++    """At load (both ranks): the knob (both must agree), and with it on the compilers (so neither rank builds them
++    inside a round) and the fill threads. Sets ``g.grammar_on``, ``g.grammars`` (None: unavailable here, with
++    ``g.grammar_why``) and ``g.filler``."""
++
++    on = enabled()
++    both = g._gather_ints([int(on)])
++    if both[0] != both[1]:
++        raise RuntimeError(f"the two ranks were started with different {ENV}: rank 0 {both[0][0]}, rank 1 "
++                           f"{both[1][0]}")
++    g.grammar_on, g.grammars, g.grammar_why, g.filler = on, None, None, None
++    if not on:
++        return
++    t0 = time.perf_counter()
++    try:
++        vocab = vocab_size(g.model_dir)
++        if vocab is None:
++            raise ValueError("config.json has no vocab_size")
++        w = getattr(g, "w", None)
++        width = int(w.head.n) * (1 if w.comm is None else int(w.world)) if w is not None else vocab
++        if width != vocab:
++            raise ValueError(f"config.json's vocab_size {vocab} is not the logits' {width} columns")
++        g.grammars = Grammars.from_model(g.model_dir, vocab, tuple(g.eos))
++    except ImportError:
++        g.grammar_why = f"structured output needs xgrammar on the server ({EXTRA})"
++    except Exception as exc:  # noqa: BLE001 - reported, and the requests refused, on both ranks
++        g.grammar_why = f"structured output is unavailable: {type(exc).__name__}: {exc}"
++    ok = g._gather_ints([int(g.grammars is not None)])
++    if not (ok[0][0] and ok[1][0]):
++        why = g.grammar_why or "rank 1 could not build its grammar compiler"
++        g.grammars, g.grammar_why = None, why
++    else:
++        g.filler = Filler()
++    if g.rank == 0:
++        if g.grammars is None:
++            print(f"[tensorfold] structured output (patches/0610): {ENV}=1 but {g.grammar_why}; response_format and "
++                  "strict tools answer HTTP 400", flush=True)
++        else:
++            print(f"[tensorfold] structured output (patches/0610): response_format / guided_* / strict tool calls "
++                  f"enforced (xgrammar {getattr(g.grammars.xgr, '__version__', '?')}, {g.grammars.vocab_size} "
++                  f"columns, mask fills on {g.filler.n} thread(s) during the forward; built in "
++                  f"{time.perf_counter() - t0:.1f} s)", flush=True)
++
++
++def check(g, body: dict[str, Any]) -> str | None:
++    """Rank 0, before any header is sent: why the body's grammar cannot run (HTTP 400), compiling it (cached for the
++    request's run). Off: None (the fields are ignored as before)."""
++
++    if not getattr(g, "grammar_on", False):
++        return None
++    try:
++        spec = request_spec(body)
++        if spec is None:
++            return None
++        if getattr(g, "grammars", None) is None:
++            return getattr(g, "grammar_why", None) or "structured output is unavailable on this server"
++        g.grammars.compile(spec)
++    except ValueError as exc:
++        return str(exc)
++    return None
++
++
++def for_request(g, body: dict[str, Any]):
++    """Rank 0: (spec, compiled) for the calling thread's request (``g.request.grammar``), or None."""
++
++    if not getattr(g, "grammar_on", False) or getattr(g, "grammars", None) is None:
++        return None
++    spec = request_spec(body)
++    return None if spec is None else (spec, g.grammars.compile(spec))
++
++
++def bound_for(g, prompt: Sequence[int]) -> Bound | None:
++    """Rank 0, in ``generate``: the calling thread's grammar bound to its prompt (the think state), or None."""
++
++    req = getattr(getattr(g, "request", None), "grammar", None)
++    if req is None or not getattr(g, "grammar_on", False) or getattr(g, "grammars", None) is None:
++        return None
++    spec, compiled = req
++    return g.grammars.bind(spec, compiled, prompt)
++
++
++def follow(g, payload: Sequence[int]) -> Bound:
++    """Rank 1: a header's packed grammar, compiled here."""
++
++    if getattr(g, "grammars", None) is None:
++        raise RuntimeError("rank 0 sent a grammar, but this rank has no grammar compiler (GLM53_TF_GRAMMAR)")
++    return g.grammars.follow(payload)
++
++
++def fresh(g, bound: Bound | None) -> Constraint | None:
++    """A new reply's grammar state (each admission, so a background request that runs again starts over)."""
++
++    if bound is None:
++        return None
++    con = g.grammars.constraint(bound)
++    con.bound = bound
++    return con
++
++
++@contextmanager
++def first_token(e, con: Constraint | None):
++    """The prefill's first token under the reply's grammar (a one-row window): ``e.sample``'s target rows masked while
++    the prefill (or ``mpf``'s finish) runs, drafts never. Nothing changes without a constraint."""
++
++    if con is None:
++        yield
++        return
++    win = con.fill(con.cut([0]))
++    own = e.__dict__.get("sample")
++    inner = e.sample
++
++    def sample(logits, positions, sampling, *, draft: bool = False, probs=None):
++        if not draft and win.rows:
++            logits = apply(logits.float(), win, e.w.vocab_offset)
++            return _host_sample(e, inner, logits, positions, sampling, probs)
++        return inner(logits, positions, sampling, draft=draft, probs=probs)
++
++    e.sample = sample
++    try:
++        yield
++    finally:
++        if own is None:
++            e.__dict__.pop("sample", None)
++        else:
++            e.sample = own
++
++
++def _host_sample(e, inner, logits, positions, sampling, probs=None) -> list[int]:
++    """``Engine.sample`` of masked rows with the host's draw (patches/0450's device draw is not used for masked rows;
++    it is off in production). A stand-in engine's own ``sample`` is called as it is."""
++
++    from .decode import Engine, sample_rows
++
++    if getattr(inner, "__func__", None) is Engine.sample:
++        return sample_rows(e.w, logits, positions, sampling, None, probs, host=True)
++    return inner(logits, positions, sampling, draft=False, probs=probs)
++
++
++def sample(e, logits, positions, sampling, win: Window | None) -> list[int]:
++    """The lone loops' ``e.sample`` of a verify window's rows under the reply's grammar."""
++
++    if win is None or not win.rows:
++        return e.sample(logits, positions, sampling)
++    return _host_sample(e, e.sample, apply(logits.float(), win, e.w.vocab_offset), positions, sampling)
++
++
++class Lone:
++    """The lone engine's decode loops (``decode.serial_decode`` / ``mtp_decode`` / ``dflash_decode`` /
++    ``auto_decode``) under a reply's grammar: ``cut`` a window before the forward (fills start), ``sample`` its rows
++    masked, ``advance`` the chosen tokens (upstream 1da4b7e's hooks, with the fills off the critical path)."""
++
++    def __init__(self, e, con: Constraint) -> None:
++        self.e, self.con = e, con
++        self.filler = getattr(e, "grammar_filler", None) or Filler(0)
++        self.win: Window | None = None
++        self.pending: Pending | None = None
++        self.error: BaseException | None = None
++
++    def cut(self, tokens: Sequence[int]) -> list[int]:
++        self.win = self.con.cut(tokens)
++        self.pending = self.filler.start([(self.con, self.win)])
++        return list(self.win.tokens)
++
++    def forward(self, tokens: Sequence[int]):
++        """``e.forward`` of the cut window, then its masks (filled meanwhile; inline: now, while the GPU runs)."""
++
++        logits = self.e.forward(tokens)
++        self.settle(logits)
++        return logits
++
++    def settle(self, logits=None) -> None:
++        """The window's masks: waited for (worker threads), or filled now (inline) while the forward runs; then
++        staged on the logits' device."""
++
++        self.error = self.pending.wait()[0]
++        if self.error is None and logits is not None:
++            stage(self.win, logits.shape[-1], logits.device, self.e.w.vocab_offset)
++
++    def sample(self, logits, positions, sampling) -> list[int]:
++        if self.error is not None:
++            raise self.error
++        return sample(self.e, logits, positions, sampling, self.win)
++
++    def advance(self, tokens: Sequence[int]) -> None:
++        self.con.advance(tokens)
++
++
++def lone(e) -> Lone | None:
++    """``Lone`` for the engine's current reply, None without a grammar (the loops run as before)."""
++
++    con = getattr(e, "constraint", None)
++    return None if con is None else Lone(e, con)
++
++
++def report(con: Constraint | None) -> dict | None:
++    """The request's grammar stats (drafts cut, rows masked, fill / exposed wait ms)."""
++
++    if con is None:
++        return None
++    s = dict(con.stats)
++    s["fill_ms"], s["wait_ms"] = round(s["fill_ms"], 2), round(s["wait_ms"], 2)
++    s["finished"] = bool(con.finished)
++    return s
++
++
++__all__ = ["Bound", "Constraint", "ENV", "FIELDS", "Filler", "GrammarError", "Grammars", "KINDS", "Spec", "Window",
++           "allowed", "apply", "stage", "bound_for", "check", "enabled", "first_token", "follow", "for_request", "fresh",
++           "pack", "request_spec", "sample", "setup", "split", "think_active", "threads"]
+diff --git a/src/tensorfold/families/glm5_next/cuda/resident.py b/src/tensorfold/families/glm5_next/cuda/resident.py
+index 2b9aab8..ee6db16 100644
+--- a/src/tensorfold/families/glm5_next/cuda/resident.py
++++ b/src/tensorfold/families/glm5_next/cuda/resident.py
+@@ -202,6 +202,8 @@ class Resident:
+             q = bat.seqs[s]
+             if q is None or q.stepper is None:
+                 return "prefill"
++            if getattr(q, "con", None) is not None:     # patches/0610: its rows need the host's masks each round
++                return "grammar"
+             stp = q.stepper
+             if stp.done(bat.eos):
+                 return "done"

@@ -1,7 +1,10 @@
 # RigMark: TensorFold on 2x DGX Spark
 
-Three sets of receipts, newest first:
+Four sets of receipts, newest first:
 
+0. **W20 run: 3 rounds on the W20 production config** (2026-09-30, image b11 = b10's patches + 0620 with
+   `GLM53_TF_TOOL_FIXES=all`): [`tensorfold-20260930-w20-final-r1/`](tensorfold-20260930-w20-final-r1/),
+   [`-r2/`](tensorfold-20260930-w20-final-r2/), [`-r3/`](tensorfold-20260930-w20-final-r3/). See [below](#w20-run-3-rounds-averaged).
 1. **W17 release run: the 3-round averaged run on the release config** (2026-09-30, image b9 = patches 0001-0490 +
    0500 + 0540 + 0550 + 0560, `config/prod.env.example` of this release): [`tensorfold-20260930-w17-final-r1/`](tensorfold-20260930-w17-final-r1/),
    [`-r2/`](tensorfold-20260930-w17-final-r2/), [`-r3/`](tensorfold-20260930-w17-final-r3/). See [below](#release-run-3-rounds-averaged).
@@ -11,6 +14,34 @@ Three sets of receipts, newest first:
    the section after that.
 
 - Alex Ellis's published vLLM receipts (unmodified copies, MIT): [`reference-alexellis/`](reference-alexellis/README.md)
+
+## W20 run (3 rounds, averaged)
+
+Production after W20 (image b11, `config/prod.env.example` of this update),
+serving, not restarted between runs. Three back-to-back RigMark standard-suite runs (2026-09-30 11:49-12:16 UTC,
+538 / 541 / 543 s), RigMark pinned at `c5a0db01b054` (clean), `reasoning_effort` low, a new comparison ID a run
+(`2026-09-glm53-exl3-2xspark-tensorfold-w20-final-r1` / `-r2` / `-r3`). All three valid: 15/15 basic output gates each.
+All numbers: [`results/W20/final/summary.md`](../W20/final/summary.md).
+
+Each directory: the receipt JSON + `.sha256` (r1 `bc08bfddfe9705d3...`, r2 `8135ad83b5e7fba0...`, r3
+`bfbd879edcf68631...`), the card, `command.txt` (paths replaced by `<repo>`; the directories were renamed after the
+runs), `metadata.json`, `preflight.json` and `models.json`. No `requests.jsonl` this time; RigMark's `run.log` is not
+included.
+
+| RigMark (mean of 3 runs' medians, min-max) | TensorFold W20 (b11) | TensorFold W17 (b9) | vLLM TP2 k=7 (Alex) |
+|---|---:|---:|---:|
+| Code / prose / structured decode tok/s | **72.4** (72.2-72.6) / **45.7** (45.3-45.8) / **95.6** (95.6-95.7) | 67.9 / 43.0 / 88.8 | 44.0 / 18.9 / 64.9 |
+| Cold prefill 8K / 32K / 64K tok/s | 1,610 (1,609-1,611) / 1,684 (1,679-1,689) / 1,667 (1,663-1,671) | 1,560 / 1,634 / 1,620 | **1,813 / 1,908 / 1,922** |
+| Immediate replay 8K / 32K / 64K tok/s | **38,183** / **139,893** / **248,359** | 36,474 / 132,814 / 243,980 | 1,812 / 11,046 / 11,364 |
+| Replay TTFT 8K / 32K / 64K s | **0.21** / **0.23** / **0.26** | 0.22 / 0.25 / 0.27 | 4.52 / 2.97 / 5.77 |
+| C1 / C2 / C4 aggregate tok/s | **57.5** (54.8-59.1) / **76.0** (73.1-79.2) / **95.1** (93.0-98.4) | 53.1 / 70.1 / 91.0 | 31.6 / 42.0 / 66.1 |
+| C1 / C2 / C4 per-stream TTFT s | **0.47** / **0.61** / 0.84 | 0.49 / 0.65 / 0.89 | 0.60 / 0.68 / **0.81** |
+| Code / prose / structured TTFT s | **0.48** / **0.38** / **0.45** | 0.50 / 0.41 / 0.47 | 0.60 / 0.49 / 0.47 |
+
+Against W17: decode +5-8%, cold prefill +3%, C4 aggregate +4.5%; from W19's adopted changes (0580 expert loads, NCCL on
+both CX7 functions) and host-side tuning outside this repo. Still behind Alex's vLLM receipt: cold prefill (0.87-0.89x) and C4 per-stream
+TTFT (0.84 vs 0.81 s). The "Read this before comparing" notes under the W13 baseline apply: different weights
+(abliterated EXL3 4-bit here, NVFP4 there), drafter policy, context limit, day and machines.
 
 ## Release run (3 rounds, averaged)
 

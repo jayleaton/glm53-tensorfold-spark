@@ -1,0 +1,157 @@
+diff --git a/src/tensorfold/families/glm5_next/cuda/decode_stream.py b/src/tensorfold/families/glm5_next/cuda/decode_stream.py
+index 35ebb45..a7c1820 100644
+--- a/src/tensorfold/families/glm5_next/cuda/decode_stream.py
++++ b/src/tensorfold/families/glm5_next/cuda/decode_stream.py
+@@ -21,6 +21,23 @@ Knobs (every one off by default; each rank reads its own, and ranks may differ w
+                                    otherwise (the slices added by the last one to finish); 1 / 0 force either. The
+                                    same sum in the same order either way (``_reduce``'s), so it places work only.
+ ``GLM53_TF_DEC_CTAS``              0 (default): one CTA every resident slot; N: at most N CTAs (the overlap stream).
++``GLM53_TF_DEC_QMM_MAXMB``         patches/0570, the dense size switch: 0 (default) = off; X > 0 = ``q4_stream.cu`` only
++                                   for 4-bit matrices of at most X MiB (weights + scales + biases, ``Q4.nbytes``), today's
++                                   ``_qmm`` for every larger one. It turns the dense hook on by itself (GLM53_TF_DEC_QMM
++                                   need not be set) and keeps its Triton guard. W16 (THEORY-2 item 7): cold, 0440's kernel
++                                   wins on every shape up to index q_b (3.54 MB = 3.375 MiB) and loses 10-18% from 14 MB
++                                   up, so 3.5 takes KDA f_b / g_b, index k (<= 4 rows), shared down, index q_b, DSA
++                                   kv_b (with PDL only) and the 1024 x 4096 grid (unmeasured), and leaves every shape
++                                   >= 4.72 MB alone.
++                                   (GLM53_TF_DEC_QMM_MAX_MB is read as the same knob.)
++``GLM53_TF_DEC_QMM_TABLE``         patches/0570: 1 (default) = the switched shapes use their W16 cold placement
++                                   (``SMALL_PLACE``: groups a stage, stages, whole-tile or split items, and the largest
++                                   window each still wins at, with and without PDL); 0 = GLM53_TF_DEC_QMM_CFG / _SERIAL
++                                   for every switched shape.
++``GLM53_TF_DEC_QMM_EXCLUDE``       patches/0570: "NxK,NxK" shapes kept on ``_qmm`` even under the size (default none).
++
++The size switch picks a kernel per (shape, window rows), never per value: both kernels give the same bits for every
++row count, so a row's bits do not depend on which one ran (batched == alone holds; the two ranks may differ).
+ ``GLM53_TF_DEC_PDL=1``             launch both as programmatic dependents (sm_90+): each CTA prefetches its first
+                                    item's weights into L2, then waits for the previous kernel (griddepcontrol.wait).
+ 
+@@ -42,6 +59,7 @@ kernels are exl3_fast.cu / fast_qmm.py) or windows past 64 rows.
+ from __future__ import annotations
+ 
+ import os
++import re
+ from functools import lru_cache
+ from pathlib import Path
+ 
+@@ -93,6 +111,60 @@ def qmm_reference_fused() -> bool:
+     return triton.__version__.startswith("3.7.")
+ 
+ 
++# -- patches/0570: the dense size switch --------------------------------------------------------------------------------
++MIB = 1 << 20
++
++# W16 cold placement of the switched shapes (results/W16/probes-head/cold.json: every (groups a stage, stages) x
++# split / whole-tile x PDL row had the same bits as _qmm). Per shape and PDL setting (GLM53_TF_DEC_PDL picks the
++# column), the setting with the best geometric mean over the 1-16-row windows in BOTH cold modes -- "flush" (a 64 MiB
++# streaming predecessor before every call, the in-situ-like one) and "rotate" (>= 96 MiB of copies back to back) --
++# and the largest window it still wins at in both: index k loses from 8 rows (flush / rotate 1.07 / 0.97 at 8, 0.76 /
++# 0.72 at 16) and DSA kv_b without PDL at 1-2 rows (0.97 / 0.93; it has no decode call in W11 anyway: 0390's latent
++# kernels absorb it), so they stay on _qmm there. Placement only: no entry changes a bit.
++#   shape: {pdl: (groups a stage, stages, whole-tile items, max rows)}    W16 flush / rotate at 2-4 rows (1-stream)
++SMALL_PLACE = {
++    "4096x128": {False: (1, 8, True, 64), True: (1, 6, True, 64)},        # 1.20 / 1.10 | pdl 1.16 / 1.94
++    "160x4096": {False: (1, 8, False, 4), True: (1, 8, False, 4)},        # 1.21 / 1.25 | pdl 1.15 / 1.46
++    "4096x1024": {False: (1, 4, True, 64), True: (1, 4, True, 64)},       # 1.17 / 1.11 | pdl 1.08 / 1.17
++    "4096x1536": {False: (1, 4, True, 64), True: (1, 4, True, 64)},       # 1.15 / 1.08 | pdl 1.19 / 1.15
++    "8192x512": {False: (1, 4, True, 0), True: (1, 6, True, 64)},         # 1.04 / 0.94 | pdl 1.05 / 1.26
++}
++
++
++def _maxmb() -> float:
++    raw = _env("GLM53_TF_DEC_QMM_MAXMB", "") or _env("GLM53_TF_DEC_QMM_MAX_MB", "") or "0"
++    try:
++        v = float(raw)
++    except ValueError:
++        v = -1.0
++    if not (v >= 0 and v == v and v != float("inf")):
++        raise ValueError(f"GLM53_TF_DEC_QMM_MAXMB={raw!r}: expected a size in MiB >= 0 (0 = off)")
++    return v
++
++
++def small_shape(q, m: int) -> tuple | None:
++    """patches/0570: (the shape key, its SMALL_PLACE entry or None) when the size switch sends this (matrix, rows) to
++    q4_stream.cu; None when it stays on _qmm. Without the size knob every shape qualifies (0440's behaviour)."""
++
++    limit = CFG["qmm_max_bytes"]
++    key = f"{q.n}x{q.k}"
++    if not limit:
++        return key, None
++    info = q.__dict__.get("_dec_small")
++    if info is None or info[0] != limit or info[1] != CFG["qmm_exclude"]:
++        ok = q.nbytes() <= limit and key not in CFG["qmm_exclude"]
++        info = (limit, CFG["qmm_exclude"], ok)
++        q.__dict__["_dec_small"] = info                           # one size check a matrix (host time at 4 streams)
++    if not info[2]:
++        return None
++    place = SMALL_PLACE.get(key) if CFG["qmm_table"] else None
++    if place is not None:
++        place = place[bool(CFG["pdl"]) and pdl_supported()]
++        if m > place[3]:
++            return None
++    return key, place
++
++
+ def parse() -> dict:
+     """The knobs, validated (a bad value refuses to start rather than silently running something else)."""
+ 
+@@ -112,6 +184,15 @@ def parse() -> dict:
+     if ctas < 0:
+         raise ValueError("GLM53_TF_DEC_CTAS must be >= 0")
+     q = _env(ENV_QMM, "0")
++    maxmb = _maxmb()                                              # patches/0570
++    if maxmb > 0 and not _on(q):
++        q = "1"                                                   # the size switch turns the dense hook on by itself
++    table = _on(_env("GLM53_TF_DEC_QMM_TABLE", "1"))
++    exclude = frozenset(v.strip() for v in _env("GLM53_TF_DEC_QMM_EXCLUDE", "").split(",") if v.strip())
++    for v in exclude:
++        if not re.fullmatch(r"\d+x\d+", v):
++            raise ValueError(f"GLM53_TF_DEC_QMM_EXCLUDE={os.environ.get('GLM53_TF_DEC_QMM_EXCLUDE')!r}: "
++                             "expected NxK shapes separated by commas")
+     if _on(q) and q != "force" and not qmm_reference_fused():
+         import sys
+ 
+@@ -120,7 +201,8 @@ def parse() -> dict:
+         q = "0"
+     return {"experts": _on(_env(ENV_EXPERTS, "0")), "qmm": _on(q),
+             "pdl": _on(_env("GLM53_TF_DEC_PDL", "0")), "experts_cfg": ecfg, "qmm_cfg": qcfg, "ctas": ctas,
+-            "qmm_serial": serial}
++            "qmm_serial": serial, "qmm_max_bytes": int(maxmb * MIB) if maxmb > 0 else 0, "qmm_table": table,
++            "qmm_exclude": exclude}
+ 
+ 
+ CFG = parse()
+@@ -281,6 +363,12 @@ def matmul(x: torch.Tensor, q, xs: torch.Tensor | None = None, *, out: torch.Ten
+ 
+     if not CFG["qmm"] or not qmm_ok(x, q, xs, out, part, f32):
+         return None
++    small = small_shape(q, x.shape[0])                            # patches/0570: None = larger than the size knob
++    if small is None:
++        return None
++    place = small[1]
++    if place is not None:
++        return run_qmm(x, q, xs, out=out, f32=f32, part=part, cfg=place[:2], serial=place[2])
+     return run_qmm(x, q, xs, out=out, f32=f32, part=part)
+ 
+ 
+@@ -326,11 +414,18 @@ def run_qmm(x, q, xs=None, *, out=None, f32=False, part=None, cfg=None, pdl=None
+ 
+ # -- installation --------------------------------------------------------------------------------------------------
+ def configure(experts: bool | None = None, qmm_on: bool | None = None, *, pdl: bool | None = None,
+-              experts_cfg: tuple | None = None, qmm_cfg: tuple | None = None) -> dict:
+-    """Install the hooks as the knobs (or the arguments) say. CUDA graphs keep the kernels they captured."""
++              experts_cfg: tuple | None = None, qmm_cfg: tuple | None = None, qmm_max_mb: float | None = None,
++              qmm_table: bool | None = None) -> dict:
++    """Install the hooks as the knobs (or the arguments) say. CUDA graphs keep the kernels they captured.
++    ``qmm_max_mb`` (patches/0570): the size switch in MiB (0 = every shape, 0440's behaviour)."""
+ 
+     import sys
+ 
++    if qmm_max_mb is not None:
++        CFG["qmm_max_bytes"] = int(float(qmm_max_mb) * MIB) if qmm_max_mb > 0 else 0
++    if qmm_table is not None:
++        CFG["qmm_table"] = bool(qmm_table)
++
+     if experts is not None:
+         CFG["experts"] = bool(experts)
+     if qmm_on is not None:

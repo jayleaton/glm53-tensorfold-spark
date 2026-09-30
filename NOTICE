@@ -16,6 +16,12 @@ TensorFold
   and vendor/TensorFold/LICENSES/. The changes in patches/ are this project's work under Apache-2.0; the
   TensorFold code they modify, and quote as diff context, stays under TensorFold's MIT License, so keep
   TensorFold's copyright and permission notice with any copy of a patched tree.
+  patches/0600-glm-upstream-ports.patch ports code from later upstream TensorFold releases (0.3.6.2 and
+  0.5.0, commits 24afe5e, 2bc35c4, a586f3d, 391713e / 05cbb54 / b4042e8, e6be5ff, 88407d1, c30a1a9,
+  51b098d / c4bf25f; same MIT License, Copyright (c) 2026 TensorFold contributors): server/cancellation.py,
+  glm5_next/cuda/image_fetch.py (from vision/images_http.py), closed_json, parse_numbers and the /health
+  totals; each ported piece names its source commit, and docs/UPSTREAM-PORTS.md lists our changes to them.
+  Those ported pieces stay under TensorFold's MIT License.
 
 GLM-5.3-Flash EXL3 2x DGX Spark serving kits (patches/0170)
   Reederey87/glm53-flash-exl3-2x-dgx-spark (https://github.com/Reederey87/glm53-flash-exl3-2x-dgx-spark,
@@ -51,6 +57,12 @@ b12x fast-prefill kernels (patches/0240)
   blocks of all four streams; the one-pass-per-row sparse MLA softmax) on this project's arithmetic; no b12x code is
   copied. The changes are listed in the files' headers and in vendor/TensorFold/THIRD_PARTY_NOTICES.md as patched.
 
+kindlingai/glm-5.3-flash-gx10 (ideas only; patches/0590 and the W19 NCCL setting)
+  https://github.com/kindlingai/glm-5.3-flash-gx10 (read at 45b438b). The repository has no licence, so no code or
+  kernel from it is included: patches/0590-glm-expert-prefill-v2.patch (exl3_fat2.cu) re-implements the structure of
+  its fused prefill MoE kernel on this project's arithmetic, and NCCL over both CX7 functions follows its notes
+  (credit for the ideas only; docs/KINDLING-AUDIT.md).
+
 log / exp of ARM Optimized Routines as built into glibc 2.39 (patches/0450)
   patches/0450-glm-gpu-round.patch (glm5_next/cuda/gpusample.py) re-implements, for the GPU, the float64 log and
   exp that numpy calls on aarch64: glibc 2.39's __log / __exp (sysdeps/ieee754/dbl-64/e_log.c, e_exp.c), which come
@@ -70,6 +82,15 @@ Public text behind the shipped draft vocabulary ranking (patches/0420)
 NVIDIA PyTorch container (nvcr.io/nvidia/pytorch:26.07-py3)
   The Docker image is built FROM this container and is subject to the NVIDIA Deep Learning Container
   License. PyTorch (BSD-3-Clause) and Triton (MIT) come from it.
+
+xgrammar (patches/0610, structured output)
+  mlc-ai/xgrammar 0.2.8 (https://github.com/mlc-ai/xgrammar), Copyright the MLC team, Apache License 2.0
+  (text: vendor/TensorFold/LICENSES/Apache-2.0.txt). Installed into the image by docker/Dockerfile with pip,
+  with its dependencies apache-tvm-ffi (Apache-2.0), pydantic (MIT) and transformers (Apache-2.0); not
+  vendored. patches/0610-glm-structured-output.patch (glm5_next/cuda/grammar.py) calls its compiler, matcher
+  and built-in GLM-4.7 / GLM-5 tool-call structural tag. The same file ports code from upstream TensorFold
+  0.5.0 (src/tensorfold/engine/grammar.py, commits 98fb8f9 and 1da4b7e; MIT License, Copyright (c) 2026
+  TensorFold contributors), named in its header.
 
 Not included; each user downloads these under their own terms:
 

@@ -1,0 +1,16 @@
+S: MemAvailable min by phase (head / worker GiB)
+  pre       11.72 /  11.32
+  ab        10.14 /   9.67
+  ab2        9.63 /   9.26
+  n1         9.09 /   8.73
+  stress     7.84 /   7.56
+  mmlu       8.92 /   8.72
+  needle     8.39 /   8.01
+  ab3        8.32 /   8.06
+  ab4        7.96 /   7.69
+  stress+mmlu+needle min 7.84 / 7.56  -> FAIL (>= 8 GiB)
+  stress min 7.84 / 7.56
+  needle min 8.39 / 8.01
+  whole load min 7.84 / 7.56
+  MemFree steps >= 1 GiB (r0): stress 3
+  MemFree steps >= 1 GiB (r1): stress 3

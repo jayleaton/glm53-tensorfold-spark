@@ -399,7 +399,7 @@ def test_cold_main_mocked(monkeypatch, tmp_path, capsys):
     import json
     d = json.loads(out.read_text())
     assert not d["errors"], d["errors"]
-    assert len(d["rotate"]) == len(d["flush"]) == len(d["hot"]) == 13 * 5
+    assert len(d["rotate"]) == len(d["flush"]) == len(d["hot"]) == len(SHAPES) * 5     # 13 shapes + 0570's 1024x4096
     r = d["rotate"][0]
     assert {"shape", "rows", "MB", "sk", "old_us", "old_GBs", "roof_GBs", "auto serial", "best_new",
             "speedup"} <= set(r)

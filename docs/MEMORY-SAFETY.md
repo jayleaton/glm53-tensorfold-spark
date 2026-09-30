@@ -1,10 +1,14 @@
 # Memory safety: the long-prefill dip and page cache at admission (patches/0550)
 
-> **Update 2026-09-30 (W17, docs/RESULTS.md):** measured on the GPU in image b9 and **not adopted**: the GPU tests
-> passed, the page-cache probe passed and the 314k needle's dip was 1.7 instead of 4.0 GiB, but the first long prefill
-> after a burst of short requests ran up to 9.8% slower in 2 of 4 prefill pairs. Production (image b9) has 0550 built
-> in with its knobs off (`GLM53_TF_ADMIT_MEM=free`, `GLM53_TF_SELECT_SCRATCH=off`, `GLM53_TF_ALLOC_TRIM_GB=0`). Next:
-> the same sequence with only the trim off.
+> **Update 2026-09-30 (W19, docs/RESULTS.md): the scratch is adopted.** Production (image b10) runs
+> `GLM53_TF_SELECT_SCRATCH=grow`, `GLM53_TF_ALLOC_TRIM_GB=0`, `GLM53_TF_ADMIT_MEM=free`. W18 found the trim to be the
+> cause of W17's slow first prefills (scratch only was as fast as off); in W19 the 314k needle's minimum went from
+> 6.58 / 6.31 to 8.68 / 8.51 GiB (head / worker) and the 4 x 250k stress minimum from 7.75 / 7.61 to 8.34 / 8.09 GiB
+> (with the NCCL channel change), so the 8 GiB gate is met again after the heavy warm-up. Section 6 has the W18
+> measurements and the 0550 v2 proposal (trims only as planned rounds).
+>
+> Earlier (W17): measured in image b9 and not adopted: the needle's dip was 1.7 instead of 4.0 GiB, but the first long
+> prefill after a burst of short requests ran up to 9.8% slower in 2 of 4 prefill pairs (the trim, per W18).
 
 Status (2026-09-29): written and tested offline (CPU, Triton's interpreter; no GPU run). Production is unchanged
 (image b7 = patches through 0490 + 0500 + 0540). 0550 applies to the b7 stack and to the whole stack through 0540.
@@ -286,3 +290,64 @@ Build `glm53-tensorfold:b8` = b7's list + 0550 (`PATCHES="... 0490 0500 0540 055
 7. **Adopt** if 1-6 pass: prod.env `IMAGE=glm53-tensorfold:b8` (0550's knobs default on; nothing else changes).
    Revert: `IMAGE=glm53-tensorfold:b7`; partial on b8: `GLM53_TF_SELECT_SCRATCH=off`, `GLM53_TF_ALLOC_TRIM_GB=0`,
    `GLM53_TF_ADMIT_MEM=free`, each alone.
+
+## 6. W17 / W18 on the GPU: the trim, and a follow-up (proposal, not implemented)
+
+Measured (docs/RESULTS.md W17, W18; `results/W18/`). Per load: the W17 sequence (heavy warm-up = `mpf.py` + `c4.py`
+x2, ab.sh set, N1, 4 x ~250k stress, MMLU-200, exact again, needle ~314k alone) with four ab.py pairs (24.5k / 98k).
+
+| load | knobs | slow prefills (of 8) | stress dip / min | needle dip / min | where |
+| --- | --- | ---: | --- | --- | --- |
+| W17 B9 | 0550 full (scratch grow, admission available, trim 2 GiB) | **5** (pairs: 1,454 / 1,550, 1,608 / 1,597, 1,577 / 1,594, 1,512 / 1,541) | 2.0 / 7.37, 6.89 | 1.7 / 7.92, 7.48 | W17 |
+| W17 M6, W18 A | 0550 off (prod) | 0 | 1.6-2.1 / 6.51, 6.14 (A) | **3.4-3.6** / 5.10, 4.75 (A) | W17, W18 |
+| W18 T | scratch grow + admission available, **trim off** | **0** | 1.25 / 7.70, 7.58 | **0.8-1.1** / 8.10, 7.86 | W18 |
+| W18 S | scratch grow only (admission free, trim off) | **0** | 1.15 / 7.84, 7.56 | **0.6-0.75** / 8.39, 8.01 (298k) | W18 |
+
+(dip = MemAvailable at the phase start minus its minimum, GiB, head / worker; the minima also depend on the boot path,
+see below.) The scratch removes ~2.5 GiB of the 314k needle's dip and ~0.4 GiB of the stress's, and the lone 314k
+prefill is faster with it (1,371 / 1,380 against 1,290 tok/s: the pre-0550 path spends time in cudaMalloc for every
+new key block size). Every prefill slowdown seen so far came with the trim on; without it 16 of 16 (T, S) and 16 of
+16 (A, M6, C7) prefills are at 1,600-1,613 tok/s. T and S do not differ measurably (the admission rule only acts with
+a lot of page cache present, which no load had). W18 did not re-run the full-on load (the plan changed), so the attribution is
+by elimination: the trim is the only 0550 knob B9 had and T does not (T keeps the scratch and the admission rule).
+
+### Why the trim costs time where it runs
+
+- `Batcher._piece` calls it before every prefill piece. During a long lone prefill every piece frees its temporaries
+  at its end, so "unused > 2 GiB" is true at almost every piece start and the 10 s interval is what limits it: a trim
+  every ~10 s of prefill (1-2 in a 24.5k prompt, ~5 in a 98k one).
+- `empty_cache` frees every unused segment with `cudaFree`, which synchronizes the device: the host loses its lead
+  over the GPU (the launch queue drains). On GB10 the pages go back to the kernel, and the next piece's cudaMallocs
+  (several GiB of piece temporaries) take them again (~0.04 s a GiB, step P).
+- It is **rank-local**: each rank decides from its own allocator at its own moment, so a trim on one rank stalls the
+  other at the next all-gather; the two ranks' costs add instead of overlapping.
+- Whether it fires depends on the allocator's state (the hysteresis raises the trigger after a trim that frees
+  < 256 MiB of graph-pool memory), which is why W17 saw it in 2 of 4 pairs and never in a fixed pattern.
+
+### Proposal for the follow-up patch (0550 v2): trim only at planned, symmetric, idle points
+
+1. **Idle trim.** Rank 0's `_plan`: when no slot is busy and the queue is empty for `GLM53_TF_ALLOC_TRIM_IDLE_S`
+   (default 2 s), plan a **trim round** (a flag in the plan `batchplan` already shares with rank 1); both ranks run
+   `empty_cache` at that round. Rank 1 cannot see idleness itself (it blocks in `_share`), so the flag has to ride the
+   plan. Cost: none for a running request; a request arriving during the trim waits for it (tens to a few hundred ms).
+2. **Pressure trim while busy.** Only when rank 0's usable memory (0550's `memsafe.view`) is under
+   `GLM53_TF_BATCH_ADMIT_GB + GLM53_TF_SESSION_RESERVE_GIB` (or MemAvailable under 8 GiB) **and** the allocator holds
+   more than `GLM53_TF_ALLOC_TRIM_GB` unused: a planned trim round on both ranks, between pieces, at most every 60 s.
+   This is the 4 x 250k case, where returning cache is worth a stall; a lone prefill on a healthy node never trims.
+3. **Never inside a lone prefill's pieces** unless (2) applies; the scratch already removes the growth the trim was
+   meant to catch (§1), and the scratch's own growth (host side, <= 16 times a process, same prompt on both ranks) is
+   already symmetric.
+4. **Boot-time trim (independent, free).** W18 found that a start with a cached calibration ends its "engine ready"
+   step (the batcher's warm-up, 6.5-7.6 s) holding ~1.2 GiB more than a start that re-measured it (engine ready
+   MemAvailable 15.6 / 15.0 against 16.8 / 16.6 GiB, both ranks; b7 did not show it: 17.0 GiB, 0.4 s). Production
+   restarts take the cached path, so prod starts ~1 GiB lower than the W17 loads did. One `torch.cuda.empty_cache()`
+   on both ranks after the warm-up (before serving) should give it back. Check: engine-ready MemAvailable equal on the
+   cached and the re-measured path.
+
+Gates for v2: same bits (exact, batchexact, reply sha, N1); prefill 24.5k / 98k x4 within 0.5% of the control; stress
+and needle minima >= T's; a planned trim visible in the log with its duration; C4 TTFT not worse.
+
+Recommended now (no rebuild; not adopted in W18 after a plan change, for W19): `GLM53_TF_SELECT_SCRATCH=grow`,
+`GLM53_TF_ALLOC_TRIM_GB=0`, `GLM53_TF_ADMIT_MEM=free` (S; `available` once the C4-under-a-copy test of §5 step 6
+passes). Expected on prod's cached boot path: stress minimum ~6.9 / 6.6 GiB, 314k needle ~7.4 / 7.6 (A's starts minus
+T's / S's dips) instead of 6.5 / 6.1 and 5.1 / 4.75 today; >= 8 needs item 4 and / or less 4-slot transient.

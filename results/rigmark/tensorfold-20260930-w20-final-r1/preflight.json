@@ -1,0 +1,70 @@
+{
+  "base_url_is_loopback": true,
+  "checks": {
+    "chat": {
+      "answer": "391",
+      "delta_keys": [
+        "content",
+        "reasoning",
+        "role"
+      ],
+      "done_marker": true,
+      "error_event": null,
+      "finish_reason": "stop",
+      "finish_stop": true,
+      "measured_events": 4,
+      "multi_event": true,
+      "ok": true,
+      "reasoning_chars": 11,
+      "reasoning_content_chars": 0,
+      "reasoning_sent_twice": false,
+      "single_choice": true,
+      "thinking_on": true,
+      "ttft_s": 0.289,
+      "usage": {
+        "completion_tokens": 11,
+        "prompt_tokens": 54,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 65
+      },
+      "usage_ints": true,
+      "visible_answer": true,
+      "wall_s": 0.475
+    },
+    "completions_token_ids": {
+      "completion_tokens_8": true,
+      "done_marker": true,
+      "error_event": null,
+      "measured_events": 2,
+      "multi_event": true,
+      "ok": true,
+      "prompt_tokens_exact": true,
+      "requested": 241,
+      "ttft_s": 0.471,
+      "usage": {
+        "completion_tokens": 8,
+        "prompt_tokens": 241,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 249
+      }
+    },
+    "models": {
+      "ids": [
+        "GLM-5.3-Flash-EXL3"
+      ],
+      "ok": true
+    },
+    "tokenize": {
+      "ok": true,
+      "prefix_tokens": 9,
+      "unit_tokens": 29
+    }
+  },
+  "decode_ok": true,
+  "gaps": [],
+  "prefill_ok": true
+}

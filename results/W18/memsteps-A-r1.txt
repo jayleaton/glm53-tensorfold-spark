@@ -1,0 +1,5 @@
+08:04:26.46 +2.23 GiB stress
+08:07:25.80 +1.53 GiB stress
+08:08:00.63 +2.11 GiB stress
+08:08:51.14 +1.15 GiB stress
+08:18:16.50 +4.67 GiB needle

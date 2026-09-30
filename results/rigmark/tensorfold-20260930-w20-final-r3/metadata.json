@@ -1,0 +1,17 @@
+{
+  "hardware": "2x NVIDIA DGX Spark (GB10, 128 GB unified memory each)",
+  "topology": "TP2 across two nodes, direct-connect ConnectX-7 RoCE, no switch",
+  "model": "neko-legends/GLM-5.3-Flash-Uncensored-EXL3 (GLM-5.3-Flash, abliterated, EXL3 4-bit)",
+  "client": "RigMark on the head node against 127.0.0.1 (loopback, no proxy)",
+  "model_revision": "07135ec082f8f11f7a71e4244a4e5167a0f96277",
+  "quantisation": "EXL3 4-bit experts as published; non-expert weights re-quantized to 4-bit at load (q4mse, from the checkpoint's BF16)",
+  "kv_cache_dtype": "FP8 latent (MLA) KV, shared pool of 1048576 tokens",
+  "serving_engine": "TensorFold 2f8e514 + glm53-tensorfold-spark engine patches (repo unknown (not a git checkout); config/prod.env), OpenAI server from tensorfold.cuda.server",
+  "serving_image": "local image glm53-tensorfold:b11, id sha256:ee4a3106a2b00ede7f67e06b9bfd491d892b999d1b061b701b7f2000e0d541e4",
+  "drafter": "incoai/GLM-5.3-Flash-DFlash2@7d74cdd881ed + MTP head, cost-derived depth (cost), up to 7 drafts, verify windows up to 16 rows, suffix lookup on; greedy verification",
+  "context_limit": 1048576,
+  "scheduler": "4 batch slots; prefill pieces 2048 rows in a batch / 4096 alone; batch MTP 1; session store 2 GiB RAM + NVMe; prefix share 1; all-gather roce",
+  "server_default_reasoning_effort": "high",
+  "negotiated_link_speed": "200 Gb/s per port (head, sysfs)",
+  "competing_traffic": "none: endpoint idle at start (checked), test window held, loopback client"
+}

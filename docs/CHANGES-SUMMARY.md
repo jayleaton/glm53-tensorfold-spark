@@ -2,7 +2,9 @@
 
 > **Work in progress.** Every number below comes from one pair of DGX Sparks and the abliterated checkpoint
 > `neko-legends/GLM-5.3-Flash-Uncensored-EXL3`, over four days (2026-09-27 to 2026-09-30). Statuses and defaults may
-> change. Updates since the initial public release: [2026-09-30](#update-2026-09-30-patches-0420-0560-test-windows-w11-w17),
+> change. Updates since the initial public release: [W20](#update-w20-2026-09-30-patch-0620-test-window-w20),
+> [W19](#update-w19-patches-0570-0610-test-windows-w18-w19),
+> [2026-09-30](#update-2026-09-30-patches-0420-0560-test-windows-w11-w17),
 > [2026-09-29](#update-2026-09-29-patches-0230-0410-test-windows-w1-w10).
 
 Every engine change is a patch against TensorFold `2f8e514` (0.3.4), applied at image build, with a `GLM53_TF_*` knob
@@ -13,6 +15,75 @@ that defaults to upstream behaviour. Details, knobs and exactness arguments: [`P
 kernel timings, a microbenchmark or arithmetic, not an end-to-end A/B. **Status**: *on* = set in both production
 configs (`config/prod*.env.example`); *batch* = on in the batch configs (production and 4 x 256k) only; *single* = single-stream config only;
 *opt-in* = off unless you set it; *rejected* = tried, measured, left off; *superseded* / *tool* as noted.
+
+## Update W20 (2026-09-30: patch 0620, test window W20)
+
+Since the W19 update, one patch was added (0620, 77 in total) and one GPU campaign run (W20; `docs/RESULTS.md` W20,
+`results/W20`). The production config (`config/prod.env.example`) is W20's: image b11 = image b10's list + 0620, with
+`GLM53_TF_TOOL_FIXES=all`. Host-side tuning outside this repo in the same campaign: +4.8% single-stream decode, +4.3%
+at 4 streams, more memory headroom. Gates of the final config: exact 10/10 and batchexact 4/4 twice, W9 transcripts, reply sha
+8794a3463259cc2f, 13/13 glmbench hashes equal to b10's, N1 12/12, 92/92 grouped == alone, structured schemas / tools
+PASS, MMLU-200 88.0%, refusals 0/10, 4 x 250k stress minimum 10.57 / 10.68 GiB, needle 314k found. RigMark re-run 3
+times on production: code / prose / structured 72.4 / 45.7 / 95.6 tok/s, C1 / C2 / C4 57.5 / 76.0 / 95.1, cold prefill
+8K / 32K / 64K 1,610 / 1,684 / 1,667, 64K replay TTFT 0.26 s (W17: 67.9 / 43.0 / 88.8, 53.1 / 70.1 / 91.0,
+1,560 / 1,634 / 1,620, 0.27 s; `results/rigmark/tensorfold-20260930-w20-final-r*`).
+
+Adopted:
+
+| Change | What | Gain (measured) | Window |
+| --- | --- | --- | --- |
+| 0620 `glm-tool-calling` (`GLM53_TF_TOOL_FIXES=all`) | `content: null` rendered as `None`; reasoning of earlier tool steps restored when the client drops it; `tool_choice` none / named and `parallel_tool_calls: false`; arguments typed by the whole schema; calls at the end of an unclosed think block. Host only, tool requests only | same bits on tool-free requests (all hashes); tool-eval-bench 90, multi-step chains 8/8 (one run, thinking off; `results/tooleval/`) | W20 |
+
+Measured and not adopted:
+
+| Setting | Result | Window |
+| --- | --- | --- |
+| `CPUSET=5-9,15-19` (server containers on the X925 cores) | 4 streams -1.5% in all 6 paired reps: with no A725 in the set, 0530 puts the HTTP threads on the engine's cores | W20 (RECIPE) |
+| `GLM53_TF_GRAMMAR_THREADS=8` | exposed mask wait 0.67 vs 0.65 ms a window: no gain | W20 (RECIPE) |
+
+Still off: 0570, 0590 (W19). Still
+behind vLLM on RigMark: cold prefill (0.87-0.89x) and C4 first token (0.84 vs 0.81 s).
+
+## Update W19 (patches 0570-0610, test windows W18-W19)
+
+Since the 2026-09-30 update (patches 0001-0560), 5 patches were added (0570-0610, 76 in total) and two GPU test windows
+run (W18, W19; `docs/RESULTS.md`, `results/W18`, `results/W19`). The production config (`config/prod.env.example`) is
+W19's: image b10 = image b9's list + 0530 + 0570 + 0580 + 0590 + 0600 + 0610, with 0580, 0550's scratch, 0530, 0610 and
+NCCL over both CX7 functions (4 channels) on, 0570 and 0590 off. Its gates (W19, loads COMBINED / COMBINED2 against
+CONTROL = the same image with every new knob off, which served image b9's bits, 13/13 hashes): exact 10/10 and
+batchexact 4/4 twice, 13/13 glmbench reply hashes, N1 12/12, 92/92 grouped == alone, replay n - 64 8/8, prefill 24.5k /
+98k 1,630-1,632 / 1,624-1,630 tok/s (+1.5%), 1-stream glmbench +3.3%, 4 streams 84.6 vs 82.2 tok/s (+3.0%), C4
+per-stream TTFT 0.76 vs 0.81 s (our RigMark-shaped client), MMLU-200 88.0%, refusals 0/10, no OOM; memory after the
+heavy sequence: 4 x 250k stress minimum 8.34 / 8.09 GiB (control 7.75 / 7.61), 314k needle 8.68 / 8.51 (6.58 / 6.31).
+RigMark was not re-run.
+
+Adopted (on in `config/prod.env.example`):
+
+| Patch / setting | What | Gain (measured) | Window |
+| --- | --- | --- | --- |
+| 0580 `glm-expert-loads` | decode's routed experts through a new load path (16-byte non-coherent vector loads a step ahead, one-round-trip prologue), same bits (`GLM53_TF_DEC_EXPERT_LOADS=1`, `_CFG=nc,8,1`) | routed-expert decode time -4.1..-4.6% (1 stream) / -2.9..-3.1% (4 streams) in the traces; the bulk of 1 stream +3.3% / 4 streams +3.0% | W19 |
+| NCCL on both CX7 functions, 4 channels (`NCCL_IB_HCA` both, `NCCL_PASSTHROUGH=1`, `NCCL_MIN/MAX_NCHANNELS=4`) | idea from the kindlingai GX10 recipe (docs/KINDLING-AUDIT.md K9) | 4 MiB all-gather 322 -> 142 us; prefill exposed NCCL -21%, prefill +1.5%; engine-ready MemFree +0.7-1.5 GiB | W18 (sweep), W19 |
+| 0550 `glm-memory-safety`, scratch only (`GLM53_TF_SELECT_SCRATCH=grow`; trim 0, admission `free`) | W18: the trim alone caused W17's slow prefills | 314k needle minimum +2.1 / +2.2 GiB, its lone prefill +1.6%; stress minimum over 8 GiB again (with the NCCL change) | W18, W19 |
+| 0530 `glm-http-pin` (`GLM53_TF_CPU_PIN=http`) | rank 0's HTTP threads off the engine's cores | within noise; kept (no cost, every gate passed with it) | W19 |
+| 0610 `glm-structured-output` (`GLM53_TF_GRAMMAR=1`) | OpenAI `response_format` (`json_object`, `json_schema`), vLLM `guided_*` / `structured_outputs`, required / named / strict tool calls, enforced with xgrammar; exact under drafting and batching | schemas 32/32, tools 6/6, drafted == undrafted == 4 at once; unconstrained hashes unchanged; a 50-object task -0.4% tok/s | W19 |
+| 0600 `glm-upstream-ports` (on by default) | host-only ports from TensorFold 0.3.6.2 / 0.5.0 (MIT): client disconnect frees the slot, request 400 hardening, image URL SSRF hardening (https, public addresses, pinned connection), `return_token_ids`, `/health` token totals, USR1 stacks | functional: a departed client's slot freed 0.18 s after the close; every check passed | W19 |
+| `docker/Dockerfile` | xgrammar 0.2.8 installed with `--no-deps` + `transformers==5.17.0` (the base's pre-release torch defeated pip's resolver); the build fails if torch's version changed | build fix | W19 |
+
+Measured and not adopted (off by default):
+
+| Patch | Result | Window |
+| --- | --- | --- |
+| 0570 `glm-dense-size-switch` | cold microbenchmark 1.0-1.7x faster per switched shape, but in the server those shapes took 1.7x `_qmm` + `_reduce`'s time (dense decode +3-5%); without it 1 stream +1.2%, 4 streams +0.7% better | W19 |
+| 0590 `glm-expert-prefill-v2` | fat2 (one persistent pipelined prefill routed-expert kernel, kindlingai's structure re-implemented, same bits): 1.16x / 1.19x slower than `fat` at 2,048 / 4,096 rows | W19 |
+| 0550's allocator trim (`GLM53_TF_ALLOC_TRIM_GB=2`) | the cause of W17's slow first prefills after bursts (W18: A / T / S all 1,600-1,613 tok/s without it); 0550 v2 (planned trims) proposed in MEMORY-SAFETY.md §6 | W18 |
+
+Analysis (offline): `docs/DECODE-KERNELS-2.md` (0570 / 0580), `docs/EXPERT-PREFILL-V2.md` (0590),
+`docs/STRUCTURED-OUTPUT.md` (0610), `docs/UPSTREAM-050-AUDIT.md` (TensorFold 0.5.0 against our stack: what reaches the
+GLM path, ranked port list), `docs/UPSTREAM-PORTS.md` (0600), `docs/KINDLING-AUDIT.md` (the kindlingai GX10 vLLM
+recipe's prefill: ideas only, their repository has no licence and no code was copied). Tools: `bench/structured.py`
+(structured output checks), `bench/grammar_bench.py` (mask cost), `results/W19/ports.py` (0600 checks),
+`results/W19/attcmp.py` (per-stage attribution from two nsys traces). `scripts/check-public.sh` now skips 0600's SSRF
+test addresses and accepts `.example` domains.
 
 ## Update 2026-09-30 (patches 0420-0560, test windows W11-W17)
 

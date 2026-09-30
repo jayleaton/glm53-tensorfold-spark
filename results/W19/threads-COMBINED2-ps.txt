@@ -1,0 +1,60 @@
+    TID PSR %CPU COMMAND
+      1  12  8.2 tensorfold
+    103  10  0.0 tensorfold
+    104   8  0.0 tensorfold
+    105  14  0.0 tensorfold
+    106   9  0.0 tensorfold
+    107  15  0.0 tensorfold
+    108   0  0.0 tensorfold
+    109  12  0.0 tensorfold
+    110   1  0.0 tensorfold
+    111   2  0.0 tensorfold
+    112  19  0.0 tensorfold
+    113   3  0.0 tensorfold
+    114  17  0.0 tensorfold
+    115   4  0.0 tensorfold
+    116  16  0.0 tensorfold
+    117   5  0.0 tensorfold
+    118  18  0.0 tensorfold
+    119   6  0.0 tensorfold
+    120  13  0.0 tensorfold
+    121   7  0.0 tensorfold
+    123  13  0.0 cuda00001400006
+    124   7  0.0 cuda-EvtHandlr
+    125  10  0.0 tensorfold
+    127  15  0.0 pt_tcpstore_uv
+    129   2  0.0 NCCL IbFailureH
+    130   2  0.0 NCCL IbAsync  0
+    131   2  0.0 NCCL IbAsync  1
+    132  11  0.0 NCCL RAS
+    133  11  0.0 NCCL Service  0
+    134  11  0.0 NCCL UDS Servic
+    135  17 19.5 NCCL Progress 1
+    138   5 75.8 tensorfold
+    266  10  0.0 tensorfold
+    267  14  0.0 tensorfold
+    268  15  0.0 tensorfold
+    269  19  0.0 tensorfold
+    270   6 97.1 tf-serve
+    277   7  0.0 tf-serve
+    278  15  0.0 tf-serve
+    279  13  0.0 tf-serve
+    280   3  0.0 tf-serve
+    281  18  0.0 tf-serve
+    282   3  0.0 tf-serve
+    283   4  0.0 tf-serve
+    284  11  0.0 tf-serve
+    285   4  0.0 tf-serve
+    286  12  0.0 tf-serve
+    287   1  0.0 tf-serve
+    288  19  0.0 tf-serve
+    289  17  0.0 tf-serve
+    290   8  0.0 tf-serve
+    291   2  0.0 tf-serve
+    292  16  0.0 tf-serve
+    293   6  0.0 tf-serve
+    294  14  0.0 tf-serve
+    295   9  0.0 tf-serve
+    296  16  0.1 tf-serve
+    417   0  0.0 tf-serve
+    435   1  0.0 tf-http

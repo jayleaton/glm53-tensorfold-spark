@@ -1,0 +1,17 @@
+all-gather us (1 / 2 / 4 / 8 / 16 / 32 MiB):
+  w-one-def       176.9    380.8    321.8    432.4    791.1   1681.5
+  w-one-ch2        76.6    122.6    212.6    395.7    780.8   1544.1
+  w-one-ch4        80.2    119.0    206.1    374.9    733.9   1453.8
+  w-one-ch8        64.2    110.5    188.4    350.2    705.6   1553.5
+  w-two-ch4        60.6     85.4    141.6    260.9    509.4   1034.4
+  w-two-ch4-b      54.9     84.5    141.9    258.7    500.2   1077.8
+all-reduce us (4 / 16 MiB):
+  w-one-def         539.5   1421.0
+  w-two-ch4         225.6    871.9
+  w-one-ar-ring     642.2   1453.5
+  w-one-ar-tree    1891.9   4494.1
+  w-two-ar-ring     429.0    813.6
+  w-two-ar-tree    1433.2   4402.9
+health v1 (Tree within 1.5x of Ring): FAIL (one-NIC 4 MiB tree/ring 2.95; one-NIC 16 MiB tree/ring 3.09; two-NIC 4 MiB tree/ring 3.34; two-NIC 16 MiB tree/ring 5.41)
+health v2 (both run; 2 NICs slow neither Ring nor Tree): PASS (ring 4 MiB 2-NIC/1-NIC 0.67; ring 16 MiB 2-NIC/1-NIC 0.56; tree 4 MiB 2-NIC/1-NIC 0.76; tree 16 MiB 2-NIC/1-NIC 0.98)
+GATE NCCL: PASS -- 2-NIC ch4 / 1-NIC default at 4 MiB 0.440 (bar 0.90); 8 MiB 259 vs 432 us, 16 MiB 500 vs 791 us, 32 MiB 1034 vs 1682 us

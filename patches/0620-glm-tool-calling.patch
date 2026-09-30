@@ -1,0 +1,542 @@
+diff --git c/src/tensorfold/cuda/server.py i/src/tensorfold/cuda/server.py
+index 70a0e80..78532e8 100644
+--- c/src/tensorfold/cuda/server.py
++++ i/src/tensorfold/cuda/server.py
+@@ -188,10 +188,113 @@ def _tool_name(tool: dict[str, Any]) -> str:
+     return str((fn or tool).get("name") or "").strip() if isinstance(tool, dict) else ""
+ 
+ 
++TOOL_FIXES_ENV = "GLM53_TF_TOOL_FIXES"
++TOOL_FIXES = ("history", "reasoning", "choice", "args", "thinkcalls", "grammar")
++TOOL_FIXES_ALL = ("history", "reasoning", "choice", "args", "thinkcalls")
++
++
++def tool_fixes(raw: str | None = None) -> frozenset[str]:
++    """patches/0620: GLM53_TF_TOOL_FIXES, a comma list of the tool-calling fixes to apply (docs/TOOL-CALLING.md):
++    ``history``, ``reasoning``, ``choice``, ``args``, ``thinkcalls``, ``grammar``; ``all`` = every one but ``grammar``;
++    empty / ``0`` / ``off`` (default): none, every request as before. Raises ValueError for an unknown name."""
++
++    raw = os.environ.get(TOOL_FIXES_ENV, "") if raw is None else raw
++    names: set[str] = set()
++    for part in raw.replace(" ", "").lower().split(","):
++        if part in ("", "0", "off", "none"):
++            continue
++        if part == "all":
++            names.update(TOOL_FIXES_ALL)
++        elif part in TOOL_FIXES:
++            names.add(part)
++        else:
++            raise ValueError(f"{TOOL_FIXES_ENV}={raw!r}: unknown fix {part!r} (expected all or a comma list of "
++                             f"{', '.join(TOOL_FIXES)})")
++    return frozenset(names)
++
++
++_JSON_TYPES = {bool: "boolean", int: "integer", float: "number", str: "string", list: "array", dict: "object",
++               type(None): "null"}
++
++
++def schema_types(prop: Any) -> frozenset[str] | None:
++    """patches/0620: the JSON types a parameter schema allows (``type`` as a string or a list, ``anyOf`` / ``oneOf``
++    of typed members, ``enum`` / ``const`` values), or None when the schema does not say (untyped, ``$ref``, ...)."""
++
++    if not isinstance(prop, dict):
++        return None
++    kind = prop.get("type")
++    if isinstance(kind, str):
++        return frozenset({kind})
++    if isinstance(kind, list) and kind and all(isinstance(k, str) for k in kind):
++        return frozenset(kind)
++    for key in ("anyOf", "oneOf"):
++        members = prop.get(key)
++        if isinstance(members, list) and members:
++            found: set[str] = set()
++            for member in members:
++                sub = schema_types(member)
++                if sub is None:
++                    return None
++                found |= sub
++            return frozenset(found)
++    values = prop["enum"] if isinstance(prop.get("enum"), list) and prop["enum"] else (
++        [prop["const"]] if "const" in prop else None)
++    if values is not None:
++        return frozenset(_JSON_TYPES.get(type(v), "string") for v in values)
++    return None
++
++
++def _fits(value: Any, types: frozenset[str]) -> bool:
++    kind = _JSON_TYPES.get(type(value))
++    return kind in types or (kind == "integer" and "number" in types)
++
++
++def typed_value(raw: str, prop: Any) -> Any:
++    """patches/0620 (``GLM53_TF_TOOL_FIXES=args``): a GLM ``<arg_value>`` read by its parameter schema. A schema that
++    allows a string keeps the text as written (``null`` becomes None only when null is allowed too); one that does
++    not reads JSON of an allowed type, then the value closed (#87), a quoted number / boolean unquoted, Python's
++    ``True`` / ``False`` / ``None``, an integral float as an integer; anything else stays the text (as before). An
++    untyped schema reads as before 0620 (JSON, else the text)."""
++
++    types = schema_types(prop)
++    if types is None:
++        try:
++            return json.loads(raw)
++        except (json.JSONDecodeError, ValueError):
++            return _closed_value(raw, None)
++    if "string" in types:
++        return None if "null" in types and raw.strip() == "null" else raw
++    text = raw.strip()
++    candidates: list[Any] = []
++    for attempt in (text, closed_json(text) if types & {"array", "object"} else None):
++        if attempt is None:
++            continue
++        try:
++            candidates.append(json.loads(attempt))
++        except (json.JSONDecodeError, ValueError):
++            pass
++    if candidates and isinstance(candidates[0], str):           # "5" / "true" quoted
++        try:
++            candidates.append(json.loads(candidates[0].strip()))
++        except (json.JSONDecodeError, ValueError):
++            pass
++    python = {"True": True, "False": False, "None": None}
++    if text in python:
++        candidates.append(python[text])
++    for value in candidates:
++        if isinstance(value, float) and "integer" in types and "number" not in types and value.is_integer():
++            value = int(value)
++        if _fits(value, types):
++            return value
++    return raw
++
++
+ def _glm_call(block: str, tools: list[dict[str, Any]]) -> tuple[str | None, dict[str, Any]]:
+     """GLM's ``name<arg_key>k</arg_key><arg_value>v</arg_value>...`` body, the way vLLM's glm47 parser reads it:
+     the name is the text before the first ``<arg_key>``; a value is kept as text when the tool's schema types the
+-    parameter as a string, and read as JSON otherwise (falling back to the text)."""
++    parameter as a string, and read as JSON otherwise (falling back to the text). patches/0620: with
++    ``GLM53_TF_TOOL_FIXES=args`` each value is read by its whole schema (``typed_value``)."""
+ 
+     cut = block.find("<arg_key>")
+     name = (block if cut < 0 else block[:cut]).strip()
+@@ -203,8 +306,12 @@ def _glm_call(block: str, tools: list[dict[str, Any]]) -> tuple[str | None, dict
+             fn = t.get("function") if isinstance(t.get("function"), dict) else t
+             schema = ((fn.get("parameters") or {}).get("properties") or {}) if isinstance(fn, dict) else {}
+     args: dict[str, Any] = {}
++    by_schema = "args" in tool_fixes()                      # patches/0620
+     for m in _GLM_ARG_RE.finditer(block):
+         key, raw = m.group(1).strip(), m.group(2)
++        if by_schema:
++            args[key] = typed_value(raw, schema.get(key))
++            continue
+         kind = (schema.get(key) or {}).get("type") if isinstance(schema.get(key), dict) else None
+         if kind == "string":
+             args[key] = raw
+@@ -610,6 +717,13 @@ class App:
+         top_p = fields.get("top_p", self.sampling["top_p"])
+         return Sampling(int(seed) if seed is not None else seed_for(prompt), temp, int(top_k), float(top_p))
+ 
++    def reply_hook(self, body: dict[str, Any], *, content: str, calls: list[dict[str, Any]] | None, reasoning: str,
++                   last: int | None, thinking: bool, stopped: bool):
++        """patches/0620: (content, calls, reasoning) of a finished chat reply with tools; a family's app may fix them
++        (``glm5_next/cuda/toolfix.py``). Here: unchanged."""
++
++        return content, calls, reasoning
++
+     def run(self, body: dict[str, Any], chat: bool, emit: Callable[[dict[str, Any]], bool], *,
+             cancelled: Callable[[], bool] | None = None) -> dict[str, Any]:
+         """One reply. patches/0600 (upstream 24afe5e): ``cancelled()`` is true once the client has gone. A request that
+@@ -743,6 +857,10 @@ class App:
+                 cut = find_stop(answer, stops)
+                 answer = answer[:cut] if cut >= 0 else answer
+         content, calls = parse_tool_calls(raw_answer, tools) if tools else (answer, None)
++        if chat and tools:                          # patches/0620: a family's fixes to the finished reply
++            content, calls, reasoning = self.reply_hook(body, content=content, calls=calls, reasoning=reasoning,
++                                                        last=out[-1] if out else None, thinking=thinking,
++                                                        stopped=stopped_at >= 0)
+         tail = content[sent["content"]:] if content.startswith(answer[:sent["content"]]) else ""
+         if tail:
+             final["content"] = tail
+diff --git c/src/tensorfold/families/glm5_next/cuda/app.py i/src/tensorfold/families/glm5_next/cuda/app.py
+index 946bb87..e3c391c 100644
+--- c/src/tensorfold/families/glm5_next/cuda/app.py
++++ i/src/tensorfold/families/glm5_next/cuda/app.py
+@@ -38,6 +38,12 @@ image rows, as vLLM does; ``/tokenize`` returns them as ``<|image|>`` ids.
+ patches/0610: GLM53_TF_GRAMMAR=1 enforces ``response_format`` (json_object / json_schema), vLLM's ``guided_*`` /
+ ``structured_outputs`` and strict / required tool calls (``grammar.py``); off, those fields are ignored as before.
+ 
++patches/0620: GLM53_TF_TOOL_FIXES (a comma list, ``all``; off by default) fixes tool-calling chains: history rendering
++(``content: null``, ``reasoning`` as ``reasoning_content``, empty arguments), the reasoning of earlier tool-call steps
++kept for clients that drop it, ``tool_choice`` none / named and ``parallel_tool_calls: false``, schema-typed
++arguments, calls left inside an unclosed think block, and (``grammar``) schema-held calls for every tools request
++(``toolfix.py``, docs/TOOL-CALLING.md).
++
+ patches/0490: a request past the context gets HTTP 400 with OpenAI's ``context_length_exceeded`` code and wording
+ ("This model's maximum context length is N tokens. However, you requested ..."), which agent clients recognise and
+ answer by compacting; ``/v1/models`` reports the limit as ``max_model_len`` / ``context_length``; the load prints one
+@@ -185,6 +191,11 @@ class GlmApp(App):
+             print(f"[tensorfold] vision (patches/0500): image_url parts on; {s.min_tokens}-{s.budget(None)} tokens an "
+                   f"image, at most {s.max_images} a request; URL fetch {'on' if s.fetch else 'off'}", flush=True)
+         self.effort_field, self.default_effort = effort_env()       # patches/0150
++        from .toolfix import ToolFixes      # patches/0620: GLM53_TF_TOOL_FIXES (off: every request as before)
++
++        self.toolfix = ToolFixes(self.tok.token_to_id("<|observation|>"))
++        if self.toolfix:
++            print(f"[tensorfold] tool calling (patches/0620): {self.toolfix.describe()}", flush=True)
+         self.prompt_tokens = PromptTokens(self.tok, model_dir / "tokenizer.json")   # patches/0210
+         self.prompt_memo = Memo()
+         # patches/0300: the request log (GLM53_TF_REQUEST_LOG; None: off); the App serves on rank 0 only
+@@ -208,7 +219,8 @@ class GlmApp(App):
+         engine's limit (2,051 tokens unless the server was started with a larger ``--context``)."""
+ 
+         problem = apply_effort(body, field=self.effort_field, default=self.default_effort,
+-                               default_thinking=self.default_thinking) or super().check(body)   # patches/0150
++                               default_thinking=self.default_thinking) or self._toolfix(body) \
++            or super().check(body)   # patches/0150, 0620
+         if not problem and getattr(self.engine, "grammar_on", False):
+             from . import grammar as grammar_mod    # patches/0610: a malformed / non-compiling grammar is a 400
+ 
+@@ -254,6 +266,22 @@ class GlmApp(App):
+         # patches/0490: OpenAI's context_length_exceeded (code, wording) instead of a message only people could read
+         return context_problem(prompt, int(asked) if asked else None, limit, chat=chat)
+ 
++    def _toolfix(self, body: dict[str, Any]) -> str | None:
++        """patches/0620: the request's messages / tools fixed in place (idempotent), or why it cannot run."""
++
++        fixes = getattr(self, "toolfix", None)
++        return fixes.prepare(body) if fixes else None
++
++    def reply_hook(self, body: dict[str, Any], *, content: str, calls, reasoning: str, last, thinking: bool,
++                   stopped: bool):
++        """patches/0620: a finished reply with tools, fixed (``toolfix.ToolFixes.reply``)."""
++
++        fixes = getattr(self, "toolfix", None)
++        if not fixes:
++            return content, calls, reasoning
++        return fixes.reply(body, content=content, calls=calls, reasoning=reasoning, last=last, thinking=thinking,
++                           stopped=stopped)
++
+     def _vision_request(self, body: dict[str, Any]) -> tuple[str, "vision_prep.Request"]:
+         """patches/0500: (the rendered text, its images preprocessed) for a chat request with images, made once a
+         request thread (``check`` makes it, ``run`` reuses it)."""
+@@ -316,6 +344,9 @@ class GlmApp(App):
+         render as a chat request with the same body renders them."""
+ 
+         apply_effort(body, field=self.effort_field, default=self.default_effort, default_thinking=self.default_thinking)
++        problem = self._toolfix(body)                               # patches/0620
++        if problem:
++            raise ValueError(problem)
+         self._vis.rendered = None
+         ids = super().tokenize(body)
+         rendered = getattr(self._vis, "rendered", None)
+@@ -331,6 +362,7 @@ class GlmApp(App):
+         cpupin.http_thread()                    # patches/0370 (GLM53_TF_CPU_PIN): a name for ps, ``nice`` when set
+         apply_effort(body, field=self.effort_field, default=self.default_effort,
+                      default_thinking=self.default_thinking)           # patches/0150 (validated by ``check``)
++        self._toolfix(body)                                         # patches/0620 (validated by ``check``)
+         self._set_vision(None)                                      # patches/0500: set by ``prompt_ids``
+         self._vis.rendered = None
+         if self.vision is not None and chat and vision_prep.count_images(body.get("messages")):
+diff --git c/src/tensorfold/families/glm5_next/cuda/grammar.py i/src/tensorfold/families/glm5_next/cuda/grammar.py
+index 480bcc2..b2842d5 100644
+--- c/src/tensorfold/families/glm5_next/cuda/grammar.py
++++ i/src/tensorfold/families/glm5_next/cuda/grammar.py
+@@ -197,6 +197,14 @@ def _function(tool: Any) -> dict | None:
+     return fn if isinstance(fn, dict) else None
+ 
+ 
++def _auto_tools() -> bool:
++    """patches/0620: ``grammar`` in GLM53_TF_TOOL_FIXES."""
++
++    from tensorfold.cuda.server import tool_fixes
++
++    return "grammar" in tool_fixes()
++
++
+ def _tool_spec(body: dict[str, Any]) -> Spec | None:
+     """Tool calls held to their schemas: ``tools`` with ``tool_choice`` ``"required"`` / a named function, or any
+     function marked ``"strict": true``. ``tool_choice`` ``"none"`` and plain ``"auto"`` requests are not
+@@ -210,7 +218,8 @@ def _tool_spec(body: dict[str, Any]) -> Spec | None:
+     fns = [_function(t) for t in tools]
+     choice = body.get("tool_choice")
+     if choice is None or choice == "auto":
+-        if not any(fn is not None and fn.get("strict") is True for fn in fns):
++        # patches/0620: GLM53_TF_TOOL_FIXES=grammar holds every auto tools request to its schemas, as strict tools
++        if not any(fn is not None and fn.get("strict") is True for fn in fns) and not _auto_tools():
+             return None
+         choice = "auto"
+     elif choice == "none":
+diff --git c/src/tensorfold/families/glm5_next/cuda/toolfix.py i/src/tensorfold/families/glm5_next/cuda/toolfix.py
+new file mode 100644
+index 0000000..6c24c20
+--- /dev/null
++++ i/src/tensorfold/families/glm5_next/cuda/toolfix.py
+@@ -0,0 +1,270 @@
++"""patches/0620: tool-calling fixes for multi-step chains (``GLM53_TF_TOOL_FIXES``, off by default; docs/TOOL-CALLING.md).
++
++Host only, rank 0's HTTP app; the engine, its tokens and every request without tools are untouched. Each fix is named
++in the comma list (``all`` = every one but ``grammar``):
++
++- ``history``: the request's messages as the chat template expects them. ``content: null`` (OpenAI's shape for an
++  assistant turn that only calls tools, and what this server answers) rendered as the literal text ``None`` before
++  the calls (and in a null tool result); it is now ``""``. An assistant turn's ``reasoning`` (the field this server
++  answers with GLM53_TF_REASONING_FIELDS=reasoning) is copied to ``reasoning_content`` (the only name the template
++  reads) when that is absent (``reasoning`` does this too). Tool-call ``arguments`` of ``""`` / null are ``{}`` (the template called ``.items()`` on
++  the string: HTTP 400).
++- ``reasoning``: the reasoning of each reply that called tools is kept, keyed by the call ids this server made
++  (``call_<24 hex>``, unique) and by a signature of the calls (names, arguments) with the last user message before
++  them (for clients that renumber the ids), and put back into a later request's assistant turn that carries those
++  calls without reasoning. GLM-5.3's template keeps the reasoning of every assistant turn after the last user
++  message (interleaved thinking inside one tool loop); clients that drop ``reasoning_content`` otherwise make every
++  earlier step of the chain render as ``<think></think>``, which the model never produced. Bounded:
++  GLM53_TF_KEEP_REASONING_ENTRIES (1024) replies and GLM53_TF_KEEP_REASONING_MB (32) of text, oldest dropped.
++- ``choice``: OpenAI ``tool_choice`` and ``parallel_tool_calls`` as upstream TensorFold 0.5.0 reads them
++  (``server/tools.py``): ``"none"`` offers no tools (the template lists none and nothing is parsed as a call), a
++  named function offers only that tool (an unknown name is a 400), ``parallel_tool_calls: false`` keeps the first
++  call. ``"required"`` / named calls are enforced by 0610's grammar (GLM53_TF_GRAMMAR=1), unchanged.
++- ``args``: argument values typed by the whole parameter schema (``server.typed_value``: type lists, anyOf / oneOf,
++  enums, quoted numbers, integral floats) instead of its ``type`` string only.
++- ``thinkcalls``: a reply that ends on ``<|observation|>`` (the model waits for a tool result) with no call in its
++  answer but complete ``<tool_call>`` blocks at the end of its reasoning (thinking never closed, or the calls written
++  inside it) returns those calls (``finish_reason: tool_calls``) instead of an empty answer.
++- ``grammar`` (with GLM53_TF_GRAMMAR=1): every tools request with ``tool_choice`` auto / absent is held to the tools'
++  schemas by 0610's structural tag, as ``"strict": true`` tools are (text stays free; a call's name and arguments
++  must fit). Costs 0610's mask fills on that request's rows.
++"""
++
++from __future__ import annotations
++
++import hashlib
++import json
++import os
++import re
++import threading
++from collections import OrderedDict
++from typing import Any
++
++from tensorfold.cuda.server import TOOL_FIXES_ENV, parse_tool_calls, tool_fixes
++
++_CALL_ID = re.compile(r"^call_[0-9a-f]{24}$")
++_CALL_BLOCK = re.compile(r"<tool_call>.*?</tool_call>", re.DOTALL)
++
++
++def _int_env(name: str, default: int) -> int:
++    raw = os.environ.get(name, "").strip()
++    if not raw:
++        return default
++    try:
++        value = int(raw)
++    except ValueError:
++        raise ValueError(f"{name}={raw!r}: expected an integer") from None
++    if value < 0:
++        raise ValueError(f"{name}={raw!r}: expected >= 0")
++    return value
++
++
++class ReasoningMemory:
++    """The reasoning of recent replies that called tools (LRU, bounded in entries and characters), found by any of
++    its keys: the call ids this server made, and a signature of the calls with the last user message before them
++    (clients that renumber the ids, as spark-bench does). A key put again points at the newer reply."""
++
++    def __init__(self, entries: int = 1024, chars: int = 32 << 20) -> None:
++        self.entries, self.chars = int(entries), int(chars)
++        self.items: OrderedDict[int, tuple[str, tuple[str, ...]]] = OrderedDict()
++        self.by_key: dict[str, int] = {}
++        self.size = 0
++        self.next = 0
++        self.lock = threading.Lock()
++
++    def put(self, keys: list[str], reasoning: str) -> None:
++        keys = [k for k in keys if isinstance(k, str) and k]
++        if not keys or not reasoning or self.entries == 0 or len(reasoning) > self.chars:
++            return
++        with self.lock:
++            n, self.next = self.next, self.next + 1
++            self.items[n] = (reasoning, tuple(keys))
++            self.size += len(reasoning)
++            for k in keys:
++                self.by_key[k] = n
++            while self.items and (len(self.items) > self.entries or self.size > self.chars):
++                old, (text, old_keys) = self.items.popitem(last=False)
++                self.size -= len(text)
++                for k in old_keys:
++                    if self.by_key.get(k) == old:
++                        del self.by_key[k]
++
++    def get(self, keys: list[str]) -> str | None:
++        with self.lock:
++            for k in keys:
++                n = self.by_key.get(k) if isinstance(k, str) else None
++                if n is not None:
++                    self.items.move_to_end(n)
++                    return self.items[n][0]
++        return None
++
++    def __len__(self) -> int:
++        return len(self.items)
++
++
++def _text(content: Any) -> str:
++    if isinstance(content, str):
++        return content
++    if isinstance(content, list):
++        return "".join(p.get("text", "") if isinstance(p, dict) and isinstance(p.get("text"), str) else
++                       (p if isinstance(p, str) else "") for p in content)
++    return ""
++
++
++def _arguments(value: Any) -> Any:
++    if isinstance(value, str):
++        try:
++            return json.loads(value) if value.strip() else {}
++        except (json.JSONDecodeError, ValueError):
++            return value
++    return {} if value is None else value
++
++
++def signature(user: str, calls: list[Any]) -> str:
++    """The key of a reply's calls after the user message ``user``: names and arguments, canonical JSON."""
++
++    shape = []
++    for c in calls:
++        fn = c.get("function") if isinstance(c, dict) and isinstance(c.get("function"), dict) else (c or {})
++        shape.append([str(fn.get("name") or ""), _arguments(fn.get("arguments"))])
++    text = json.dumps([user, shape], ensure_ascii=False, sort_keys=True, separators=(",", ":"), default=str)
++    return "sig:" + hashlib.sha256(text.encode("utf-8", "surrogatepass")).hexdigest()
++
++
++def last_user(messages: list[Any], before: int | None = None) -> str:
++    """The text of the last user message (before index ``before``)."""
++
++    for m in reversed(messages[:before] if before is not None else messages):
++        if isinstance(m, dict) and m.get("role") == "user":
++            return _text(m.get("content"))
++    return ""
++
++
++class ToolFixes:
++    """The fixes GLM53_TF_TOOL_FIXES names, for one app (``GlmApp``)."""
++
++    def __init__(self, observation_id: int | None, raw: str | None = None) -> None:
++        self.on = tool_fixes(raw)
++        self.observation = observation_id
++        self.memory = ReasoningMemory(_int_env("GLM53_TF_KEEP_REASONING_ENTRIES", 1024),
++                                      _int_env("GLM53_TF_KEEP_REASONING_MB", 32) << 20) \
++            if "reasoning" in self.on else None
++
++    def __bool__(self) -> bool:
++        return bool(self.on)
++
++    def describe(self) -> str:
++        return f"{TOOL_FIXES_ENV}={','.join(sorted(self.on))}"
++
++    # -- the request -------------------------------------------------------------------------------------------
++
++    def prepare(self, body: dict[str, Any]) -> str | None:
++        """Fix ``body`` in place before it is rendered (``check``, ``tokenize`` and ``run`` all call it: idempotent).
++        Returns an error message (HTTP 400) or None."""
++
++        if not self.on or not isinstance(body, dict):
++            return None
++        if "choice" in self.on:
++            problem = self._choice(body)
++            if problem:
++                return problem
++        messages = body.get("messages")
++        if not isinstance(messages, list):
++            return None
++        for i, m in enumerate(messages):
++            if not isinstance(m, dict):
++                continue
++            if "history" in self.on:
++                _history(m)
++            if (self.memory is not None or "history" in self.on) and m.get("role") == "assistant" \
++                    and not isinstance(m.get("reasoning_content"), str) and isinstance(m.get("reasoning"), str):
++                m["reasoning_content"] = m["reasoning"]         # the only name the template reads
++            if self.memory is not None and m.get("role") == "assistant" and isinstance(m.get("tool_calls"), list) \
++                    and m["tool_calls"] and not isinstance(m.get("reasoning_content"), str) \
++                    and "</think>" not in _text(m.get("content")):
++                ids = [c.get("id") for c in m["tool_calls"] if isinstance(c, dict)]
++                keys = [k for k in ids if isinstance(k, str) and _CALL_ID.match(k)]
++                kept = self.memory.get(keys + [signature(last_user(messages, i), m["tool_calls"])])
++                if kept is not None:
++                    m["reasoning_content"] = kept
++        return None
++
++    def _choice(self, body: dict[str, Any]) -> str | None:
++        choice = body.get("tool_choice")
++        tools = body.get("tools")
++        if not tools or not isinstance(tools, list):
++            return None
++        if isinstance(choice, str) and choice.strip().lower() == "none":
++            body["tools"] = []
++            return None
++        if isinstance(choice, dict) and str(choice.get("type") or "").lower() == "function":
++            fn = choice.get("function")
++            name = str(fn.get("name") or "").strip() if isinstance(fn, dict) else ""
++            if not name:
++                return 'tool_choice {"type": "function"} needs {"function": {"name": ...}}'
++            kept = [t for t in tools if _name(t) == name]
++            if not kept:
++                return f"tool_choice names the tool {name!r}, which the request does not offer"
++            body["tools"] = kept
++        return None
++
++    # -- the reply ---------------------------------------------------------------------------------------------
++
++    def reply(self, body: dict[str, Any], *, content: str, calls, reasoning: str, last: int | None,
++              thinking: bool, stopped: bool):
++        """(content, calls, reasoning) of a finished reply with tools, fixed."""
++
++        if not self.on:
++            return content, calls, reasoning
++        tools = body.get("tools") or []
++        if "thinkcalls" in self.on and not calls and thinking and not stopped and not content.strip() \
++                and last is not None and last == self.observation and "<tool_call>" in reasoning:
++            head, tail = trailing_calls(reasoning)
++            if tail:
++                _, found = parse_tool_calls(tail, tools)
++                if found:
++                    calls, reasoning = found, head
++        if "choice" in self.on and calls and body.get("parallel_tool_calls") is False:
++            calls = calls[:1]
++        if self.memory is not None and calls and thinking and reasoning:
++            messages = body.get("messages") if isinstance(body.get("messages"), list) else []
++            self.memory.put([c.get("id") for c in calls] + [signature(last_user(messages), calls)], reasoning)
++        return content, calls, reasoning
++
++
++def _name(tool: Any) -> str:
++    if not isinstance(tool, dict):
++        return ""
++    fn = tool.get("function") if isinstance(tool.get("function"), dict) else tool
++    return str(fn.get("name") or "").strip()
++
++
++def _history(m: dict[str, Any]) -> None:
++    """One message as the template expects it (``history``)."""
++
++    if "content" in m and m["content"] is None:
++        m["content"] = ""
++    if m.get("role") != "assistant":
++        return
++    for call in m.get("tool_calls") or []:
++        fn = call.get("function") if isinstance(call, dict) else None
++        if isinstance(fn, dict) and (fn.get("arguments") is None
++                                     or (isinstance(fn.get("arguments"), str) and not fn["arguments"].strip())):
++            fn["arguments"] = {}
++
++
++def trailing_calls(text: str) -> tuple[str, str]:
++    """(the text before, the run of complete ``<tool_call>`` blocks that ends ``text``): the blocks separated by
++    whitespace only, up to the end but for whitespace and a closing ``</think>``. ``("text", "")`` without one."""
++
++    end = text.rstrip()
++    if end.endswith("</think>"):
++        end = end[: -len("</think>")].rstrip()
++    start = len(end)
++    for m in reversed(list(_CALL_BLOCK.finditer(end))):
++        if end[m.end():start].strip():
++            break
++        start = m.start()
++    if start == len(end):
++        return text, ""
++    return text[:start].rstrip(), end[start:]

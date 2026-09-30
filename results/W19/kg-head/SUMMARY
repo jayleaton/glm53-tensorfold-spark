@@ -1,0 +1,7 @@
+11:13:44 start head
+11:14:48 head loads-bench rc=0 64s :: GATE 0580: nc,8,1 >= 1.05x grouped_kernel [flush] (and >= 1.00x [rotate]) on every U 8-22 window: FAIL (flush 1.113 1.045 1.187 1.032; rotate 0.981 1.012 1.086 1.083; geomean 1.093)
+GATE 0580 load path: probe 3 (nc,8,2, no decode / mma) >= 220 GB/s [flush] on every U 8-22 window: PASS (231, 231, 230, 226)
+GATE 0580: nc,8,1 >= 1.05x grouped_kernel [flush] (and >= 1.00x [rotate]) on every U 8-22 window: FAIL (flush 1.113 1.045 1.187 1.032; rotate 0.981 1.012 1.086 1.083; geomean 1.093)
+11:16:07 head cold570 rc=0 79s :: GATE item7: new >= 1.10x old cold on shapes < 8 MB (KDA o, shared gate/up/down, DSA q_b/kv, index) [rotate+flush]: passing ['4096x1024 (shared down)', '8192x512 (DSA kv_b)', '160x4096 (index k)']; failing none; not measured / invalid ['4096
+11:16:22 head loads-bits rc=0 15s :: 20 passed in 11.91s
+11:16:22 done head

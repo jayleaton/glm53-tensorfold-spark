@@ -1,0 +1,33 @@
+{
+ "label": "",
+ "args": {
+  "base": "http://127.0.0.1:8001",
+  "model": "GLM-5.3-Flash-EXL3",
+  "modes": "batchexact",
+  "doc": 30000,
+  "system": 2000,
+  "append": 2000,
+  "tokens": 64,
+  "long_tokens": 256,
+  "streams": "1,2,4",
+  "reps": 2,
+  "delay": 3.0,
+  "extra": "{}",
+  "stress_target": 250000,
+  "stress_step": 60000,
+  "stress_final": 32000,
+  "mem_hosts": "local,<worker-ssh>",
+  "mem_log": null,
+  "mem_min": 8.0,
+  "label": "",
+  "out": "results/W20/batchexact-RECIPE.json"
+ },
+ "batchexact": {
+  "same": [
+   true,
+   true,
+   true,
+   true
+  ]
+ }
+}

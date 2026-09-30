@@ -34,7 +34,9 @@ ip -br addr           # the IPv4 address on that netdev
 cat /sys/class/infiniband/<RDMA device>/ports/1/state    # "4: ACTIVE"
 ```
 
-- `NCCL_IB_HCA` = the RDMA device of the cabled port (preset: `rocep1s0f1`).
+- `NCCL_IB_HCA` = the RDMA device(s) of the cabled port (preset: `rocep1s0f1,roceP2p1s0f1`, the two functions of a
+  Spark's CX7 port; `ibdev2netdev` lists both; if yours shows only one, set that one and drop `NCCL_PASSTHROUGH` /
+  `NCCL_MIN_NCHANNELS` / `NCCL_MAX_NCHANNELS` from the config).
 - `NCCL_SOCKET_IFNAME` = its netdev (preset: `enp1s0f1np1`). Must be the same name on both nodes.
 - `HEAD_IP` = the head's IPv4 address on that netdev (not its LAN address).
 - Check the link: `ping -c 3 -I <netdev> <worker link address>` from the head.

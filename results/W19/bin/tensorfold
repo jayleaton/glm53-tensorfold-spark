@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# W19 shim (W7 / W11's): the real /usr/local/bin/tensorfold under an idle nsys session "w19" (collection starts with
+# `nsys start`, ONE window per server start: nsysctl.sh)
+if [[ "${W19_NSYS:-0}" == 1 ]]; then
+    exec nsys launch --session-new=w19 --trace=cuda-sw,nvtx --cuda-graph-trace=node --cuda-event-trace=false \
+        --trace-fork-before-exec=false /usr/local/bin/tensorfold "$@"
+fi
+exec /usr/local/bin/tensorfold "$@"

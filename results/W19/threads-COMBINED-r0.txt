@@ -1,0 +1,47 @@
+      3 tf-serve | allowed 0-19 | on 9
+      2 tf-serve | allowed 0-19 | on 19
+      2 tf-serve | allowed 0-19 | on 14
+      2 tf-serve | allowed 0-19 | on 13
+      2 tf-serve | allowed 0-19 | on 11
+      2 tf-serve | allowed 0-19 | on 0
+      2 tensorfold | allowed 0-19 | on 9
+      2 tensorfold | allowed 0-19 | on 7
+      2 tensorfold | allowed 0-19 | on 5
+      2 tensorfold | allowed 0-19 | on 3
+      2 tensorfold | allowed 0-19 | on 1
+      2 tensorfold | allowed 0-19 | on 0
+      1 tf-serve | allowed 0-19 | on 8
+      1 tf-serve | allowed 0-19 | on 7
+      1 tf-serve | allowed 0-19 | on 4
+      1 tf-serve | allowed 0-19 | on 3
+      1 tf-serve | allowed 0-19 | on 17
+      1 tf-serve | allowed 0-19 | on 16
+      1 tf-serve | allowed 0-19 | on 15
+      1 tf-serve | allowed 0-19 | on 10
+      1 tf-serve | allowed 0-19 | on 1
+      1 tensorfold | allowed 0-19 | on 8
+      1 tensorfold | allowed 0-19 | on 6
+      1 tensorfold | allowed 0-19 | on 4
+      1 tensorfold | allowed 0-19 | on 2
+      1 tensorfold | allowed 0-19 | on 19
+      1 tensorfold | allowed 0-19 | on 18
+      1 tensorfold | allowed 0-19 | on 17
+      1 tensorfold | allowed 0-19 | on 16
+      1 tensorfold | allowed 0-19 | on 15
+      1 tensorfold | allowed 0-19 | on 14
+      1 tensorfold | allowed 0-19 | on 13
+      1 tensorfold | allowed 0-19 | on 12
+      1 tensorfold | allowed 0-19 | on 11
+      1 tensorfold | allowed 0-19 | on 10
+      1 pt_tcpstore_uv | allowed 0-19 | on 16
+      1 cuda00001400006 | allowed 0-19 | on 11
+      1 cuda-EvtHandlr | allowed 0-19 | on 4
+      1 bash | allowed 0-19 | on 3
+      1 bash | allowed 0-19 | on 10
+      1 NCCL UDS Servic | allowed 0-19 | on 0
+      1 NCCL Service  0 | allowed 0-19 | on 0
+      1 NCCL RAS | allowed 0-19 | on -1
+      1 NCCL Progress 1 | allowed 0-19 | on 0
+      1 NCCL IbFailureH | allowed 0-19 | on -1
+      1 NCCL IbAsync  1 | allowed 0-19 | on 0
+      1 NCCL IbAsync  0 | allowed 0-19 | on 0

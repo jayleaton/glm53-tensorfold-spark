@@ -16,12 +16,16 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 SELF="scripts/check-public.sh"
 LOCAL_LIST=".check-public.local"
 
-# name|regex (grep -E, case-insensitive)|path glob excluded for this pattern (may be empty)
+# 0600's image-URL hardening refuses private / link-local / CGNAT / metadata addresses; its tests, patch and doc list
+# example addresses of each range (10.0.0.1, 192.168.1.1, 100.64.0.1, 100.100.100.200, ...), none of them ours.
+SSRF_FIXTURES="tests/test_upstream_ports.py patches/0600-glm-upstream-ports.patch docs/UPSTREAM-PORTS.md"
+
+# name|regex (grep -E, case-insensitive)|path globs excluded for this pattern (space-separated, may be empty)
 PATTERNS=(
-    'private IPv4 192.168/16|\b192\.168\.[0-9]{1,3}\.[0-9]{1,3}\b|'
-    'private IPv4 10/8 (the launcher tests use a fake 10.0.0.1)|\b10\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\b|tests/test_serve_ops.py'
-    'private IPv4 172.16/12|\b172\.(1[6-9]|2[0-9]|3[01])\.[0-9]{1,3}\.[0-9]{1,3}\b|'
-    'CGNAT / Tailscale IPv4|\b100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\.[0-9]{1,3}\.[0-9]{1,3}\b|'
+    "private IPv4 192.168/16|\\b192\\.168\\.[0-9]{1,3}\\.[0-9]{1,3}\\b|$SSRF_FIXTURES"
+    "private IPv4 10/8 (the launcher tests use a fake 10.0.0.1)|\\b10\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\b|tests/test_serve_ops.py $SSRF_FIXTURES"
+    "private IPv4 172.16/12|\\b172\\.(1[6-9]|2[0-9]|3[01])\\.[0-9]{1,3}\\.[0-9]{1,3}\\b|$SSRF_FIXTURES"
+    "CGNAT / Tailscale IPv4|\\b100\\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\\.[0-9]{1,3}\\.[0-9]{1,3}\\b|$SSRF_FIXTURES"
     'Tailscale IPv6|fd7a:|'
     'Tailscale names|\.ts\.net\b|tailnet|tailscale|'
     'gmail address|[a-z0-9._%+-]+@gmail\.com|'
@@ -62,7 +66,10 @@ for entry in "${PATTERNS[@]}"; do
     skip="${rest##*|}"; re="${rest%|*}"
     hits=$(for f in "${FILES[@]}"; do
                # shellcheck disable=SC2053
-               [[ -n "$skip" && "$f" == $skip ]] && continue
+               skipped=0
+               read -ra globs <<< "$skip"
+               for g in "${globs[@]}"; do [[ "$f" == $g ]] && { skipped=1; break; }; done
+               [[ $skipped -eq 1 ]] && continue
                grep -HnIiE -- "$re" "$f" 2>/dev/null
            done)
     [[ "$name" == "home directories" && -n "$hits" ]] && hits=$(grep -viE "$HOME_OK" <<< "$hits")
@@ -75,7 +82,7 @@ done
 
 # e-mail addresses other than placeholder / example domains (model outputs in results/ invent a few)
 emails=$(for f in "${FILES[@]}"; do grep -HnoIiE '[a-z0-9][a-z0-9._%+-]*@[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}' "$f" 2>/dev/null; done |
-         grep -viE '@(example\.(com|org|net)|company\.com|novatech\.io)$|:noreply@anthropic\.com$' | cut -c1-200)
+         grep -viE '@(([a-z0-9-]+\.)*example(\.(com|org|net))?|company\.com|novatech\.io)$|:noreply@anthropic\.com$' | cut -c1-200)
 if [[ -n "$emails" ]]; then fail=1; echo "== e-mail addresses (not on the example-domain allowlist)"; echo "$emails"; fi
 
 # files that should never be published

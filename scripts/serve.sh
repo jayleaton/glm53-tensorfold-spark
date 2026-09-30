@@ -298,14 +298,19 @@ preflight() { # read-only checks (AGENTS.md lists them); non-zero on a problem a
         log "preflight: warning: no 'ip' command here; cannot check NCCL_SOCKET_IFNAME / HEAD_IP"
     fi
     # the RDMA port of the link must be up on both nodes (a down port shows as an NCCL timeout minutes into the load)
-    st=$(cat "/sys/class/infiniband/$NCCL_IB_HCA/ports/1/state" 2>/dev/null || echo "")
-    wst=$(wssh cat "/sys/class/infiniband/$NCCL_IB_HCA/ports/1/state" 2>/dev/null || echo "")
-    for pair in "head:$st" "worker:$wst"; do
-        case "${pair#*:}" in
-            *ACTIVE*) ;;
-            "") log "preflight: warning: cannot read $NCCL_IB_HCA port state on the ${pair%%:*}" ;;
-            *) log "preflight: $NCCL_IB_HCA port 1 on the ${pair%%:*} is '${pair#*:}', not ACTIVE"; bad=1 ;;
-        esac
+    # (NCCL_IB_HCA may list several devices, comma-separated: each one is checked)
+    IFS=',' read -ra hcas <<< "$NCCL_IB_HCA"
+    for hca in "${hcas[@]}"; do
+        hca="${hca%%:*}"
+        st=$(cat "/sys/class/infiniband/$hca/ports/1/state" 2>/dev/null || echo "")
+        wst=$(wssh cat "/sys/class/infiniband/$hca/ports/1/state" 2>/dev/null || echo "")
+        for pair in "head:$st" "worker:$wst"; do
+            case "${pair#*:}" in
+                *ACTIVE*) ;;
+                "") log "preflight: warning: cannot read $hca port state on the ${pair%%:*}" ;;
+                *) log "preflight: $hca port 1 on the ${pair%%:*} is '${pair#*:}', not ACTIVE"; bad=1 ;;
+            esac
+        done
     done
     # vm.min_free_kbytes is taken from the GPU's share of unified memory; a mismatch gives the ranks different room
     h=$(cat /proc/sys/vm/min_free_kbytes 2>/dev/null || echo "?"); w=$(wssh cat /proc/sys/vm/min_free_kbytes 2>/dev/null || echo "?")

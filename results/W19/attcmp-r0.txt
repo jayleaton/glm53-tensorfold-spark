@@ -1,0 +1,82 @@
+== prefill (r0): wall 13619 -> 13329 ms; tokens 21454 / 21454; [us/prompt token]
+  family                            ctl excl comb excl    delta       % |  ctl sum comb sum
+  routed experts                     189.317   189.093   -0.224   -0.1% |  189.318  189.093
+  dense q4 / GEMM                    136.911   143.493   +6.582   +4.8% |  173.881  175.484
+  NCCL                                99.305    78.160  -21.145  -21.3% |  162.840  133.825
+  attention + indexer                 81.891    82.483   +0.592   +0.7% |   84.147   84.450
+  KDA                                 66.342    68.299   +1.957   +2.9% |   69.849   70.356
+  router / grouping / combine         28.092    29.561   +1.469   +5.2% |   40.513   40.623
+  hc                                  14.199    14.553   +0.354   +2.5% |   22.645   23.161
+  norms / elementwise / other          6.939     7.132   +0.193   +2.8% |    7.357    7.625
+  RoCE all-gather                      1.350     1.245   -0.105   -7.8% |    1.509    1.406
+  L2 prefetch (0460, side stream)      0.687     0.675   -0.011   -1.6% |    1.319    1.338
+  sampling / argmax / softmax          0.041     0.040   -0.000   -1.1% |    0.041    0.040
+  GPU idle                             9.732     6.563   -3.170  -32.6% |    9.732    6.563
+  WALL                               634.805   621.297  -13.508   -2.1% |  634.805  621.297
+== prose (r0): wall 5492 -> 5364 ms; tokens 256 / 256; [ms/token]
+  family                            ctl excl comb excl    delta       % |  ctl sum comb sum
+  routed experts                      11.185    10.708   -0.477   -4.3% |   11.191   10.708
+  dense q4 / GEMM                      4.880     5.030   +0.150   +3.1% |    5.440    5.619
+  L2 prefetch (0460, side stream)      1.712     1.733   +0.021   +1.2% |    3.327    3.372
+  RoCE all-gather                      0.742     0.657   -0.084  -11.4% |    1.111    1.045
+  KDA                                  0.617     0.605   -0.011   -1.9% |    0.927    0.907
+  attention + indexer                  0.534     0.540   +0.006   +1.1% |    0.561    0.567
+  hc                                   0.303     0.282   -0.021   -7.0% |    0.548    0.514
+  router / grouping / combine          0.202     0.197   -0.005   -2.4% |    0.301    0.294
+  norms / elementwise / other          0.116     0.098   -0.017  -15.0% |    0.123    0.106
+  NCCL                                 0.013     0.005   -0.008  -62.6% |    0.014    0.006
+  sampling / argmax / softmax          0.003     0.003   +0.000   +1.5% |    0.003    0.003
+  GPU idle                             1.146     1.093   -0.053   -4.6% |    1.146    1.093
+  WALL                                21.451    20.951   -0.500   -2.3% |   21.451   20.951
+== code (r0): wall 6277 -> 6197 ms; tokens 384 / 384; [ms/token]
+  family                            ctl excl comb excl    delta       % |  ctl sum comb sum
+  routed experts                       9.269     8.892   -0.377   -4.1% |    9.273    8.892
+  dense q4 / GEMM                      3.308     3.432   +0.124   +3.7% |    3.617    3.762
+  L2 prefetch (0460, side stream)      1.110     1.134   +0.024   +2.2% |    2.156    2.202
+  RoCE all-gather                      0.541     0.502   -0.039   -7.3% |    0.813    0.772
+  KDA                                  0.416     0.423   +0.007   +1.6% |    0.629    0.645
+  attention + indexer                  0.349     0.353   +0.004   +1.1% |    0.369    0.374
+  hc                                   0.211     0.200   -0.011   -5.4% |    0.375    0.356
+  router / grouping / combine          0.140     0.142   +0.002   +1.4% |    0.206    0.208
+  norms / elementwise / other          0.082     0.072   -0.010  -12.0% |    0.086    0.076
+  NCCL                                 0.029     0.043   +0.014  +46.9% |    0.030    0.044
+  sampling / argmax / softmax          0.002     0.002   +0.000   +0.0% |    0.002    0.002
+  GPU idle                             0.889     0.943   +0.054   +6.1% |    0.889    0.943
+  WALL                                16.346    16.137   -0.208   -1.3% |   16.346   16.137
+== conc4 (r0): wall 20959 -> 20807 ms; tokens 1536 / 1536; [ms/token]
+  family                            ctl excl comb excl    delta       % |  ctl sum comb sum
+  routed experts                       8.485     8.242   -0.242   -2.9% |    8.485    8.242
+  dense q4 / GEMM                      2.325     2.422   +0.097   +4.2% |    2.379    2.490
+  KDA                                  0.790     0.794   +0.005   +0.6% |    0.964    0.968
+  L2 prefetch (0460, side stream)      0.631     0.646   +0.015   +2.4% |    1.200    1.219
+  RoCE all-gather                      0.463     0.410   -0.052  -11.3% |    0.655    0.590
+  attention + indexer                  0.253     0.256   +0.003   +1.3% |    0.262    0.267
+  hc                                   0.145     0.143   -0.003   -1.8% |    0.247    0.246
+  router / grouping / combine          0.099     0.106   +0.008   +7.6% |    0.141    0.149
+  norms / elementwise / other          0.082     0.077   -0.005   -6.4% |    0.084    0.080
+  NCCL                                 0.021     0.019   -0.003  -11.9% |    0.026    0.028
+  sampling / argmax / softmax          0.003     0.003   -0.000   -2.1% |    0.003    0.003
+  GPU idle                             0.349     0.427   +0.078  +22.4% |    0.349    0.427
+  WALL                                13.645    13.546   -0.099   -0.7% |   13.645   13.546
+
+== kernel names of the touched families (summed kernel ms, normalised as above)
+  prefill routed experts     expert_kernel 167.880 -> 168.090; rot_in1_kernel 15.428 -> 15.265; grouped_kernel 5.598 -> 0.000; ld_kernel 0.000 -> 5.374; plan_kernel 0.256 -> 0.242; gateup_epilogue_kernel 0.061 -> 0.047
+  prefill dense q4 / GEMM    _fq4 160.446 -> 161.900; _qmm 10.669 -> 10.595; _reduce 1.002 -> 0.997; _group_sums 0.979 -> 0.988; _swiglu 0.783 -> 0.755; q4_kernel 0.000 -> 0.247
+  prefill NCCL               ncclDevKernel_SendRecv 161.066 -> 132.250; ncclDevKernel_AllGather_RING_LL 1.771 -> 1.571
+  prefill RoCE all-gather    gather_kernel 1.510 -> 1.408
+  prefill hc                 _hc_post 14.202 -> 14.361; _hc_partial_mm 5.001 -> 5.239; _hc_finish 3.132 -> 3.267; _stream_mean 0.205 -> 0.214; _hc_partial 0.098 -> 0.079
+  prose   routed experts     grouped_kernel 10.219 -> 0.000; ld_kernel 0.000 -> 9.772; expert_kernel 0.564 -> 0.558; gateup_epilogue_kernel 0.134 -> 0.114; down_epilogue_kernel 0.099 -> 0.091; rot_in_kernel 0.096 -> 0.094
+  prose   dense q4 / GEMM    _qmm 5.136 -> 4.897; q4_kernel 0.000 -> 0.436; _fq4 0.111 -> 0.114; _reduce 0.111 -> 0.088; _group_sums 0.059 -> 0.060; _swiglu 0.023 -> 0.023
+  prose   NCCL               ncclDevKernel_AllGather_RING_LL 0.014 -> 0.006
+  prose   RoCE all-gather    gather_kernel 1.111 -> 1.045
+  prose   hc                 _hc_partial 0.207 -> 0.211; _hc_finish 0.207 -> 0.202; _hc_post 0.116 -> 0.088; _stream_mean 0.012 -> 0.007; _hc_partial_mm 0.006 -> 0.006
+  code    routed experts     grouped_kernel 8.435 -> 0.000; ld_kernel 0.000 -> 8.092; expert_kernel 0.497 -> 0.491; grouped_loop_kernel 0.090 -> 0.090; gateup_epilogue_kernel 0.100 -> 0.076; rot_in_kernel 0.075 -> 0.073
+  code    dense q4 / GEMM    _qmm 3.408 -> 3.291; q4_kernel 0.000 -> 0.276; _fq4 0.077 -> 0.076; _reduce 0.078 -> 0.064; _group_sums 0.040 -> 0.040; _swiglu 0.015 -> 0.015
+  code    NCCL               ncclDevKernel_AllGather_RING_LL 0.030 -> 0.044
+  code    RoCE all-gather    gather_kernel 0.812 -> 0.772
+  code    hc                 _hc_partial 0.145 -> 0.149; _hc_finish 0.135 -> 0.134; _hc_post 0.083 -> 0.064; _stream_mean 0.008 -> 0.004; _hc_partial_mm 0.004 -> 0.004
+  conc4   routed experts     grouped_kernel 7.968 -> 0.000; ld_kernel 0.000 -> 7.571; grouped_loop_kernel 0.201 -> 0.393; expert_kernel 0.117 -> 0.118; gateup_epilogue_kernel 0.085 -> 0.049; rot_in_kernel 0.057 -> 0.059
+  conc4   dense q4 / GEMM    _qmm 2.217 -> 2.190; _fq4 0.069 -> 0.073; q4_kernel 0.000 -> 0.135; _reduce 0.059 -> 0.057; _group_sums 0.024 -> 0.025; _swiglu 0.010 -> 0.010
+  conc4   NCCL               ncclDevKernel_AllGather_RING_LL 0.026 -> 0.028
+  conc4   RoCE all-gather    gather_kernel 0.655 -> 0.590
+  conc4   hc                 _hc_partial 0.095 -> 0.102; _hc_finish 0.073 -> 0.075; _hc_post 0.071 -> 0.060; _hc_partial_mm 0.005 -> 0.005; _stream_mean 0.004 -> 0.004

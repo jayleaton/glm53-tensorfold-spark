@@ -286,6 +286,9 @@ def test_tokenize_counts_rows(model_dir, monkeypatch, http):
 
 
 def test_url_fetched_once_a_request(model_dir, monkeypatch, http):
+    # patches/0600: a local http:// image server needs the local-testing knobs (HTTPS / public addresses by default)
+    monkeypatch.setenv("GLM53_TF_VISION_FETCH_HTTP", "1")
+    monkeypatch.setenv("GLM53_TF_VISION_FETCH_PRIVATE", "1")
     png = io.BytesIO()
     image(90, 60).save(png, "PNG")
     hits = []
@@ -297,6 +300,7 @@ def test_url_fetched_once_a_request(model_dir, monkeypatch, http):
         def do_GET(self):
             hits.append(self.path)
             self.send_response(200)
+            self.send_header("Content-Type", "image/png")          # patches/0600: a declared image type
             self.send_header("Content-Length", str(len(png.getvalue())))
             self.end_headers()
             self.wfile.write(png.getvalue())

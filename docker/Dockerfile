@@ -23,6 +23,19 @@ ENV PIP_NO_CACHE_DIR=1 \
 RUN test -f /usr/include/infiniband/verbs.h || (apt-get update \
  && apt-get install -y --no-install-recommends libibverbs-dev ibverbs-providers && rm -rf /var/lib/apt/lists/*)
 
+# patches/0610 (GLM53_TF_GRAMMAR, off by default): structured output's grammar engine, xgrammar 0.2.8 (Apache-2.0;
+# aarch64 cp312 wheel), and what it imports (apache-tvm-ffi, pydantic, transformers: pure Python here). The base
+# image's torch is a pre-release (2.13.0a0+...nv26.07), so pip's resolver cannot match xgrammar's `torch>=1.10` to it
+# even with a `torch==<that>` constraint (W19: "conflicting dependencies"). So xgrammar goes in with --no-deps, then its
+# one missing requirement (transformers, which does not require torch); the build fails if torch's version changed.
+RUN python -c "import torch; print(torch.__version__)" > /tmp/torch-before.txt \
+ && pip install --no-deps "xgrammar==0.2.8" \
+ && pip install "transformers==5.17.0" \
+ && python -c "import torch, xgrammar, transformers, importlib.metadata as m; \
+v = open('/tmp/torch-before.txt').read().strip(); assert torch.__version__ == v, (torch.__version__, v); \
+print('xgrammar', m.version('xgrammar'), 'transformers', transformers.__version__, 'torch', torch.__version__, '(unchanged)')" \
+ && rm /tmp/torch-before.txt
+
 COPY vendor/TensorFold /src/TensorFold
 COPY patches /src/patches
 # PATCHES: space-separated patch number prefixes to apply (e.g. "0001 0002 0003"); empty = every patch, in order

@@ -29,6 +29,21 @@ patches/0330 modes (docs/EXPERT-TC.md):
   they outlast the kernel): the W5 question, why fast2's isolated win (-2 ms a layer at 2,048 rows) became -2% end to
   end. A static-stride kernel (fast2, tc with ticket off) waits for its slowest CTA; a ticket kernel rebalances;
 - ``--variants a,b``: only the variants whose names start with one of these (e.g. ``fast2,fat s3,tc``).
+
+patches/0590 mode (docs/EXPERT-PREFILL-V2.md):
+
+    bench_experts.py 2048 4096 8192 --fat2 --contend --no-v1 --variants fast2,fat,fat2
+
+- ``--fat2`` adds the ``fat2`` kernels (exl3_fat2.cu): configurations 0 (128 members, 4 stages) / 1 (64, 4) /
+  2 (128, 3), the static stride (ticket off), CTA caps (44 / 40 of 48 SMs), and the probes (no decode, no mma); bits
+  against fast2 as above, and the DRAM floor as with ``--tc``;
+- with ``--contend`` every variant also gets its MAKESPAN: from the side stream's start until both the kernel and the
+  side work are done (the side work alone is printed too). The contended kernel time alone rewards a kernel that
+  starves the side stream; the makespan is what the overlapped prefill pays;
+- the GATE line (with ``--fat2 --contend``, 2,048 and 4,096 rows, uniform routing): fat2's bits "same" and its
+  contended time <= 0.75 x fat's (``fat s3``, production). It is printed as PASS / FAIL with the ratios, the makespan
+  ratios and the DRAM floor of the layer (the bound any kernel that keeps fat's dataflow -- Xg in, fp32 Y out --
+  cannot beat: at 2,048 rows it sits at ~0.74x fat's isolated time).
 """
 
 from __future__ import annotations
@@ -139,6 +154,26 @@ def _ms_under(fn, start, side, reps=20, warm=3):
     return float(np.median(t))
 
 
+def _makespan_under(fn, start, side, reps=20, warm=3):
+    """patches/0590: from just before the side stream's work is enqueued until the kernel AND the side work are done
+    (the side stream joined back), ms; and the side work alone (no kernel), ms."""
+    def once(with_kernel):
+        a, b = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
+        a.record()
+        start()
+        if with_kernel:
+            fn()
+        torch.cuda.current_stream().wait_stream(side)
+        b.record()
+        torch.cuda.synchronize()
+        return a.elapsed_time(b)
+    for _ in range(warm):
+        once(True)
+    both = float(np.median([once(True) for _ in range(reps)]))
+    alone = float(np.median([once(False) for _ in range(reps)]))
+    return both, alone
+
+
 def _floor_ms(rows, bw=220e9):
     """The layer's DRAM floor at ``bw``: every weight once (1.81 GB a rank), Xg read, Xd written and read, Y written."""
     P = rows * TOP
@@ -146,7 +181,7 @@ def _floor_ms(rows, bw=220e9):
     return 1e3 * (weights + P * D * 2 + 2 * P * NI * 2 + P * D * 4) / bw
 
 
-def run(rows, kind, v1, tc=False, contend=False, only=()):
+def run(rows, kind, v1, tc=False, contend=False, only=(), fat2=False):
     exl3_mm, ex, x, picks, grp, s, n = _setup(rows, kind)
     fx, ext = exl3_mm._fast_ext(), exl3_mm._ext()
     y = torch.zeros((rows * SLOTS, D), dtype=torch.float32, device="cuda")
@@ -185,6 +220,19 @@ def run(rows, kind, v1, tc=False, contend=False, only=()):
                     probe),
                 lambda cfg=cfg, ticket=ticket, ctas=ctas, probe=probe: tx.down_tc(
                     s.xd, ex.dt, *G, ex.svh_d, y, NI, D, SLOTS, cfg, ticket, ctas, probe))
+    if fat2:                                                  # patches/0590
+        f2 = exl3_mm._fat2_ext()
+        for name, cfg, ticket, ctas, probe in (("fat2", 0, True, 0, 0), ("fat2 cfg1", 1, True, 0, 0),
+                                               ("fat2 cfg2", 2, True, 0, 0), ("fat2 static", 0, False, 0, 0),
+                                               ("fat2 ctas 44", 0, True, 44, 0), ("fat2 ctas 40", 0, True, 40, 0),
+                                               ("fat2 probe: no decode", 0, True, 0, 1),
+                                               ("fat2 probe: no mma", 0, True, 0, 2)):
+            variants[name] = (
+                lambda cfg=cfg, ticket=ticket, ctas=ctas, probe=probe: f2.gateup_fat2(
+                    s.xg, ex.gt, ex.ut, *G, ex.svh_g, ex.svh_u, ex.suh_d, s.xd, D, NI, SLOTS, LIMIT, cfg, ticket, ctas,
+                    probe),
+                lambda cfg=cfg, ticket=ticket, ctas=ctas, probe=probe: f2.down_fat2(
+                    s.xd, ex.dt, *G, ex.svh_d, y, NI, D, SLOTS, cfg, ticket, ctas, probe))
     if only:
         variants = {k: v for k, v in variants.items() if k == "fast2" or k == "fat s3" or k.startswith(tuple(only))}
 
@@ -215,26 +263,34 @@ def run(rows, kind, v1, tc=False, contend=False, only=()):
             print(f"  v1 subprocess failed: {out.stderr.strip().splitlines()[-1:]}")
     for name, (gu, dn) in variants.items():
         res[name] = (_ms(gu), _ms(dn))
-    under = {}
+    under, span = {}, {}
+    side_alone = None
     if contend:                                               # patches/0330: the same kernels beside a busy stream
         start, side = _contender()
         for name, (gu, dn) in variants.items():
             under[name] = _ms_under(lambda gu=gu, dn=dn: (gu(), dn()), start, side)
+            if fat2 and "probe" not in name:                  # patches/0590: and what both streams pay
+                span[name], side_alone = _makespan_under(lambda gu=gu, dn=dn: (gu(), dn()), start, side)
 
     fat_dec, once_dec = _decodes(n, rows)
     print(f"\nrows {rows}, {kind}: {n.mean():.1f} members an expert (max {n.max()}); a weight tile is decoded "
           f"{fat_dec:.2f}x a chunk by fat, {once_dec:.2f}x by once; rot_in {rot:.2f} ms, rot_in1 {rot1:.2f} ms")
     base = res["fat s3"][0] + res["fat s3"][1]
     floor = _floor_ms(rows)
-    print(f"  DRAM floor of the layer (weights once, Xg, Xd, Y at 220 GB/s): {floor:.2f} ms")
+    print(f"  DRAM floor of the layer (weights once, Xg, Xd, Y at 220 GB/s): {floor:.2f} ms"
+          + (f" (at 235 GB/s: {_floor_ms(rows, 235e9):.2f} ms = {_floor_ms(rows, 235e9) / base:.2f}x fat)" if fat2 else ""))
+    if span:
+        print(f"  side stream's work alone: {side_alone:.2f} ms; makespan = kernel + side work from the side's start")
     print(f"  {'kernels':24s} {'gate/up ms':>10s} {'TF/s':>6s} {'down ms':>8s} {'TF/s':>6s} {'sum ms':>7s} {'vs fat':>7s} "
           f"{'floor':>6s}" + (f" {'contended':>9s} {'x':>5s}" if under else "") + " bits")
     for name, (gu, dn) in res.items():
         bits = "" if "probe" in name or name == "v1" else ("same" if same[name] else "DIFFERENT")
         extra = f" {under[name]:9.2f} {under[name] / (gu + dn):5.2f}" if name in under else ""
+        if name in span:
+            extra += f"  makespan {span[name]:7.2f}"
         print(f"  {name:24s} {gu:10.2f} {flops_gu / gu / 1e9:6.1f} {dn:8.2f} {flops_dn / dn / 1e9:6.1f} {gu + dn:7.2f} "
               f"{base / (gu + dn):6.2f}x {floor / (gu + dn):6.2f}{extra} {bits}")
-    return res, same
+    return res, same, under, span
 
 
 def main(argv):
@@ -242,18 +298,44 @@ def main(argv):
         print(json.dumps(run_v1(int(argv[1]), argv[2])))
         return
     v1 = "--no-v1" not in argv
-    tc, contend = "--tc" in argv, "--contend" in argv
+    tc, contend, fat2 = "--tc" in argv, "--contend" in argv, "--fat2" in argv
     only = ()
     if "--variants" in argv:
         only = tuple(v.strip() for v in argv[argv.index("--variants") + 1].split(",") if v.strip())
     rows = [int(a) for a in argv if a.isdigit()] or [1024, 2048, 4096, 8192]
     print(torch.cuda.get_device_name(), torch.version.cuda)
     bad = []
+    gate = {}
     for r in rows:
         for kind in ("uniform", "skewed"):
-            _, same = run(r, kind, v1, tc, contend, only)
+            res, same, under, span = run(r, kind, v1, tc, contend, only, fat2)
             bad += [(r, kind, k) for k, v in same.items() if not v]
+            if fat2 and kind == "uniform" and "fat2" in res:
+                gate[r] = (res, same, under, span)
     print("\nALL BITS SAME" if not bad else f"\nBITS DIFFER: {bad}")
+    if fat2:
+        print(gate_line(gate, contend))
+
+
+def gate_line(gate, contend):
+    """patches/0590's GATE: fat2's bits same, and <= 0.75x fat's (fat s3) time at 2,048 and 4,096 rows beside a busy
+    side stream (uniform routing)."""
+    if not contend:
+        return "GATE 0590: needs --contend (the gate is measured beside a busy side stream)"
+    need = [r for r in (2048, 4096) if r not in gate]
+    if need:
+        return f"GATE 0590: needs rows {need}"
+    ok, parts = True, []
+    for r in (2048, 4096):
+        res, same, under, span = gate[r]
+        x = under["fat2"] / under["fat s3"]
+        m = span["fat2"] / span["fat s3"] if "fat s3" in span else float("nan")
+        iso = sum(res["fat2"]) / sum(res["fat s3"])
+        fl = _floor_ms(r, 235e9) / sum(res["fat s3"])
+        ok &= bool(same.get("fat2")) and x <= 0.75
+        parts.append(f"{r}: contended {x:.3f}x fat (makespan {m:.3f}x, isolated {iso:.3f}x; DRAM floor at 235 GB/s "
+                     f"{fl:.3f}x){'' if same.get('fat2') else ' BITS DIFFER'}")
+    return f"GATE 0590: {'PASS' if ok else 'FAIL'} (<= 0.75x fat, same bits) -- " + "; ".join(parts)
 
 
 if __name__ == "__main__":

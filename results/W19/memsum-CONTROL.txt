@@ -1,0 +1,17 @@
+CONTROL: MemAvailable min by phase (head / worker GiB)
+  pre       12.60 /  12.03
+  ab        10.96 /  10.34
+  post-ab   10.09 /  10.00
+  ab2        9.81 /   9.58
+  n1         9.37 /   9.06
+  stress     7.75 /   7.61
+  mmlu       9.42 /   9.30
+  needle     6.58 /   6.31
+  ab3        7.98 /   7.68
+  ab4        7.24 /   6.95
+  stress+mmlu+needle min 6.58 / 6.31  -> FAIL (>= 8 GiB)
+  stress min 7.75 / 7.61
+  needle min 6.58 / 6.31
+  whole load min 6.58 / 6.31
+  MemFree steps >= 1 GiB (r0): stress 3, needle 1
+  MemFree steps >= 1 GiB (r1): stress 2, needle 1

@@ -19,6 +19,18 @@ Method (every number a median of 7 replays of a CUDA graph of back-to-back calls
 - the roof probe streams the same byte count with 16-byte loads from a persistent grid (the W11-style probe inside
   this process, so the numbers share the clock state); GB/s = bytes / time.
 
+patches/0580 (``--loads``): exl3_ld.cu's ld_kernel (GLM53_TF_DEC_EXPERT_LOADS) vs exl3.cu's grouped_kernel -- the two
+grouped launches of a routed layer (gate/up + down), every (ld, nt, pd) of expert_loads.CFGS, COLD two ways: "rotate"
+(3 layer copies of 128 experts back to back, as above) and "flush" (a 64 MiB streaming read before every call; graph A
+= N x (flush, call), graph B = N x flush, us = median (A - B) / N: cold L2 plus a DRAM-busy predecessor tail, the
+in-situ-like number); the probes 1 (no decode), 2 (no mma), 3 (load path alone) at (8, 2); the whole routed layer
+(rot_in + epilogues too) old vs the default; Z compared bit for bit (NaN-filled buffers) before timing. Two gate lines:
+
+    GATE 0580 load path: probe 3 (nc,8,2, no decode / mma) >= 220 GB/s [flush] on every U 8-22 window: PASS|FAIL
+    GATE 0580: <cfg> >= 1.05x grouped_kernel [flush] (and >= 1.00x [rotate]) on every U 8-22 window: PASS|FAIL
+
+    PYTHONPATH=/src/TensorFold/tests/cuda python tests/cuda/bench_decode_kernels.py --loads [--quick] [--json out.json]
+
 Reading it: new / probe is the kernel's share of the attainable bandwidth; old -> new is the E1 / E2 gain; if probe 1 is
 not faster than new, the decode ALU is hidden and only data movement matters. Every new variant's output is compared
 with old's bit for bit before it is timed (a False there means the variant must not be used).
@@ -37,6 +49,11 @@ import torch
 sys.path.insert(0, str(Path(__file__).parent))
 
 from tensorfold.families.glm5_next.cuda import decode_stream as ds, exl3_mm, qmm  # noqa: E402
+
+try:                                                         # patches/0580
+    from tensorfold.families.glm5_next.cuda import expert_loads as el  # noqa: E402
+except ImportError:                                          # pragma: no cover
+    el = None
 
 DEV = "cuda"
 D, NI, E, TOP, LIMIT = 4096, 1024, 288, 8, 10.0
@@ -268,6 +285,194 @@ def bench_qmm(pdls, quick: bool) -> list[dict]:
     return rows
 
 
+# -- patches/0580: the expert load path, cold ------------------------------------------------------------------------------
+LOAD_WINDOWS = [((1,), 8), ((2,), 13), ((3,), 17), ((4,), 22), ((8,), 35), ((16,), 64), ((3, 3, 3, 2), 51),
+                ((4, 4, 4, 4), 60)]
+GATE_U = (8, 22)                         # the gate's windows: 1-stream decode / verify (1-4 rows)
+LOAD_GATE_X = 1.05
+LOAD_PROBE_GBS = 220.0
+FLUSH_BYTES = 64 << 20
+
+
+def _flush_us(fns, pred, reps: int = 9) -> float:
+    """us a call with a cold-L2 predecessor: median over reps of (graph[pred, fn, pred, fn ...] - graph[pred ...]) / N,
+    the two graphs replayed interleaved."""
+
+    for f in fns:
+        pred()
+        f()
+    torch.cuda.synchronize()
+    ga, gb = torch.cuda.CUDAGraph(), torch.cuda.CUDAGraph()
+    with torch.cuda.graph(ga):
+        for f in fns:
+            pred()
+            f()
+    with torch.cuda.graph(gb):
+        for _ in fns:
+            pred()
+    ga.replay()
+    gb.replay()
+    torch.cuda.synchronize()
+    t = []
+    for _ in range(reps):
+        ev = [torch.cuda.Event(enable_timing=True) for _ in range(4)]
+        ev[0].record()
+        ga.replay()
+        ev[1].record()
+        ev[2].record()
+        gb.replay()
+        ev[3].record()
+        torch.cuda.synchronize()
+        t.append((ev[0].elapsed_time(ev[1]) - ev[2].elapsed_time(ev[3])) * 1e3 / len(fns))
+    return statistics.median(t)
+
+
+def gate_0580(rows: list[dict], lo_hi=GATE_U, x: float = LOAD_GATE_X, probe_gbs: float = LOAD_PROBE_GBS) -> dict:
+    """The two gate lines from ``bench_loads`` rows (pure: CPU-testable). The config is one knob setting for every
+    window, so it is chosen once: the eligible (same-bits) config with the best geometric mean flush speed-up over
+    the gate windows; it passes if it is >= x on EVERY gate window in flush mode and >= 1.00 in rotate mode."""
+
+    import math
+
+    gate = [r for r in rows if lo_hi[0] <= r["U"] <= lo_hi[1]]
+    out = {"windows": [r["window"] for r in gate]}
+    pr = [r.get("probe 3 nc", {}).get("flush_GBs") for r in gate]
+    ok_p = bool(gate) and all(v is not None and v >= probe_gbs for v in pr)
+    out["probe_pass"] = ok_p
+    out["probe_line"] = (f"GATE 0580 load path: probe 3 (nc,8,2, no decode / mma) >= {probe_gbs:.0f} GB/s [flush] on "
+                         f"every U {lo_hi[0]}-{lo_hi[1]} window: {'PASS' if ok_p else 'FAIL'} "
+                         f"({', '.join('n/a' if v is None else f'{v:.0f}' for v in pr)})")
+    cfgs = sorted({k for r in gate for k, v in r.items() if k.startswith("new ") and isinstance(v, dict)})
+    best, best_g = None, 0.0
+    for c in cfgs:
+        sp = []
+        for r in gate:
+            v = r.get(c)
+            if not v or not v.get("same_bits") or not v.get("flush_us"):
+                sp = None
+                break
+            sp.append(r["old_flush_us"] / v["flush_us"])
+        if sp:
+            g = math.exp(sum(math.log(a) for a in sp) / len(sp))
+            if g > best_g:
+                best, best_g = c, g
+    out["best"] = best
+    if best is None:
+        out["pass"] = False
+        out["line"] = f"GATE 0580: no eligible config measured on the U {lo_hi[0]}-{lo_hi[1]} windows: FAIL"
+        return out
+    fl = [r["old_flush_us"] / r[best]["flush_us"] for r in gate]
+    ro = [r["old_rotate_us"] / r[best]["rotate_us"] for r in gate if r[best].get("rotate_us")]
+    ok = all(v >= x for v in fl) and all(v >= 1.0 for v in ro)
+    out.update(flush=fl, rotate=ro, geomean=best_g)
+    out["pass"] = ok
+    out["line"] = (f"GATE 0580: {best[4:]} >= {x:.2f}x grouped_kernel [flush] (and >= 1.00x [rotate]) on every U "
+                   f"{lo_hi[0]}-{lo_hi[1]} window: {'PASS' if ok else 'FAIL'} (flush "
+                   f"{' '.join(f'{v:.3f}' for v in fl)}; rotate {' '.join(f'{v:.3f}' for v in ro)}; geomean {best_g:.3f})")
+    return out
+
+
+def bench_loads(quick: bool) -> list[dict]:
+    """patches/0580: grouped_kernel (gate/up + down) vs ld_kernel, cold (rotate and flush), probes, whole routed."""
+
+    if el is None:
+        raise RuntimeError("patches/0580 (expert_loads) is not in this tree")
+    n_exp = 128
+    layers = [_layer(10 + c, n_exp) for c in range(COPIES)]
+    s = exl3_mm.Scratch(64, SLOTS, D, NI, DEV)
+    y = torch.zeros((64 * SLOTS, D), dtype=torch.float32, device=DEV)
+    ext = exl3_mm._ext()
+    gsk, dsk = exl3_mm.GATEUP_CFG[2], exl3_mm.DOWN_CFG[2]
+    flush_buf = torch.empty(FLUSH_BYTES, dtype=torch.uint8, device=DEV)
+    fout = torch.zeros(1, dtype=torch.int32, device=DEV)
+    fctas = torch.cuda.get_device_properties(0).multi_processor_count * 8
+
+    def pred():
+        _probe().probe(flush_buf, FLUSH_BYTES, fctas, fout)
+
+    cases = LOAD_WINDOWS if not quick else [((1,), 8), ((2,), 13), ((4,), 22), ((3, 3, 3, 2), 51)]
+    cfgs = el.CFGS if not quick else (("nc", 8, 2), ("nc", 8, 1), ("cpa", 8, 2), ("w32", 8, 2), ("nc", 4, 2))
+    rows = []
+    for sizes, U in cases:
+        pick, grp, used = _window(sizes, U, n_exp, sum(sizes) * 7 + U)
+        R = pick.shape[0]
+        P = R * SLOTS
+        x = torch.randn((R, D), device=DEV).to(torch.bfloat16)
+        ext.rot_in(x, x.stride(0), pick, layers[0].suh_g, layers[0].suh_u, s.xg, s.xu, R, D, SLOTS)
+        s.xd[:P].copy_((torch.randn((P, NI), device=DEV) * 0.5).half())
+        nbytes = used * EXPERT_BYTES
+        zg = torch.empty((2 * gsk * P * NI,), dtype=torch.float32, device=DEV)
+        zd = torch.empty((dsk * P * D,), dtype=torch.float32, device=DEV)
+
+        def old(ex):
+            ext.grouped(s.xg, s.xu, ex.gt, ex.ut, grp.ids, grp.count, grp.members, zg, 2, D, NI, P, gsk, SLOTS, 8, 4)
+            ext.grouped(s.xd, s.xd, ex.dt, ex.dt, grp.ids, grp.count, grp.members, zd, 1, NI, D, P, dsk, SLOTS, 8, 4)
+
+        def new(ex, cfg, probe=0, pdl=False):
+            el.run(s.xg, s.xu, ex.gt, ex.ut, grp, zg, 2, D, NI, P, gsk, SLOTS, cfg, probe, pdl)
+            el.run(s.xd, s.xd, ex.dt, ex.dt, grp, zd, 1, NI, D, P, dsk, SLOTS, cfg, probe, pdl)
+
+        zg.fill_(float("nan"))
+        zd.fill_(float("nan"))
+        old(layers[0])
+        torch.cuda.synchronize()
+        ref_g, ref_d = zg.view(torch.int32).clone(), zd.view(torch.int32).clone()
+        t_rot = _graph_us([lambda ex=ex: old(ex) for ex in layers])
+        t_fl = _flush_us([lambda ex=ex: old(ex) for ex in layers], pred)
+        row = {"window": f"{'+'.join(map(str, sizes))} rows, U {used}", "rows": R, "U": used, "MB": nbytes / 1e6,
+               "old_rotate_us": t_rot, "old_flush_us": t_fl, "old_rotate_GBs": nbytes / t_rot / 1e3,
+               "old_flush_GBs": nbytes / t_fl / 1e3, "roof_GBs": roof_gbs(nbytes)}
+        variants = [(c, False) for c in cfgs] + ([(el.DEFAULT, True)] if ds.pdl_supported() else [])
+        for cfg, pdl in variants:                             # (the default again with GLM53_TF_DEC_EXPERT_LOADS_PDL)
+            if not (el.fits(D, NI, gsk, 4, cfg) and el.fits(NI, D, dsk, 4, cfg)):
+                continue
+            zg.fill_(float("nan"))
+            zd.fill_(float("nan"))
+            new(layers[0], cfg, 0, pdl)
+            torch.cuda.synchronize()
+            same = torch.equal(zg.view(torch.int32), ref_g) and torch.equal(zd.view(torch.int32), ref_d)
+            tr = _graph_us([lambda ex=ex: new(ex, cfg, 0, pdl) for ex in layers])
+            tf = _flush_us([lambda ex=ex: new(ex, cfg, 0, pdl) for ex in layers], pred)
+            row[f"new {','.join(map(str, cfg))}{' pdl' if pdl else ''}"] = {
+                "rotate_us": tr, "flush_us": tf, "rotate_GBs": nbytes / tr / 1e3, "flush_GBs": nbytes / tf / 1e3,
+                "same_bits": same}
+        for ld, probe in sorted(el.PROBES):
+            cfg = (ld, 8, 2)
+            tr = _graph_us([lambda ex=ex: new(ex, cfg, probe) for ex in layers])
+            tf = _flush_us([lambda ex=ex: new(ex, cfg, probe) for ex in layers], pred)
+            row[f"probe {probe} {ld}"] = {"rotate_us": tr, "flush_us": tf, "rotate_GBs": nbytes / tr / 1e3,
+                                          "flush_GBs": nbytes / tf / 1e3}
+
+        def routed(ex, on):
+            with el.using(on=on, gu=el.DEFAULT, dn=el.DEFAULT), ds.using(experts=False):
+                exl3_mm.routed(x, pick, grp, ex, s, y, R, LIMIT)
+
+        row["routed_old_rotate_us"] = _graph_us([lambda ex=ex: routed(ex, False) for ex in layers])
+        row["routed_new_rotate_us"] = _graph_us([lambda ex=ex: routed(ex, True) for ex in layers])
+        rows.append(row)
+    return rows
+
+
+def _fmt_loads(rows: list[dict]) -> list[str]:
+    out = []
+    for r in rows:
+        best = min(((v["flush_us"], k) for k, v in r.items() if k.startswith("new ") and v.get("same_bits")),
+                   default=(float("nan"), "none"))
+        out.append(f"loads {r['window']}: {r['MB']:.0f} MB, roof {r['roof_GBs']:.0f} GB/s | grouped_kernel rotate "
+                   f"{r['old_rotate_us']:.1f} us {r['old_rotate_GBs']:.0f} GB/s, flush {r['old_flush_us']:.1f} us "
+                   f"{r['old_flush_GBs']:.0f} GB/s | best new [flush] {best[1][4:]} {best[0]:.1f} us "
+                   f"({r['old_flush_us'] / best[0]:.3f}x) | routed layer {r['routed_old_rotate_us']:.1f} -> "
+                   f"{r['routed_new_rotate_us']:.1f} us")
+        for k, v in r.items():
+            if isinstance(v, dict):
+                bits = "" if "same_bits" not in v else ("  same bits" if v["same_bits"] else "  BITS DIFFER")
+                out.append(f"    {k:18s} rotate {v['rotate_us']:8.1f} us {v['rotate_GBs']:5.0f} GB/s ({r['old_rotate_us'] / v['rotate_us']:.3f}x)"
+                           f" | flush {v['flush_us']:8.1f} us {v['flush_GBs']:5.0f} GB/s ({r['old_flush_us'] / v['flush_us']:.3f}x){bits}")
+    g = gate_0580(rows)
+    out += [g["probe_line"], g["line"]]
+    return out
+
+
 def _fmt(rows: list[dict], key: str) -> list[str]:
     out = []
     for r in rows:
@@ -295,7 +500,16 @@ def main() -> None:
     ap.add_argument("--experts-only", action="store_true")
     ap.add_argument("--qmm-only", action="store_true")
     ap.add_argument("--no-pdl", action="store_true")
+    ap.add_argument("--loads", action="store_true", help="patches/0580 only: grouped_kernel vs exl3_ld.cu, cold")
     a = ap.parse_args()
+    if a.loads:
+        res = {"device": torch.cuda.get_device_name(0), "loads": bench_loads(a.quick)}
+        lines = _fmt_loads(res["loads"])
+        res["gate"] = {k: v for k, v in gate_0580(res["loads"]).items() if k != "windows"}
+        print("\n".join(lines), flush=True)
+        if a.json:
+            Path(a.json).write_text(json.dumps(res, indent=1, default=str))
+        return
     pdls = [False] + ([True] if ds.pdl_supported() and not a.no_pdl else [])
     res = {"device": torch.cuda.get_device_name(0), "triton_fused_qmm": ds.qmm_reference_fused()}
     if not a.qmm_only:

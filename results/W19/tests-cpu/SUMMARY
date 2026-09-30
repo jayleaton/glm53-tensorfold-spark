@@ -1,0 +1,12 @@
+10:57:37 start
+10:58:25 upstream-ports rc=0 48s :: 169 passed in 44.95s
+10:58:30 disconnect rc=0 5s :: 8 passed in 2.76s
+10:58:56 grammar rc=0 26s :: 129 passed in 23.09s
+10:59:00 http-pin rc=0 4s :: 4 passed in 1.70s
+10:59:04 size-switch rc=0 4s :: 16 passed in 2.00s
+10:59:13 loads-compile rc=0 9s :: 5 passed in 6.45s
+10:59:34 fat2-compile rc=0 21s :: 21 passed in 18.86s
+10:59:37 fat2-bench rc=0 3s :: 3 passed in 1.62s
+11:04:36 loads-emu rc=0 299s :: 58 passed in 295.94s (0:04:55)
+11:13:29 fat2-emu rc=0 533s :: 49 passed in 531.02s (0:08:51)
+11:13:29 done
