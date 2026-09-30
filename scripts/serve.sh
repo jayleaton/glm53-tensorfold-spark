@@ -53,6 +53,13 @@ case "$CONTAINER_RT" in
     *) echo "[glm53-tf] CONTAINER_RT=$CONTAINER_RT: expected docker or podman" >&2; exit 2 ;;
 esac
 rt() { printf '%s' "$CONTAINER_RT"; }
+# Runtime answers on the current node, and for podman that it is rootful (rootless has a separate image store, and
+# GPU / RDMA devices, --ulimit memlock=-1 and IPC_LOCK can fail). 0: ok; 1: not answering or (podman) rootless.
+rt_ok() {
+    $(rt) info >/dev/null 2>&1 || return 1
+    [[ "$CONTAINER_RT" == podman ]] || return 0
+    [[ "$($(rt) info --format '{{.Host.Security.Rootless}}' 2>/dev/null)" == false ]]
+}
 # Every ops feature below is off unless set (config or environment); `start` / `stop` / `status` behave as before.
 # post-load canary (scripts/canary.py): off | warn (log a failure, keep serving) | strict (stop both ranks, exit 1)
 CANARY="${CANARY:-off}"
@@ -263,8 +270,13 @@ preflight() { # read-only checks (AGENTS.md lists them); non-zero on a problem a
     done
     [[ $bad == 0 ]] || return 1
     wssh true || { log "preflight: cannot ssh to $WORKER_SSH: passwordless ssh from the head is needed (ssh-copy-id $WORKER_SSH)"; return 1; }
-    $(rt) info >/dev/null 2>&1 || { log "preflight: the container runtime does not answer on the head (service running? user in the $CONTAINER_RT group?)"; bad=1; }
-    wssh $(rt) info >/dev/null 2>&1 || { log "preflight: the container runtime does not answer on the worker as $WORKER_SSH (service running? user in the $CONTAINER_RT group?)"; bad=1; }
+    local rt_hint  # accurate "how to run the runtime" hint per runtime (podman has no podman group)
+    if [[ "$CONTAINER_RT" == podman ]]; then rt_hint="service running? run as root or via sudo on both nodes"; else rt_hint="service running? user in the docker group?"; fi
+    if ! rt_ok; then log "preflight: the container runtime does not answer (or is rootless) on the head ($rt_hint)"; bad=1; fi
+    # worker: same check, built from the concrete binary name so it runs on the worker (rt_ok is a local function)
+    local rtb="$CONTAINER_RT" w_cmd="$CONTAINER_RT info >/dev/null 2>&1"
+    [[ "$CONTAINER_RT" == podman ]] && w_cmd="$w_cmd && [[ \"\$($rtb info --format '{{.Host.Security.Rootless}}' 2>/dev/null)\" == false ]]"
+    if ! wssh "$w_cmd"; then log "preflight: the container runtime does not answer (or is rootless) on the worker as $WORKER_SSH ($rt_hint)"; bad=1; fi
     $(rt) image inspect "$IMAGE" >/dev/null 2>&1 || { log "preflight: no image $IMAGE here (scripts/serve.sh build)"; bad=1; }
     wssh $(rt) image inspect "$IMAGE" >/dev/null 2>&1 || { log "preflight: no image $IMAGE on the worker (scripts/serve.sh build ships it)"; bad=1; }
     [[ -n "$(ls -A vendor/TensorFold 2>/dev/null)" ]] \
@@ -550,7 +562,9 @@ watch_tick() {
     elif [[ "$r1" == unreachable ]]; then log "watch: worker unreachable over ssh (not counted)"
     elif [[ "$r1" != true ]]; then bad="rank 1 $r1"
     else
-        age=$(( now - $(date -d "$($(rt) inspect -f '{{.State.StartedAt}}' "$NAME-r0")" +%s) ))
+        # podman's .State.StartedAt ends with a zone word ('... +0000 UTC' or '... +0200 CEST') that `date -d`
+        # rejects; strip it (docker returns a bare ISO UTC time, so the sed is a no-op there).
+        age=$(( now - $(date -d "$($(rt) inspect -f '{{.State.StartedAt}}' "$NAME-r0" | sed -E 's/ [A-Za-z]+$//')" +%s) ))
         body=$(curl -s -m 10 -w '\n%{http_code}' "$BASE/health" || true)
         code=${body##*$'\n'}; body=${body%$'\n'*}
         if [[ "$code" == 200 ]]; then :

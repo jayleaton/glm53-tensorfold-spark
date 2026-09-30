@@ -17,8 +17,8 @@ Run on the head; run the `ssh <worker>` lines to check the worker too.
 | --- | --- | --- |
 | GPU, driver | `nvidia-smi --query-gpu=name,driver_version --format=csv,noheader` (both) | `NVIDIA GB10`, the **same** driver on both; 580.x is known good (590.x: a CUDA-graph deadlock is reported on GB10) |
 | Nothing else on the GPUs | `nvidia-smi --query-compute-apps=pid,name --format=csv,noheader` (both) | empty. Stop vLLM or any other stack first: only one fits |
-| Docker + NVIDIA runtime | `docker info --format '{{.Runtimes}}'` (both) | contains `nvidia`; runs without `sudo`. With `CONTAINER_RT=podman`: `podman info` plus a CDI spec (once: `sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml`) and `podman run --device nvidia.com/gpu=all` |
-| Passwordless ssh | `ssh -o BatchMode=yes <worker> docker ps` | no password prompt; the worker user can run docker |
+| Docker + NVIDIA runtime | `docker info --format '{{.Runtimes}}'` (both) | contains `nvidia`; runs without `sudo`. With `CONTAINER_RT=podman`: `podman info` plus a CDI spec (once: `sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml`, regenerate after a driver/toolkit upgrade) and `podman run --device nvidia.com/gpu=all`; must be rootful (`podman info --format '{{.Host.Security.Rootless}}'` is `false`) |
+| Passwordless ssh | `ssh -o BatchMode=yes <worker> docker ps` (podman: `ssh -o BatchMode=yes <worker> podman ps`, as a user that can use rootful podman) | no password prompt; the worker user can run the container runtime |
 | Passwordless sudo (memory gate) | `sudo -n true` (both) | exit 0. Without it `MEM_GATE_DROP_CACHES` cannot drop page caches and the 4th slot may not fit |
 | Free memory | `grep -E 'MemTotal\|MemFree' /proc/meminfo` (both) | MemFree >= 108 GiB when idle (`MEM_GATE_GIB=108`). Close desktop sessions, browsers, other containers |
 | Disk | `df -h ~/.cache` (both) | ~165 GB for the checkpoint + ~84 GB prepared weights + up to 64 GiB session tier |

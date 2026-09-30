@@ -10,9 +10,10 @@
 #   head   (rank 0):        docker compose --env-file config/minimal.env -f docker/compose.yaml --profile rank0 up -d
 #   stop (each node):       docker compose --env-file config/minimal.env -f docker/compose.yaml --profile rank0 --profile rank1 down
 #
-# Podman: substitute `podman compose` (or podman-compose) for `docker compose` above; the GPU is exposed here via the
-# CDI device path `nvidia.com/gpu=all` (the `deploy.resources` block below is the Docker Compose form, ignored by
-# podman-compose). Rootful only: the pod uses host networking so NCCL / the RoCE proxy own the CX7 NIC.
+# Podman: substitute `podman compose` (or podman-compose) for `docker compose` and add the podman override file
+# (`-f docker/compose.yaml -f docker/compose.podman.yaml`); it exposes the GPU via the CDI device path
+# `nvidia.com/gpu=all` (Docker ignores CDI device paths and uses the `deploy.resources` block, so the CDI entry must
+# stay in the podman-only override). Rootful only: the pod uses host networking so NCCL / the RoCE proxy own the CX7 NIC.
 #
 # Each node needs the image (docker compose ... build, or scripts/serve.sh build) and the weights in its own HF cache.
 # Container and volume names match serve.sh, so `scripts/serve.sh status|logs|stop` work on either path.
@@ -28,10 +29,6 @@ x-rank: &rank
   ipc: host
   devices:
     - /dev/infiniband
-    # NVIDIA GPU. Docker Compose uses the `deploy.resources.reservations.devices`
-    # block below; podman-compose reads the CDI device path here. Keep both: the
-    # deploy block is ignored by podman-compose, the devices entry by docker.
-    - nvidia.com/gpu=all
   ulimits:
     memlock: -1
   cap_add:

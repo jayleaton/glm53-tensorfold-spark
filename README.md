@@ -185,6 +185,15 @@ set `CONTAINER_RT=podman` either in `config/prod.env` or on the command line: `C
 The serving pod always needs host networking (NCCL/RoCE own the CX7 NIC), so this is never the rootless/pasta path.
 Podman exposes the GPU via CDI (`--device nvidia.com/gpu=all`): generate the spec once with the NVIDIA Container
 Toolkit, `sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml` (see AGENTS.md Docker + NVIDIA runtime row).
+Regenerate it after a driver or toolkit upgrade (the spec references the installed driver and can go stale).
+
+Podman differs from Docker in three small ways the rest of the flow already handles:
+- the container image ID has no `sha256:` prefix (`podman image inspect --format '{{.Id}}'`), so switching runtimes
+  re-runs calibration once (the cache is keyed on the image ID);
+- `--log-opt max-size` / `max-file` are honored but write `k8s-file` logs, not Docker's `json-file` (the `LOG_MAX_*`
+  knobs still apply; the log driver differs);
+- `docker compose` is `podman compose` plus the override file `-f docker/compose.yaml -f docker/compose.podman.yaml`,
+  which adds the CDI device path (the base compose file keeps the Docker `deploy.resources` GPU form only).
 
 **Verify:**
 
@@ -539,7 +548,7 @@ Before publishing a fork: `scripts/check-public.sh` scans the tree for private I
 | --- | --- |
 | `vendor/TensorFold` | TensorFold, pinned submodule (`2f8e514`, 0.3.4), unmodified |
 | `patches/` | engine patches, applied in order at image build |
-| `docker/` | Dockerfile, entrypoint, compose file |
+| `docker/` | Dockerfile, entrypoint, compose files (`compose.yaml` + `compose.podman.yaml` override) |
 | `scripts/` | `serve.sh` (build / start / stop / status / logs / canary / watchdog / gpucheck; `PATCHES="..." serve.sh build` for a subset), `prepare.sh`, `gpuwatch.py` (GB10 clock / slow-state watch), `traffic-report.py` (request-log summary), `rigmark/` (turnkey RigMark runs, docs/RIGMARK.md), systemd units, `check-public.sh` |
 | `config/` | `prod.env.example` (production, the default), earlier configs, `minimal.env.example` (32k debugging baseline) |
 | `AGENTS.md` | step-by-step setup for AI coding agents: checks, commands, expected logs, failures and fixes |
