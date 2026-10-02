@@ -1,0 +1,57 @@
+diff --git a/src/tensorfold/families/glm5_next/cuda/batch.py b/src/tensorfold/families/glm5_next/cuda/batch.py
+--- a/src/tensorfold/families/glm5_next/cuda/batch.py
++++ b/src/tensorfold/families/glm5_next/cuda/batch.py
+@@ -1656,6 +1656,37 @@
+             self.thread.join(timeout=60)
+ 
+     # -- the round loop ------------------------------------------------------------------------------------------------
++    def _idle_bell(self, *, wait: bool) -> None:
++        """Wake an empty batch through the existing rendezvous store, never a GPU collective.
++
++        Adapted from upstream TensorFold #132. Both ranks know when every sequence has ended; only that
++        boundary rings/waits. Active rounds and sampler-carried plans therefore pay no TCP round trip.
++        RoceComm forwards ``store`` to its NCCL base. Store-less test communicators retain the old exchange.
++        """
++
++        if any(s is not None for s in self.seqs):
++            return
++        store = getattr(getattr(self.g, "comm", None), "store", None)
++        if store is None:
++            return
++        seq = getattr(self, "_idle_bell_seq", 0) + 1
++        key = f"tf_glm_batch_idle_{seq}"
++        if wait:
++            from datetime import timedelta
++
++            while True:
++                try:
++                    store.wait([key], timedelta(hours=1))
++                    break
++                except torch.distributed.DistStoreError as exc:
++                    # Only a genuine idle wait may retry; peer loss and other store errors must fail loudly.
++                    if not str(exc).startswith("wait timeout after "):
++                        raise
++            store.delete_key(key)
++        else:
++            store.set(key, b"1")
++        self._idle_bell_seq = seq
++
+     def _serve(self) -> None:
+         """Rank 0's loop thread: plan a round (shared with rank 1), run it."""
+ 
+@@ -1702,6 +1733,7 @@
+                     self._execute(*ahead)       # cancels only: no spills, no admissions, no pieces
+                     self._go_resident()         # patches/0450
+                     continue
++                self._idle_bell(wait=True)      # an empty follower sleeps on the CPU until rank 0 has a plan
+                 cancels, admits, pieces = batchplan.parse_plan(self.g._share(None))
+                 if self.kvp is not None:                # patches/0290: the slots rank 0 spills this round
+                     got = self.g._share(None)
+@@ -1814,6 +1846,7 @@
+             pieces = mpf.more_pieces(pieces, prefilling, allow, self.piece, self.mpf_rows)
+         plan = batchplan.encode_plan(cancels, [(slot, cached, self._header(job)) for slot, cached, job in admits],
+                                      pieces)
++        self._idle_bell(wait=False)             # ring before the empty follower enters this plan's collective
+         self.g._share(plan)
+         if self.kvp is not None:                        # patches/0290: this round's spills, before the admissions
+             self._spills = list(spills)
