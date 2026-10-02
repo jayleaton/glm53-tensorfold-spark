@@ -16,6 +16,18 @@ new namespace, without deleting the old one. A restart of the same image reuses 
 The patch concerns resident batched serving, not stale GPU telemetry after container shutdown or the
 separate single-request engine path.
 
+## Heat and power scope
+
+An idle worker blocked in a GPU collective consumes power and generates heat without doing inference.
+On the installation used for this check, board/ACPI temperatures repeatedly reached about 95–98°C
+and one machine turned itself off. The shutdown cause remains unproven; heat preceding it is not
+proof that the idle collective caused it or that this patch prevents another shutdown.
+
+The checks below establish that both resident GPUs return to 0% utilization. They do not measure
+temperature or wattage reduction against an otherwise identical unpatched run. Active prefill and
+decode remain GPU workloads and can still run hot. This patch makes the empty batch sleep; it does
+not change cooling, clocks, power limits or active-load thermal behavior.
+
 ## CPU regression checks
 
 With the patched image and pytest available:

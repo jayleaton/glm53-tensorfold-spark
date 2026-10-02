@@ -3,7 +3,7 @@ diff --git a/src/tensorfold/families/glm5_next/cuda/batch.py b/src/tensorfold/fa
 +++ b/src/tensorfold/families/glm5_next/cuda/batch.py
 @@ -1656,6 +1656,37 @@
              self.thread.join(timeout=60)
- 
+
      # -- the round loop ------------------------------------------------------------------------------------------------
 +    def _idle_bell(self, *, wait: bool) -> None:
 +        """Wake an empty batch through the existing rendezvous store, never a GPU collective.
@@ -38,7 +38,7 @@ diff --git a/src/tensorfold/families/glm5_next/cuda/batch.py b/src/tensorfold/fa
 +
      def _serve(self) -> None:
          """Rank 0's loop thread: plan a round (shared with rank 1), run it."""
- 
+
 @@ -1702,6 +1733,7 @@
                      self._execute(*ahead)       # cancels only: no spills, no admissions, no pieces
                      self._go_resident()         # patches/0450
