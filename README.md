@@ -1,5 +1,7 @@
 Follow me on X for more updates: https://x.com/jayleaton
 
+Support me here: https://buymeacoffee.com/jayleaton
+
 # GLM-5.3-Flash on TensorFold, 2x NVIDIA DGX Spark
 
 Serve GLM-5.3-Flash (the abliterated EXL3 4-bit checkpoint
