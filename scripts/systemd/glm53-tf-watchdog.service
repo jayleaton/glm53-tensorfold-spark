@@ -11,7 +11,9 @@
 # Healing (stop + start of both ranks) is off unless WATCH_HEAL=1 is set here or in the config file.
 [Unit]
 Description=GLM-5.3 TensorFold watchdog tick
-After=network-online.target docker.service
+# The ranks live in a podman or docker container; the tick only needs /health reachable, so don't gate on a
+# specific container runtime's service (After=docker.service would wait forever under podman).
+After=network-online.target
 
 [Service]
 Type=oneshot

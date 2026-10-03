@@ -194,8 +194,8 @@ def test_xid_cli_fail_levels():
 # -- serve.sh ----------------------------------------------------------------------------------------------------
 
 FAKE_DOCKER = r"""#!/usr/bin/env bash
-# fake docker: containers are files in $FAKE_STATE (content: true|false)
-echo "docker $*" >> "$FAKE_STATE/calls"
+# fake docker / podman: containers are files in $FAKE_STATE (content: true|false)
+echo "$(basename "$0") $*" >> "$FAKE_STATE/calls"
 case "$1" in
 run)
     name=""; prev=""
@@ -213,6 +213,7 @@ inspect)
         *) cat "$FAKE_STATE/c.$n" ;;
     esac ;;
 image) exit 0 ;;
+info) [[ " $* " == *Rootless* ]] && echo "${FAKE_ROOTLESS:-false}"; exit 0 ;;   # rootful default; FAKE_ROOTLESS=true to simulate rootless
 logs) echo "log of ${@: -1}"
     # rank 0's boot line (patches/0290) that serve.sh's slot check reads
     [[ "${@: -1}" == *-r0 ]] && echo "[tf] context: 1048576 tokens a request, ${FAKE_SLOTS:-4} request slot(s)" ;;
@@ -263,7 +264,7 @@ def kit(tmp_path, engine):
         "HEAD_HF=/tmp/hf\nWORKER_HF=/tmp/hf\nMODEL_PATH=/m\nIMAGE=fake:img\nSERVED_NAME=fake\n")
     bin_ = tmp_path / "bin"
     bin_.mkdir()
-    for name, text in (("docker", FAKE_DOCKER), ("ssh", FAKE_SSH), ("nvidia-smi", FAKE_SMI),
+    for name, text in (("docker", FAKE_DOCKER), ("podman", FAKE_DOCKER), ("ssh", FAKE_SSH), ("nvidia-smi", FAKE_SMI),
                        ("journalctl", FAKE_JOURNAL), ("ip", FAKE_IP)):
         (bin_ / name).write_text(text)
         (bin_ / name).chmod(0o755)
@@ -310,6 +311,23 @@ def test_start_defaults_unchanged(kit):
     assert "--log-opt" not in args and "--stop-timeout" not in args
     assert not any(a.startswith("NCCL_DEBUG") for a in args)
     assert "NCCL_IB_HCA=fakehca0" in args and "GLOO_SOCKET_IFNAME=eth9" in args
+
+
+def test_start_podman_uses_podman_only(kit):
+    """CONTAINER_RT=podman: the podman fake runs every container op, no docker call, GPU via CDI device path."""
+    r = kit.run("start", CONTAINER_RT="podman", CANARY="warn", PREFLIGHT="warn")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert kit.exists("glm53-tf-r0") and kit.exists("glm53-tf-r1")
+    assert "podman run" in kit.calls() and "docker run" not in kit.calls()
+    args = (kit.state / "args.glm53-tf-r0").read_text().split("\n")
+    assert "nvidia.com/gpu=all" in args and "--gpus" not in args
+
+
+def test_start_podman_rootless_runtime_is_reported(kit):
+    """A rootless podman (Rootless=true) fails the preflight runtime check on both nodes."""
+    r = kit.run("preflight", CONTAINER_RT="podman", FAKE_ROOTLESS="true")
+    assert r.returncode == 1, r.stdout + r.stderr
+    assert "rootless" in r.stdout + r.stderr
 
 
 def test_start_happy_path_runs_canary(kit):
