@@ -1,0 +1,39 @@
+# chat_template_kwargs.thinking is read as enable_thinking when enable_thinking is absent: true / false, or
+# {"type": "enabled" | "disabled"}; any other value leaves the server default and is never an error.
+# Semantics from MiaAI-Lab/GLM-5.3-Flash-EXL3-2x-DGX-Sparks-TensorFold patch 0057-server-thinking-alias (PR #25 by @Alexbob0,
+# Apache-2.0), re-implemented for this tree: one choke point (apply_effort), no logging.
+#
+--- a/src/tensorfold/families/glm5_next/cuda/app.py
++++ b/src/tensorfold/families/glm5_next/cuda/app.py
+@@ -87,6 +87,20 @@
+     return field == "1", (None if default == "max" else default)
+ 
+ 
++def thinking_switch(value: Any) -> bool | None:
++    """``chat_template_kwargs.thinking`` as ``enable_thinking``: a bool, or ``{"type": "enabled" | "disabled"}``;
++    anything else (None, a string, ``{"type": "adaptive"}``) is unset: the server's default applies, never an error."""
++    if isinstance(value, bool):
++        return value
++    if isinstance(value, dict):
++        kind = value.get("type")
++        if kind == "enabled":
++            return True
++        if kind == "disabled":
++            return False
++    return None
++
++
+ def apply_effort(body: dict[str, Any], *, field: bool, default: str | None, default_thinking: bool) -> str | None:
+     """Fill ``body["chat_template_kwargs"]`` from ``reasoning_effort`` (with ``field``) and ``default``; keys the
+     request set itself win. Idempotent (``check`` and ``run`` both call it). Returns an error message, or None."""
+@@ -95,6 +109,10 @@
+     if kwargs is not None and not isinstance(kwargs, dict):
+         return None                                     # left for the template to reject as before
+     kwargs = dict(kwargs or {})
++    if "thinking" in kwargs and "enable_thinking" not in kwargs:
++        switch = thinking_switch(kwargs["thinking"])
++        if switch is not None:
++            kwargs["enable_thinking"] = switch
+     asked = body.get("reasoning_effort") if field else None
+     if asked is not None:
+         key = str(asked).strip().lower()
