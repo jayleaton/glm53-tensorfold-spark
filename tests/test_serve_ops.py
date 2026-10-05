@@ -310,6 +310,14 @@ def test_start_defaults_unchanged(kit):
     assert "--log-opt" not in args and "--stop-timeout" not in args
     assert not any(a.startswith("NCCL_DEBUG") for a in args)
     assert "NCCL_IB_HCA=fakehca0" in args and "GLOO_SOCKET_IFNAME=eth9" in args
+    assert "MALLOC_ARENA_MAX=4" in args and "MALLOC_ARENA_MAX=4" in (kit.state / "args.glm53-tf-r1").read_text().split("\n")
+
+
+def test_malloc_arena_max_override(kit):
+    r = kit.run("start", MALLOC_ARENA_MAX="2")
+    assert r.returncode == 0, r.stdout + r.stderr
+    for rank in (0, 1):
+        assert "MALLOC_ARENA_MAX=2" in (kit.state / f"args.glm53-tf-r{rank}").read_text().split("\n")
 
 
 def test_start_happy_path_runs_canary(kit):
