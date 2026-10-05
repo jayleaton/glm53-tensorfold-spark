@@ -1,0 +1,109 @@
+diff --git a/src/tensorfold/families/glm5_next/cuda/vision_prep.py b/src/tensorfold/families/glm5_next/cuda/vision_prep.py
+index 9cfe72c..bda115e 100644
+--- a/src/tensorfold/families/glm5_next/cuda/vision_prep.py
++++ b/src/tensorfold/families/glm5_next/cuda/vision_prep.py
+@@ -32,6 +32,11 @@
+   request log's hashes) therefore tells two images apart with no change to it, and shares state between requests
+   only where the image is the same. The engine's embedding (``vision.py``) turns those ids into the vision tower's
+   rows; nothing else reads them (the lookup drafter never proposes one).
++- **Too many images** (patches/0660): GLM53_TF_VISION_MAX_IMAGES counts every image part in ``messages``, earlier
++  turns included, so an agent that keeps screenshots in its history is refused on every later request once it holds
++  more than the limit. The 400 says so. GLM53_TF_VISION_OVERFLOW=drop_oldest (default ``refuse``) instead replaces
++  the oldest image parts with the text ``OMITTED`` and keeps the newest GLM53_TF_VISION_MAX_IMAGES (``drop_oldest``);
++  a request whose last message alone holds more images is still refused.
+ """
+ 
+ from __future__ import annotations
+@@ -133,6 +138,7 @@ class Settings:
+     prep_slots: int = 16
+     prep_waiters: int = 128
+     prep_wait: float = 60.0
++    overflow: str = "refuse"           # patches/0660 GLM53_TF_VISION_OVERFLOW: refuse | drop_oldest
+ 
+     @classmethod
+     def read(cls, model_dir: Path | None = None) -> "Settings":
+@@ -177,6 +183,9 @@ class Settings:
+                 and s.prep_waiters >= 0):
+             raise ValueError("GLM53_TF_VISION_FETCH_TIMEOUT / _FETCH_TOTAL_S / _PREP_WAIT_S must be > 0, "
+                              "_PREP_SLOTS >= 1, _PREP_WAITERS >= 0")
++        s.overflow = os.environ.get("GLM53_TF_VISION_OVERFLOW", "refuse").strip().lower() or "refuse"
++        if s.overflow not in OVERFLOW_POLICIES:
++            raise ValueError(f"GLM53_TF_VISION_OVERFLOW={s.overflow!r}: use one of {', '.join(OVERFLOW_POLICIES)}")
+         if s.cap_tokens < 0 or s.low_tokens < 0 or s.max_images < 1:
+             raise ValueError("GLM53_TF_VISION_MAX_TOKENS / _LOW_TOKENS must be >= 0, _MAX_IMAGES >= 1")
+         return s
+@@ -459,6 +468,54 @@ def markup(messages: list, nonce: str) -> tuple[list, list[Ref]]:
+     return out, refs
+ 
+ 
++OVERFLOW_POLICIES = ("refuse", "drop_oldest")
++OMITTED = "[image omitted: over GLM53_TF_VISION_MAX_IMAGES]"
++
++
++def too_many(n: int, s: "Settings", last: int | None = None) -> VisionError:
++    """patches/0660: the image-count 400, saying the count covers the whole history and how to get out of it."""
++
++    if last is not None and last > s.max_images:
++        return VisionError(f"{last} images in the last message: at most {s.max_images} a request "
++                           "(GLM53_TF_VISION_MAX_IMAGES); send fewer images or raise the server's limit")
++    hint = ("drop older images from the conversation, raise the server's GLM53_TF_VISION_MAX_IMAGES, or set "
++            "GLM53_TF_VISION_OVERFLOW=drop_oldest on the server to replace the oldest images with a text marker")
++    return VisionError(f"{n} images in this request's messages: at most {s.max_images} (GLM53_TF_VISION_MAX_IMAGES). "
++                       "The count includes every image in earlier turns of the conversation, so every later "
++                       f"request carrying this history is refused too: {hint}")
++
++
++def drop_oldest(messages: list, keep: int) -> tuple[list, int]:
++    """patches/0660: ``messages`` with every image part but the newest ``keep`` replaced by the text part
++    ``OMITTED``, and how many were replaced. The input is not modified; malformed image parts count as images (and
++    are dropped, or refused later, like any other)."""
++
++    drop = count_images(messages) - keep
++    if drop <= 0:
++        return messages, 0
++    out, seen = [], 0
++    for m in messages:
++        content = m.get("content") if isinstance(m, dict) else None
++        if not isinstance(content, list) or seen >= drop:
++            out.append(m)
++            continue
++        parts = []
++        for part in content:
++            if isinstance(part, dict) and part.get("type") in IMAGE_TYPES and seen < drop:
++                seen += 1
++                parts.append({"type": "text", "text": OMITTED})
++            else:
++                parts.append(part)
++        out.append(dict(m, content=parts))
++    return out, drop
++
++
++def last_images(messages: list) -> int:
++    """The image parts in the last message (what ``drop_oldest`` must not touch)."""
++
++    return count_images(messages[-1:]) if isinstance(messages, list) and messages else 0
++
++
+ def sentinel(nonce: str, i: int) -> str:
+     return f"\x00tf-image-{nonce}-{i}\x00"
+ 
+@@ -631,10 +688,17 @@ class Host:
+         """The chat template's text with image placeholders, and the image references it kept, in prompt order."""
+ 
+         nonce = secrets.token_hex(6)
++        n = count_images(messages)
++        if n > self.s.max_images:                  # patches/0660: say why, or drop the oldest when asked to
++            if self.s.overflow != "drop_oldest":
++                raise too_many(n, self.s)
++            last = last_images(messages)
++            if last > self.s.max_images:
++                raise too_many(n, self.s, last)
++            messages, _ = drop_oldest(messages, self.s.max_images)
+         marked, refs = markup(messages, nonce)
+         if len(refs) > self.s.max_images:
+-            raise VisionError(f"{len(refs)} images in one request: at most {self.s.max_images} "
+-                              "(GLM53_TF_VISION_MAX_IMAGES)")
++            raise too_many(len(refs), self.s)
+         text = template.render(marked, tools=tools, enable_thinking=enable_thinking, extra=extra)
+         text, order = splice(text, nonce, len(refs), self.s)
+         return text, [refs[i] for i in order]
