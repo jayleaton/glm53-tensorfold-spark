@@ -169,7 +169,8 @@ def test_disk_index_shares_pages_and_evicts_lru():
     assert ix.find(a + [1, 2], 0, True, False) is ra.entry and ix.find(a, 0, True, False) is None
     assert ix.find(a + [1], 0, True, True) is None and ix.find(a + [1], 64, True, False) is None
     assert ix.find(b[:900] + [1], 0, True, False) is None           # only whole entries resume
-    assert ix.has(0, b, True, False) is rb.entry and ix.lcp(system + [5] * 400) == 700
+    # patches/0670: inside a stored full page the disk index's common prefix is exact to SUB (64) tokens
+    assert ix.has(0, b, True, False) is rb.entry and ix.lcp(system + [5] * 400) == 700 // 64 * 64
     # room for one more 5-page entry only by evicting: the least recently used (b; a was touched after it)
     ix.budget = ix.used + 3 * PB
     rc = _add(ix, c)
