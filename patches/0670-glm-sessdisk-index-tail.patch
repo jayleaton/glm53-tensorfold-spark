@@ -1,0 +1,202 @@
+diff --git a/src/tensorfold/families/glm5_next/cuda/sessdisk.py b/src/tensorfold/families/glm5_next/cuda/sessdisk.py
+index 5e7a2da..64f92c8 100644
+--- a/src/tensorfold/families/glm5_next/cuda/sessdisk.py
++++ b/src/tensorfold/families/glm5_next/cuda/sessdisk.py
+@@ -67,6 +67,7 @@ import shutil
+ import threading
+ import time
+ import zlib
++from array import array
+ from collections import deque
+ from dataclasses import dataclass, field
+ from pathlib import Path
+@@ -325,12 +326,112 @@ def chunk_plan(segs: Sequence[tuple[int, int]], size: int, chunk: int = CHUNK) -
+ 
+ 
+ # -- the index (host only, the same on both ranks) -------------------------------------------------------------------
++SUB = 64            # patches/0670: the in-page granularity ``DiskIndex.lcp`` keeps (every snapshot grid is a multiple)
++
++
++def _sub(ids: Sequence[int]) -> bytes:
++    return hashlib.blake2b(sessions._bytes(ids), digest_size=8).digest()
++
++
++class DiskIds:
++    """patches/0670: an entry's token ids as the in-RAM index keeps them: the length, the chained page digests
++    (``DiskEntry.chain``), an 8-byte digest per SUB tokens of each full page and only the tokens past the last full
++    page (``tail``, int32, < PAGE). The whole ids as a Python ``list[int]`` (8-36 B a token, one list per entry, not
++    shared between entries with a common prefix) made the index grow with traffic until the tier's GiB budget filled
++    (the DeepSeek kit's G18 drift, fixed the same way); this costs ~0.35 B a token. The file header keeps the full ids
++    (``DiskTier._write``) and ``_Load`` reads them from it.
++
++    Enough of a sequence for the index's users: ``len``; equality with a token sequence (exact: length, chain, tail;
++    ``prompt[:n] != entry.ids`` works as with a list); slices / items inside the tail (``SessionIndex._prefix``).
++    Anything else (iteration, an id inside a full page) raises, so nothing silently reads ids that are not here."""
++
++    __slots__ = ("n", "chain", "subs", "tail")
++
++    def __init__(self, ids: Sequence[int], blocks: list[bytes]) -> None:
++        n = len(ids)
++        full = n // PAGE * PAGE
++        self.n = n
++        self.chain = blocks                         # the entry's own chain (shared, not copied)
++        self.subs = b"".join(_sub(ids[a:a + SUB]) for a in range(0, full, SUB))
++        self.tail = array("i", [int(t) for t in ids[full:n]])
++
++    @property
++    def full(self) -> int:
++        return self.n // PAGE * PAGE
++
++    def __len__(self) -> int:
++        return self.n
++
++    def __iter__(self):
++        raise TypeError("a session disk entry keeps only its tail in RAM: read the ids from its file")
++
++    def __getitem__(self, i):
++        full = self.full
++        if isinstance(i, slice):
++            a, b, step = i.indices(self.n)
++            if b <= a:
++                return []
++            if step != 1 or a < full:
++                raise LookupError(f"ids[{i.start}:{i.stop}] of a session disk entry: only [{full}:] is kept in RAM")
++            return self.tail[a - full:b - full].tolist()
++        k = int(i) + (self.n if int(i) < 0 else 0)
++        if not full <= k < self.n:
++            raise LookupError(f"ids[{i}] of a session disk entry: only [{full}:] is kept in RAM")
++        return self.tail[k - full]
++
++    def __eq__(self, other) -> bool:
++        if isinstance(other, DiskIds):
++            return (self.n, self.chain[-1:], self.subs, self.tail) == (other.n, other.chain[-1:], other.subs, other.tail)
++        try:
++            n = len(other)
++        except TypeError:
++            return NotImplemented
++        if n != self.n:
++            return False
++        blocks = self.n // PAGE
++        if blocks and chain(other, blocks)[-1] != self.chain[blocks - 1]:
++            return False
++        return [int(t) for t in other[blocks * PAGE:]] == self.tail.tolist()
++
++    def __ne__(self, other) -> bool:
++        eq = self.__eq__(other)
++        return eq if eq is NotImplemented else not eq
++
++    __hash__ = None
++
++    def __repr__(self) -> str:
++        return f"DiskIds(n={self.n}, tail={len(self.tail)})"
++
++    def lcp(self, prompt: Sequence[int], blocks: list[bytes]) -> int:
++        """The common prefix with ``prompt``: exact past the last full page, else rounded down to SUB tokens (the
++        chain finds the page, the SUB digests the block inside it)."""
++
++        lo, hi = 0, min(len(blocks), len(self.chain))
++        while lo < hi:                  # chained digests: equal at j means equal before j too
++            mid = (lo + hi + 1) // 2
++            if blocks[mid - 1] == self.chain[mid - 1]:
++                lo = mid
++            else:
++                hi = mid - 1
++        k = lo * PAGE
++        if k < self.full:               # inside a full page: whole SUB blocks
++            for j in range(PAGE // SUB):
++                a = k + j * SUB
++                if a + SUB > len(prompt) or _sub(prompt[a:a + SUB]) != self.subs[a // SUB * 8:a // SUB * 8 + 8]:
++                    return a
++            return k + PAGE
++        end = min(len(prompt), self.n)
++        while k < end and prompt[k] == self.tail[k - self.full]:
++            k += 1
++        return k
++
++
+ @dataclass
+ class DiskEntry:
+     id: int
+     key: bytes
+     tag: int
+-    ids: list[int]
++    ids: DiskIds                # patches/0670: length, page / SUB digests, tail (not a list[int])
+     mtp_len: int
+     drafter: bool
+     chain: list[bytes]
+@@ -358,8 +459,15 @@ class DiskIndex:
+     Deterministic: the same calls give the same state (rank 1 replays rank 0's saves / evictions)."""
+ 
+     find = SessionIndex.find             # the longest stored strict prefix of the request's tag whose caches fit
+-    _prefix = SessionIndex._prefix
+-    lcp = SessionIndex.lcp
++    _prefix = SessionIndex._prefix       # (length, chain and the tail: exact on ``DiskIds``)
++
++    def lcp(self, prompt: Sequence[int], blocks: list[bytes] | None = None) -> int:
++        """The longest common prefix of ``prompt`` with any entry's tokens, to SUB tokens inside a full page
++        (patches/0670). Its one use, the fork marks (``SessionIndex.marks``), rounds it down to the snapshot grid or
++        PAGE, both multiples of SUB, so the marks are the ones the exact prefix gives."""
++
++        blocks = chain(prompt) if blocks is None else blocks
++        return max((e.ids.lcp(prompt, blocks) for e in self.entries.values()), default=0)
+ 
+     def __init__(self, budget: int, page_bytes: Callable[[bool], int]) -> None:
+         self.budget = int(budget)
+@@ -440,8 +548,8 @@ class DiskIndex:
+             self.pages[keys[p]] = [1, pb]
+             self.bytes += pb
+         self.clock += 1
+-        e = DiskEntry(self.next_id, key, int(tag), ids, int(mtp_len), bool(drafter), blocks, keys, int(entry_bytes),
+-                      self.clock, kind)
++        e = DiskEntry(self.next_id, key, int(tag), DiskIds(ids, blocks), int(mtp_len), bool(drafter), blocks, keys,
++                      int(entry_bytes), self.clock, kind)
+         self.next_id += 1
+         self.entries[e.id] = e
+         self.by_key[key] = e.id
+@@ -870,7 +978,7 @@ class DiskTier:
+             off += _align(m["nbytes"])
+         win = getattr(snap, "window", None)
+         meta = {"format": FORMAT, "compat": self.hash, "rank": self.rank, "key": e.key.hex(), "kind": e.kind,
+-                "tag": e.tag, "n": len(e.ids), "ids": ids_b64(e.ids), "mtp_len": e.mtp_len, "drafter": int(e.drafter),
++                "tag": e.tag, "n": len(e.ids), "ids": ids_b64(snap.ids), "mtp_len": e.mtp_len, "drafter": int(e.drafter),
+                 "stride": stride, "pages": [k.hex() for k in e.pages], "page_sha": [],
+                 "snap": {"mtp_len": int(snap.mtp_len), "drafter_end": int(snap.drafter_end), "grid": int(snap.grid),
+                          "kv": int(getattr(snap, "kv", 0) or 0),
+@@ -1091,7 +1199,7 @@ class DiskTier:
+                 sizes[k] = p.stat().st_size if p.exists() else -1
+             if sizes[k] != stride:
+                 raise ValueError("a page file is missing or truncated")
+-        meta["_ids"] = ids
++        meta["_ids"] = array("i", ids)         # patches/0670: the scan holds every header at once: 4 B a token
+         meta["_keys"] = keys
+         meta["_tails"] = tails
+         return key, meta
+@@ -1208,6 +1316,7 @@ class _Load:
+         self.workers: list[threading.Thread] = []
+         self.dest: dict[str, Any] = {}
+         self.meta: dict = {}
++        self.ids: list[int] = []                # patches/0670: the full ids, from the header (``_start``)
+         self.scatter: list[tuple] = []      # patches/0290: (paged cache, first row, staged rows) written in ``result``
+         self._lock = threading.Lock()
+         try:
+@@ -1228,8 +1337,10 @@ class _Load:
+                 or meta.get("pages") != [k.hex() for k in e.pages] or int(meta.get("n", -1)) != len(e.ids) \
+                 or int(meta.get("mtp_len", -2)) != e.mtp_len:
+             raise LoadError("header does not match the index")
+-        if b64_ids(meta["ids"]) != e.ids:
++        ids = b64_ids(meta["ids"])              # patches/0670: the index keeps only a tail; the file has them all
++        if ids != e.ids:
+             raise LoadError("token ids differ")
++        self.ids = ids
+         lay, stride = t.lay[e.has_mtp]
+         if int(meta["stride"]) != stride:
+             raise LoadError("page layout differs")
+@@ -1409,7 +1520,7 @@ class _Load:
+         if m["window"] is not None:
+             win = {"end": int(m["window"]["end"]), "lo": int(m["window"]["lo"]), "k": self.dest.get("win.k"),
+                    "v": self.dest.get("win.v")}
+-        fields = dict(ids=list(self.entry.ids), rec=self.dest["rec"], conv=self.dest["conv"],
++        fields = dict(ids=list(self.ids), rec=self.dest["rec"], conv=self.dest["conv"],
+                       pending=self.dest.get("pending"), mtp_len=int(m["mtp_len"]), drafter_end=int(m["drafter_end"]),
+                       grid=int(m["grid"]), window=win, kv=int(m["kv"]))
+         return self.tier.snap_cls(**fields)
