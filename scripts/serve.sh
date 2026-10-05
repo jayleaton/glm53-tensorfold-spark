@@ -31,7 +31,7 @@ fi
 export CONFIG
 # A non-empty caller export wins over the same key in the config file:
 #   CONTEXT=32768 GLM53_TF_NONEXPERT=q4mse scripts/serve.sh start
-caller_env=$(env | grep -E '^(HEAD_PREPARED|WORKER_PREPARED|HEAD_SESSIONS|WORKER_SESSIONS|CONTEXT|MTP_DRAFTS|NO_DRAFTS|IMAGE|PORT|HOST|DRAFTER|MODEL_PATH|EXTRA_ARGS|SERVED_NAME|MAX_TOKENS|CPUSET|HEAD_CPUSET|WORKER_CPUSET|CANARY[A-Z_]*|MEM_GATE_[A-Z_]+|START_ATTEMPTS|READY_TIMEOUT|LOG_MAX_[A-Z]+|WATCH_[A-Z_]+|GPUWATCH_[A-Z_]+|WARMUP_LENGTHS|PREFLIGHT|NCCL_PASSTHROUGH|PATCHES|GLM53_TF_[A-Z0-9_]+)=.' || true)
+caller_env=$(env | grep -E '^(HEAD_PREPARED|WORKER_PREPARED|HEAD_SESSIONS|WORKER_SESSIONS|CONTEXT|MTP_DRAFTS|NO_DRAFTS|IMAGE|PORT|HOST|DRAFTER|MODEL_PATH|EXTRA_ARGS|SERVED_NAME|MAX_TOKENS|CPUSET|HEAD_CPUSET|WORKER_CPUSET|CANARY[A-Z_]*|MEM_GATE_[A-Z_]+|START_ATTEMPTS|READY_TIMEOUT|LOG_MAX_[A-Z]+|WATCH_[A-Z_]+|GPUWATCH_[A-Z_]+|WARMUP_LENGTHS|PREFLIGHT|NCCL_PASSTHROUGH|WORKER_NCCL_SOCKET_IFNAME|WORKER_NCCL_IB_HCA|WORKER_ROCE_HCA|PATCHES|GLM53_TF_[A-Z0-9_]+)=.' || true)
 # shellcheck disable=SC1090
 set -a; source "$CONFIG"; set +a
 while IFS= read -r kv; do [[ -n "$kv" ]] && export "${kv?}"; done <<< "$caller_env"
@@ -70,6 +70,13 @@ LOG_MAX_SIZE="${LOG_MAX_SIZE:-}"              # e.g. 200m: docker json-file log 
 LOG_MAX_FILE="${LOG_MAX_FILE:-3}"
 PREFLIGHT="${PREFLIGHT:-off}"                 # before start: off | warn (log problems) | strict (refuse to start on one)
 NCCL_PASSTHROUGH="${NCCL_PASSTHROUGH:-0}"     # 1: every other NCCL_* variable set here reaches both ranks
+# A pair cabled through different CX7 ports (issue #11): the worker's link netdev / RDMA devices when they are not
+# named as on the head. Rank 1 gets these as NCCL_SOCKET_IFNAME / GLOO_SOCKET_IFNAME / NCCL_IB_HCA; unset = the head's
+# values (as before). WORKER_ROCE_HCA likewise replaces GLM53_TF_ROCE_HCA for rank 1 (patches/0230; only needed when
+# GLM53_TF_ROCE_HCA is set: unset, each rank picks its own active ports and pairs them by IPv4 subnet).
+WORKER_NCCL_SOCKET_IFNAME="${WORKER_NCCL_SOCKET_IFNAME:-${NCCL_SOCKET_IFNAME:-}}"
+WORKER_NCCL_IB_HCA="${WORKER_NCCL_IB_HCA:-${NCCL_IB_HCA:-}}"
+WORKER_ROCE_HCA="${WORKER_ROCE_HCA:-${GLM53_TF_ROCE_HCA:-}}"
 # patches/0370: docker --cpuset-cpus for the containers (empty: every cpu, as before). GB10's Cortex-X925 cores are
 # 5-9,15-19 on both Sparks; CPUSET="5-9,15-19" is the container-level form of GLM53_TF_CPU_PIN=fast. HEAD_ / WORKER_
 # override it per node
@@ -127,6 +134,11 @@ run_args() { # $1 = rank, $2 = host HF cache dir
     if [[ "$rank" == 0 ]]; then prep="$HEAD_PREPARED"; else prep="$WORKER_PREPARED"; fi
     if [[ "$rank" == 0 ]]; then sess="$HEAD_SESSIONS"; else sess="$WORKER_SESSIONS"; fi   # patches/0250
     local cpuset="$HEAD_CPUSET"; [[ "$rank" == 0 ]] || cpuset="$WORKER_CPUSET"             # patches/0370
+    local ifname="$NCCL_SOCKET_IFNAME" hca="$NCCL_IB_HCA" roce="" skip='^$'                  # issue #11: per node
+    if [[ "$rank" != 0 ]]; then
+        ifname="$WORKER_NCCL_SOCKET_IFNAME"; hca="$WORKER_NCCL_IB_HCA"; roce="$WORKER_ROCE_HCA"
+        skip='^GLM53_TF_ROCE_HCA='
+    fi
     echo --name "$NAME-r$rank" -d --gpus all --ipc=host --network host \
         ${cpuset:+--cpuset-cpus "$cpuset"} \
         -v "$prep:/prepared" -e GLM53_TF_PREPARED=/prepared -e GLM53_TF_PREPARED_WRITE="${GLM53_TF_PREPARED_WRITE:-1}" \
@@ -144,10 +156,11 @@ run_args() { # $1 = rank, $2 = host HF cache dir
         -e GLM53_TF_PREFILL_ROWS="${GLM53_TF_PREFILL_ROWS:-auto}" -e GLM53_TF_AUTO_FDRAFTS="${GLM53_TF_AUTO_FDRAFTS:-7}" \
         -e GLM53_TF_PROFILE="${GLM53_TF_PROFILE:-0}" -e GLM53_TF_EXPERT_LOOP="${GLM53_TF_EXPERT_LOOP:-1}" \
         -e GLM53_TF_EXPERT_LOOP_CFG="${GLM53_TF_EXPERT_LOOP_CFG:-4,2}" \
-        $(env | grep -E '^GLM53_TF_[A-Z0-9_]+=' | sed 's/^/-e /' | tr '\n' ' ') \
+        $(env | grep -E '^GLM53_TF_[A-Z0-9_]+=' | grep -vE "$skip" | sed 's/^/-e /' | tr '\n' ' ') \
+        ${roce:+-e GLM53_TF_ROCE_HCA="$roce"} \
         $([[ "$NCCL_PASSTHROUGH" == 1 ]] && env | grep -E '^NCCL_[A-Z0-9_]+=' | grep -vE '^NCCL_(SOCKET_IFNAME|IB_HCA|PASSTHROUGH)=' | sed 's/^/-e /' | tr '\n' ' ') \
-        -e NCCL_SOCKET_IFNAME="$NCCL_SOCKET_IFNAME" -e NCCL_IB_HCA="$NCCL_IB_HCA" \
-        -e GLOO_SOCKET_IFNAME="$NCCL_SOCKET_IFNAME" "$IMAGE"
+        -e NCCL_SOCKET_IFNAME="$ifname" -e NCCL_IB_HCA="$hca" \
+        -e GLOO_SOCKET_IFNAME="$ifname" "$IMAGE"
 }
 
 gpu_busy() { # a foreign CUDA process on either node means the other stack is still up
@@ -228,8 +241,12 @@ on_node() { # $1 = head | worker, then a command line (one string): run it on th
     if [[ "$n" == head ]]; then bash -c "$*"; else wssh "$*"; fi
 }
 
-link_addrs() { # $1 = head | worker: the IPv4 addresses (a.b.c.d/nn) on NCCL_SOCKET_IFNAME, space-separated
-    on_node "$1" "ip -o -4 addr show dev '$NCCL_SOCKET_IFNAME'" 2>/dev/null | awk '{printf "%s ", $4}' || true
+link_if() { # $1 = head | worker: that node's link netdev
+    if [[ "$1" == head ]]; then echo "$NCCL_SOCKET_IFNAME"; else echo "$WORKER_NCCL_SOCKET_IFNAME"; fi
+}
+
+link_addrs() { # $1 = head | worker: the IPv4 addresses (a.b.c.d/nn) on that node's link netdev, space-separated
+    on_node "$1" "ip -o -4 addr show dev '$(link_if "$1")'" 2>/dev/null | awk '{printf "%s ", $4}' || true
 }
 
 weights_missing() { # $1 = head | worker, $2 = that node's HF cache, $3 = container path, $4 = file to look for:
@@ -263,8 +280,12 @@ preflight() { # read-only checks (AGENTS.md lists them); non-zero on a problem a
         for node in head worker; do
             a=$(link_addrs "$node")
             if [[ -z "$a" ]]; then
-                log "preflight: no IPv4 address on NCCL_SOCKET_IFNAME=$NCCL_SOCKET_IFNAME on the $node: set it to the CX7" \
-                    "netdev that carries the link (ibdev2netdev: '$NCCL_IB_HCA port 1 ==> <netdev> (Up)'; ip -br addr)"
+                local kv="NCCL_SOCKET_IFNAME=$NCCL_SOCKET_IFNAME" hv="$NCCL_IB_HCA"
+                [[ "$node" == worker && "$WORKER_NCCL_SOCKET_IFNAME" != "$NCCL_SOCKET_IFNAME" ]] \
+                    && kv="WORKER_NCCL_SOCKET_IFNAME=$WORKER_NCCL_SOCKET_IFNAME"
+                [[ "$node" == worker ]] && hv="$WORKER_NCCL_IB_HCA"
+                log "preflight: no IPv4 address on $kv on the $node: set it to the CX7" \
+                    "netdev that carries the link (ibdev2netdev: '$hv port 1 ==> <netdev> (Up)'; ip -br addr)"
                 bad=1
             elif [[ "$node" == head && "$HEAD_IP" =~ ^[0-9]+(\.[0-9]+){3}$ && " $a" != *" $HEAD_IP/"* ]]; then
                 log "preflight: HEAD_IP=$HEAD_IP is not an address of $NCCL_SOCKET_IFNAME on the head (it has: ${a% })"
@@ -275,17 +296,16 @@ preflight() { # read-only checks (AGENTS.md lists them); non-zero on a problem a
         log "preflight: warning: no 'ip' command here; cannot check NCCL_SOCKET_IFNAME / HEAD_IP"
     fi
     # the RDMA port of the link must be up on both nodes (a down port shows as an NCCL timeout minutes into the load)
-    # (NCCL_IB_HCA may list several devices, comma-separated: each one is checked)
-    IFS=',' read -ra hcas <<< "$NCCL_IB_HCA"
-    for hca in "${hcas[@]}"; do
-        hca="${hca%%:*}"
-        st=$(cat "/sys/class/infiniband/$hca/ports/1/state" 2>/dev/null || echo "")
-        wst=$(wssh cat "/sys/class/infiniband/$hca/ports/1/state" 2>/dev/null || echo "")
-        for pair in "head:$st" "worker:$wst"; do
-            case "${pair#*:}" in
+    # (NCCL_IB_HCA may list several devices, comma-separated: each one is checked; the worker's: WORKER_NCCL_IB_HCA)
+    for node in head worker; do
+        if [[ "$node" == head ]]; then IFS=',' read -ra hcas <<< "$NCCL_IB_HCA"; else IFS=',' read -ra hcas <<< "$WORKER_NCCL_IB_HCA"; fi
+        for hca in "${hcas[@]}"; do
+            hca="${hca%%:*}"
+            st=$(on_node "$node" "cat '/sys/class/infiniband/$hca/ports/1/state'" 2>/dev/null || echo "")
+            case "$st" in
                 *ACTIVE*) ;;
-                "") log "preflight: warning: cannot read $hca port state on the ${pair%%:*}" ;;
-                *) log "preflight: $hca port 1 on the ${pair%%:*} is '${pair#*:}', not ACTIVE"; bad=1 ;;
+                "") log "preflight: warning: cannot read $hca port state on the $node" ;;
+                *) log "preflight: $hca port 1 on the $node is '$st', not ACTIVE"; bad=1 ;;
             esac
         done
     done

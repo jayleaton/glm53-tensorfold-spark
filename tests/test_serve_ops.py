@@ -610,3 +610,43 @@ def test_preflight_roce_marker_and_busy_gpu(kit):
 def test_preflight_memory_warnings(kit):
     r = kit.run("preflight", MEM_GATE_GIB="100000")
     assert r.returncode == 0 and "under MEM_GATE_GIB=100000" in r.stdout
+
+
+# -- issue #11: a pair cabled through different CX7 ports (WORKER_NCCL_SOCKET_IFNAME / _IB_HCA / WORKER_ROCE_HCA) --------
+def _env_args(kit, rank):
+    return (kit.state / f"args.glm53-tf-r{rank}").read_text().split("\n")
+
+
+def test_worker_link_names_default_to_the_head(kit):
+    r = kit.run("start", GLM53_TF_ROCE_HCA="hcaA")
+    assert r.returncode == 0, r.stdout + r.stderr
+    for rank in (0, 1):
+        args = _env_args(kit, rank)
+        assert "NCCL_SOCKET_IFNAME=eth9" in args and "GLOO_SOCKET_IFNAME=eth9" in args
+        assert "NCCL_IB_HCA=fakehca0" in args and "GLM53_TF_ROCE_HCA=hcaA" in args
+        assert sum(a.startswith("GLM53_TF_ROCE_HCA=") for a in args) == 1
+
+
+def test_worker_link_names_override_rank1_only(kit):
+    r = kit.run("start", WORKER_NCCL_SOCKET_IFNAME="eth7", WORKER_NCCL_IB_HCA="hcaW0,hcaW1",
+                GLM53_TF_ROCE_HCA="hcaA", WORKER_ROCE_HCA="hcaW1")
+    assert r.returncode == 0, r.stdout + r.stderr
+    a0, a1 = _env_args(kit, 0), _env_args(kit, 1)
+    assert "NCCL_SOCKET_IFNAME=eth9" in a0 and "NCCL_IB_HCA=fakehca0" in a0 and "GLM53_TF_ROCE_HCA=hcaA" in a0
+    assert "NCCL_SOCKET_IFNAME=eth7" in a1 and "GLOO_SOCKET_IFNAME=eth7" in a1 and "NCCL_IB_HCA=hcaW0,hcaW1" in a1
+    assert [a for a in a1 if a.startswith("GLM53_TF_ROCE_HCA=")] == ["GLM53_TF_ROCE_HCA=hcaW1"]
+    assert not any("eth9" in a for a in a1) and not any("fakehca0" in a for a in a1)
+    # GLM53_TF_ROCE_HCA unset: neither rank gets one (each picks its active ports), whatever WORKER_NCCL_* say
+    r = kit.run("start", WORKER_NCCL_SOCKET_IFNAME="eth7")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert not any(a.startswith("GLM53_TF_ROCE_HCA=") for a in _env_args(kit, 0) + _env_args(kit, 1))
+
+
+def test_preflight_checks_the_worker_link_name(kit):
+    r = kit.run("preflight", WORKER_NCCL_SOCKET_IFNAME="eth7", FAKE_NETDEVS="eth9 eth7")
+    assert r.returncode == 0 and "preflight ok" in r.stdout, r.stdout + r.stderr
+    r = kit.run("preflight", WORKER_NCCL_SOCKET_IFNAME="eth7", WORKER_NCCL_IB_HCA="hcaW0")
+    assert r.returncode != 0 and "WORKER_NCCL_SOCKET_IFNAME=eth7 on the worker" in r.stdout, r.stdout
+    assert "cannot read fakehca0 port state on the head" in r.stdout
+    assert "cannot read hcaW0 port state on the worker" in r.stdout
+    assert "fakehca0 port state on the worker" not in r.stdout
