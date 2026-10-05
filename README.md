@@ -340,7 +340,9 @@ curl -s http://127.0.0.1:8000/v1/chat/completions -H 'Content-Type: application/
 
 Up to 8 images a request (`GLM53_TF_VISION_MAX_IMAGES`), 20 MiB and 64 M pixels each; an image takes up to 8,000
 prompt tokens (1,036 for 1024 x 768) and `usage.prompt_tokens` counts them. A bad image is an HTTP 400 before
-anything streams. Video is not supported. Details and every knob: [`docs/VISION.md`](docs/VISION.md).
+anything streams. Video is not supported. The image limit counts every image in `messages`, earlier turns included:
+an agent that keeps screenshots in its history is refused on every later request once it holds more than 8. Raise
+the limit, or set `GLM53_TF_VISION_OVERFLOW=drop_oldest` to replace the oldest images with a text marker instead. Details and every knob: [`docs/VISION.md`](docs/VISION.md).
 
 **Clients:** base URL `http://127.0.0.1:8000/v1`, model `GLM-5.3-Flash-EXL3`, any API key. Set the context window
 to **1,048,576** and the maximum output to **32,768** (Continue, Cline, Open WebUI and others:

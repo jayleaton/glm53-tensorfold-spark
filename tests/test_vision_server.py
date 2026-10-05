@@ -262,6 +262,66 @@ def test_http_400s(model_dir, monkeypatch, http, body_fn, needle, stream):
     assert not eng.prompts
 
 
+def history(*turns):
+    """A conversation: each turn a user message with that many images, then an assistant reply."""
+    msgs, seed = [], 100
+    for i, k in enumerate(turns):
+        content = [{"type": "text", "text": f"turn {i}"}]
+        for _ in range(k):
+            content.append({"type": "image_url", "image_url": {"url": url(image(40, 40, seed))}})
+            seed += 1
+        msgs.append({"role": "user", "content": content})
+        if i < len(turns) - 1:
+            msgs.append({"role": "assistant", "content": f"reply {i}"})
+    return {"messages": msgs, "max_tokens": 4}
+
+
+@pytest.mark.parametrize("stream", [False, True])
+def test_history_overflow_refused_by_default(model_dir, monkeypatch, http, stream):
+    # patches/0660: the default is unchanged (a 400), and the message says the count includes earlier turns
+    app, eng = make_app(model_dir, monkeypatch, GLM53_TF_VISION_MAX_IMAGES=2)
+    code, text = post(http(app), "/v1/chat/completions", dict(history(1, 1, 1), stream=stream))
+    err = json.loads(text)["error"]
+    assert code == 400 and err["param"] == "messages" and err["type"] == "invalid_request_error", text
+    assert "3 images" in err["message"] and "earlier turns" in err["message"]
+    assert "GLM53_TF_VISION_OVERFLOW=drop_oldest" in err["message"] and not eng.prompts
+
+
+@pytest.mark.parametrize("stream", [False, True])
+def test_history_overflow_drop_oldest(model_dir, monkeypatch, http, stream):
+    app, eng = make_app(model_dir, monkeypatch, GLM53_TF_VISION_MAX_IMAGES=2, GLM53_TF_VISION_OVERFLOW="drop_oldest")
+    body = history(1, 1, 1)
+    code, text = post(http(app), "/v1/chat/completions", dict(body, stream=stream))
+    assert code == 200, text
+    p = eng.prompts[-1]
+    imgs = eng.visions[-1].images
+    assert len(imgs) == 2 and sum(vp.is_vid(t) for t in p) == sum(i.tokens for i in imgs)
+    text = app.tok.decode([t for t in p if not vp.is_vid(t)], skip_special_tokens=False).replace(" ", "")
+    omitted = vp.OMITTED.replace(" ", "")
+    assert text.count(omitted) == 1 and text.index(omitted) < text.index("turn1")
+    # the newest two images are the ones kept: the same as sending only them
+    kept = {"messages": [dict(m) for m in body["messages"]], "max_tokens": 4}
+    kept["messages"][0] = dict(kept["messages"][0], content=[{"type": "text", "text": "turn 0"},
+                                                               {"type": "text", "text": vp.OMITTED}])
+    run(app, kept)
+    assert eng.prompts[-1] == p
+    # the request itself is too large: still a 400, whatever the policy
+    code, text = post(http(app), "/v1/chat/completions", dict(history(1, 3), stream=stream))
+    assert code == 400 and "3 images in the last message" in json.loads(text)["error"]["message"], text
+    # within the limit: untouched
+    n = len(eng.prompts)
+    run(app, history(1, 1))
+    assert len(eng.visions[n].images) == 2 and vp.OMITTED.replace(" ", "") not in app.tok.decode(eng.prompts[n]).replace(" ", "")
+
+
+def test_tokenize_drop_oldest(model_dir, monkeypatch, http):
+    app, eng = make_app(model_dir, monkeypatch, GLM53_TF_VISION_MAX_IMAGES=1, GLM53_TF_VISION_OVERFLOW="drop_oldest")
+    _, ids = model_dir
+    code, text = post(http(app), "/tokenize", {"messages": history(1, 1)["messages"]})
+    got = json.loads(text)
+    assert code == 200 and got["tokens"].count(ids["<|begin_of_image|>"]) == 1, text
+
+
 def test_context_counts_image_rows(model_dir, monkeypatch, http):
     app, eng = make_app(model_dir, monkeypatch, limit=400)
     img = image(700, 700)                                    # 625 rows: past the limit on its own
