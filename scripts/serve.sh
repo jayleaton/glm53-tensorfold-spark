@@ -31,7 +31,7 @@ fi
 export CONFIG
 # A non-empty caller export wins over the same key in the config file:
 #   CONTEXT=32768 GLM53_TF_NONEXPERT=q4mse scripts/serve.sh start
-caller_env=$(env | grep -E '^(HEAD_PREPARED|WORKER_PREPARED|HEAD_SESSIONS|WORKER_SESSIONS|CONTEXT|MTP_DRAFTS|NO_DRAFTS|IMAGE|PORT|HOST|DRAFTER|MODEL_PATH|EXTRA_ARGS|SERVED_NAME|MAX_TOKENS|CPUSET|HEAD_CPUSET|WORKER_CPUSET|CANARY[A-Z_]*|MEM_GATE_[A-Z_]+|START_ATTEMPTS|READY_TIMEOUT|LOG_MAX_[A-Z]+|WATCH_[A-Z_]+|GPUWATCH_[A-Z_]+|WARMUP_LENGTHS|PREFLIGHT|NCCL_PASSTHROUGH|MALLOC_ARENA_MAX|PATCHES|GLM53_TF_[A-Z0-9_]+)=.' || true)
+caller_env=$(env | grep -E '^(HEAD_PREPARED|WORKER_PREPARED|HEAD_SESSIONS|WORKER_SESSIONS|CONTEXT|MTP_DRAFTS|NO_DRAFTS|IMAGE|PORT|HOST|DRAFTER|MODEL_PATH|EXTRA_ARGS|SERVED_NAME|MAX_TOKENS|CPUSET|HEAD_CPUSET|WORKER_CPUSET|CANARY[A-Z_]*|MEM_GATE_[A-Z_]+|START_ATTEMPTS|READY_TIMEOUT|LOG_MAX_[A-Z]+|WATCH_[A-Z_]+|GPUWATCH_[A-Z_]+|WARMUP_LENGTHS|PREFLIGHT|NCCL_PASSTHROUGH|PATCHES|GLM53_TF_[A-Z0-9_]+)=.' || true)
 # shellcheck disable=SC1090
 set -a; source "$CONFIG"; set +a
 while IFS= read -r kv; do [[ -n "$kv" ]] && export "${kv?}"; done <<< "$caller_env"
@@ -70,16 +70,16 @@ LOG_MAX_SIZE="${LOG_MAX_SIZE:-}"              # e.g. 200m: docker json-file log 
 LOG_MAX_FILE="${LOG_MAX_FILE:-3}"
 PREFLIGHT="${PREFLIGHT:-off}"                 # before start: off | warn (log problems) | strict (refuse to start on one)
 NCCL_PASSTHROUGH="${NCCL_PASSTHROUGH:-0}"     # 1: every other NCCL_* variable set here reaches both ranks
-# glibc malloc arenas in both containers. The default (8 a core: 160 on GB10) lets each HTTP / tokenizer / disk-tier
-# thread keep its own arena, and freed memory stays mapped in all of them: host RSS creeps up over days of traffic.
-# 4 bounds that (the DeepSeek kit's prod config sets the same); the GPU path does not allocate on the host
-MALLOC_ARENA_MAX="${MALLOC_ARENA_MAX:-4}"
 # patches/0370: docker --cpuset-cpus for the containers (empty: every cpu, as before). GB10's Cortex-X925 cores are
 # 5-9,15-19 on both Sparks; CPUSET="5-9,15-19" is the container-level form of GLM53_TF_CPU_PIN=fast. HEAD_ / WORKER_
 # override it per node
 CPUSET="${CPUSET:-}"
 HEAD_CPUSET="${HEAD_CPUSET:-$CPUSET}"
 WORKER_CPUSET="${WORKER_CPUSET:-$CPUSET}"
+# glibc malloc arenas in both containers. The default (8 a core: 160 on GB10) lets each HTTP / tokenizer / disk-tier
+# thread keep its own arena, and freed memory stays mapped in all of them: host RSS creeps up over days of traffic.
+# 4 bounds that (the DeepSeek kit's prod config sets the same); the GPU path does not allocate on the host
+MALLOC_ARENA_MAX="${MALLOC_ARENA_MAX:-4}"         # set in the config (or exported, when the config does not set it)
 # preflight's GPU state check (scripts/gpuwatch.py check, docs/OPS-GPUWATCH.md): off | on (a degraded node -- clock or
 # power clamp, a step-time regression past the transient window -- is a preflight problem; warnings are logged) |
 # strict (a warning is a problem too: a recent slow state, an idle clock asymmetry; use for benchmark windows)
