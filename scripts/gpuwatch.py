@@ -150,6 +150,36 @@ def parse_metrics(text: str) -> dict[str, float]:
 
 # -- nodes -------------------------------------------------------------------------------------------------------
 
+# ssh binds the ControlPath as a Unix socket, "<dir>/ssh-" + %C (40 hex) + ".<16 random>" while the master starts, and
+# that has to fit sun_path (107 usable bytes on Linux). Under a long home directory the default state dir is too long
+# and ssh refuses the master ("too long for Unix domain socket"), so the worker is never sampled.
+CTL_SUFFIX_LEN = len("/ssh-") + 40 + 1 + 16
+SUN_PATH_MAX = 107
+CTL_FALLBACK_BASE = Path("/tmp")
+
+
+def control_dir_for(state_dir: Path) -> Path | None:
+    """The ssh ControlMaster socket directory: <state_dir>/gpuwatch, or a private per-user directory under /tmp when
+    that path is too long for a socket. None means run without connection sharing."""
+    ctl = state_dir / "gpuwatch"
+    if len(str(ctl)) + CTL_SUFFIX_LEN <= SUN_PATH_MAX:
+        try:
+            ctl.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            return None
+        return ctl
+    ctl = CTL_FALLBACK_BASE / f"glm53-gw-{os.getuid()}"
+    try:
+        ctl.mkdir(mode=0o700, exist_ok=True)
+        st = ctl.lstat()
+    except OSError:
+        return None
+    # a shared /tmp: only a directory we own and nobody else can write to may hold the socket
+    if not ctl.is_dir() or ctl.is_symlink() or st.st_uid != os.getuid() or st.st_mode & 0o077:
+        return None
+    return ctl
+
+
 @dataclass
 class Node:
     name: str
@@ -836,13 +866,10 @@ def main(argv: list[str] | None = None) -> int:
     worker = args.worker or os.environ.get("WORKER_SSH") or cfg.get("WORKER_SSH", "")
     port = args.port or os.environ.get("PORT") or cfg.get("PORT", "8000")
     nodes = parse_nodes(args.nodes) if args.nodes else [Node("head")] + ([Node("worker", worker)] if worker else [])
-    ctl = state_dir / "gpuwatch"
-    try:
-        ctl.mkdir(parents=True, exist_ok=True)
+    ctl = control_dir_for(state_dir)
+    if ctl:
         for n in nodes:
             n.control_dir = str(ctl)
-    except OSError:
-        pass
 
     if args.cmd == "status":
         st = load_state(state_dir)
