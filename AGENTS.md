@@ -39,6 +39,11 @@ cat /sys/class/infiniband/<RDMA device>/ports/1/state    # "4: ACTIVE"
   `NCCL_MIN_NCHANNELS` / `NCCL_MAX_NCHANNELS` from the config).
 - `NCCL_SOCKET_IFNAME` = its netdev (preset: `enp1s0f1np1`). Must be the same name on both nodes.
 - `HEAD_IP` = the head's IPv4 address on that netdev (not its LAN address).
+- Different names on the worker (the pair is cabled through a different port on each node): set the worker's in
+  `WORKER_NCCL_SOCKET_IFNAME` / `WORKER_NCCL_IB_HCA` (rank 1 uses them; unset = the head's values). The RoCE
+  all-gather picks each node's active ports itself and pairs them by subnet; only if you set `GLM53_TF_ROCE_HCA`,
+  set the worker's in `WORKER_ROCE_HCA` too. Not yet verified on such a pair: report what `preflight` and `logs 1`
+  show.
 - Check the link: `ping -c 3 -I <netdev> <worker link address>` from the head.
 - If the port is `DOWN` or has no address, the link is not configured. Do not reconfigure networking without the
   user's approval; tell them what is missing.
@@ -71,6 +76,7 @@ Edit **only** these fields in `config/prod.env`:
 | `HEAD_HF` | absolute path of the head's HF cache | `echo ~/.cache/huggingface` on the head (or `$HF_HOME`) |
 | `WORKER_HF` | absolute path of the worker's HF cache | `ssh <worker> 'echo ~/.cache/huggingface'` |
 | `NCCL_SOCKET_IFNAME`, `NCCL_IB_HCA` | only if step 2 found other names | step 2 |
+| `WORKER_NCCL_SOCKET_IFNAME`, `WORKER_NCCL_IB_HCA` | only if the worker's names differ from the head's (cabled through another port) | step 2 on the worker |
 | `DRAFTER` | set it empty (`DRAFTER=`) only if the drafter was not downloaded | |
 
 `serve.sh` refuses a config that still has `<placeholders>`. It reads `config/prod.env` by default: do not pass
