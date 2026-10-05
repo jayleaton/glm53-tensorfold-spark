@@ -60,6 +60,7 @@ an idle node and record its healthy GB/s (a copy is read + write, so the number 
 | loaded (a node counts as busy) | `--load-util 50` % | | |
 | `clock_floor` | SM < `--clock-floor 1500` MHz while loaded | crit | 2 |
 | `power_clamp` | power < `--power-clamp 18` W while loaded (healthy under load: 42-92 W; 60-62 W on 2026-09-28) | crit | 2 |
+| `util_spin` | power < `--power-clamp` W while loaded but SM >= `--clock-floor` MHz: ~96 % utilization from a kernel waiting on a peer (an idle batched follower before patches/0630, or a context left on a node after its rank stopped), not the clamp | warn | 3 |
 | `clock_low_idle` | idle SM < `--idle-floor 1000` MHz and the idle reason not set (`0` turns it off) | warn | 6 |
 | `idle_asymmetry` | idle, slower / faster SM < `--idle-asym-ratio 0.6` | warn | 6 |
 | `asymmetry` | loaded, slower / faster SM < `--asym-ratio 0.85`, or power ratio < `--asym-power-ratio 0.5` | warn | 3 |
@@ -124,6 +125,12 @@ load alerts within about 10 s. When in doubt, look at the CSV for the benchmark 
 `conditions` column is not empty invalidate that window.
 
 ## What to do
+
+**`util_spin` (warn)**: not the clamp. With the server up and idle, it is the batched follower waiting in a control
+collective (fixed by patches/0630). With both ranks stopped and no process on the GPU (`nvidia-smi
+--query-compute-apps=pid --format=csv,noheader` empty), a context was left behind on that node: `sudo systemctl
+restart nvidia-persistenced` there clears it in a few seconds (re-apply the clock cap afterwards: the restart resets
+it). No power drain needed.
 
 **`power_clamp` / `clock_floor` (crit)**: the clamp. It does not clear by itself, and a **warm reboot does not
 clear it** (proven 2026-09-11).
