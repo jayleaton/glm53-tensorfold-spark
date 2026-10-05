@@ -85,7 +85,7 @@ def kinds(conds) -> set[str]:
 
 def test_control_path_length_math():
     # the path ssh refused on a node whose home is /home/<19-char user> (2026-09-30): 112 bytes, over sun_path
-    real = "/home/ryanneely1000/.local/state/glm53-tf/gpuwatch"
+    real = "/home/" + "u" * 19 + "/.local/state/glm53-tf/gpuwatch"
     assert len(real) + gw.CTL_SUFFIX_LEN > gw.SUN_PATH_MAX
     # the fallback always fits, whatever the uid's digit count
     assert len(str(gw.CTL_FALLBACK_BASE / "glm53-gw-4294967294")) + gw.CTL_SUFFIX_LEN <= gw.SUN_PATH_MAX
