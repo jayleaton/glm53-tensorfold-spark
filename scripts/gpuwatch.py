@@ -387,8 +387,8 @@ class Thresholds:
 
 
 # key -> (severity, samples in a row before it alerts)
-PERSIST = {"unreachable": 2, "clock_floor": 2, "power_clamp": 2, "clock_low_idle": 6, "throttle": 2,
-           "sw_power_cap": 3, "hot": 3, "asymmetry": 3, "idle_asymmetry": 6, "step_regression": 1,
+PERSIST = {"unreachable": 2, "clock_floor": 2, "power_clamp": 2, "util_spin": 3, "clock_low_idle": 6,
+           "throttle": 2, "sw_power_cap": 3, "hot": 3, "asymmetry": 3, "idle_asymmetry": 6, "step_regression": 1,
            "probe_slow": 1, "probe_asymmetry": 1}
 
 
@@ -425,8 +425,17 @@ def evaluate(samples: dict[str, dict[str, Any]], step: dict[str, Any] | None, th
             out.append(Condition(f"{name}:clock_floor", "crit",
                                  f"{desc}: SM clock under {th.clock_floor:.0f} MHz under load (clamp)"))
         if busy and pw is not None and pw < th.power_clamp:
-            out.append(Condition(f"{name}:power_clamp", "crit",
-                                 f"{desc}: power under {th.power_clamp:.0f} W under load (power clamp)"))
+            if sm is not None and sm >= th.clock_floor:
+                # The clamp pins the SM clock (507-890 MHz). Full clocks at a few watts and ~96 % utilization is a
+                # kernel waiting on a peer: an idle batched follower's control collective, or a context left
+                # behind on the node after its rank stopped (issues #8, #10). Real work at 2 GHz draws 42-92 W.
+                out.append(Condition(f"{name}:util_spin", "warn",
+                                     f"{desc}: {s.get('util_pct')}% utilization at under {th.power_clamp:.0f} W "
+                                     "with a healthy clock: a kernel spinning on a wait, not the clamp "
+                                     "(docs/OPS-GPUWATCH.md)"))
+            else:
+                out.append(Condition(f"{name}:power_clamp", "crit",
+                                     f"{desc}: power under {th.power_clamp:.0f} W under load (power clamp)"))
         if (not busy and th.idle_floor > 0 and sm is not None and sm < th.idle_floor
                 and "gpu_idle" not in reasons):
             out.append(Condition(f"{name}:clock_low_idle", "warn",
@@ -466,7 +475,7 @@ def evaluate(samples: dict[str, dict[str, Any]], step: dict[str, Any] | None, th
             if len(pw) >= 2 and min(pw.values()) / max(pw.values()) < th.asym_power_ratio:
                 low = min(pw, key=pw.__getitem__)
                 high = max(pw, key=pw.__getitem__)
-                if not any(c.key == f"{low}:power_clamp" for c in out):
+                if not any(c.key in (f"{low}:power_clamp", f"{low}:util_spin") for c in out):
                     out.append(Condition("pair:asymmetry", "warn",
                                          f"{low} draws {pw[low]:.0f} W vs {high} {pw[high]:.0f} W under load"))
         probes = {n: s["probe"]["gbs"] for n, s in good.items()

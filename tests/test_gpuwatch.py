@@ -38,6 +38,7 @@ def smi_line(sm=2229, power=13.0, util=0, reasons=0, temp=57, swcap=6869275397, 
 HEALTHY_LOAD = dict(sm=2236, power=71.0, util=96, temp=68)
 CLAMP_LOAD = dict(sm=507, power=12.1, util=96, temp=43)            # the head node, 2026-09-11
 CLAMP_IDLE = dict(sm=507, power=5.1, util=0, temp=42)
+SPIN_IDLE = dict(sm=2093, power=10.3, util=96, temp=51)            # issue #10: the worker after a stop
 
 
 # -- parsing -------------------------------------------------------------------------------------------------------
@@ -148,6 +149,21 @@ def test_clamp_at_idle_warns():
     # parked by the driver (the idle reason set): no idle-floor warning for that node
     conds = gw.evaluate({"head": sample(sm=507, reasons=0x1)}, None, gw.Thresholds())
     assert conds == []
+
+
+def test_spin_at_full_clock_is_not_the_clamp():
+    # issues #8 / #10: ~96 % utilization at full clocks and a few watts is a kernel waiting on a peer, not the clamp
+    for head, worker in ((sample(), sample(**SPIN_IDLE)),                          # #10: after a stop
+                         (sample(sm=2411, power=13.6), sample(sm=2411, power=14.7, util=96))):   # #8: idle server
+        conds = gw.evaluate({"head": head, "worker": worker}, None, gw.Thresholds())
+        assert kinds(conds) == {"worker:util_spin"}
+        assert conds[0].severity == "warn" and "not the clamp" in conds[0].message
+    # beside a node under real load: no power asymmetry on top of the spin
+    conds = gw.evaluate({"head": sample(**HEALTHY_LOAD), "worker": sample(**SPIN_IDLE)}, None, gw.Thresholds())
+    assert kinds(conds) == {"worker:util_spin"}
+    # the clamp's own signature (pinned clock) stays critical
+    conds = gw.evaluate({"head": sample(**CLAMP_LOAD)}, None, gw.Thresholds())
+    assert {"head:clock_floor", "head:power_clamp"} <= kinds(conds) and "head:util_spin" not in kinds(conds)
 
 
 def test_throttle_power_cap_heat_and_unreachable():
@@ -598,6 +614,13 @@ def test_preflight_refuses_a_clamped_node(kit, fakes):
     assert r.returncode != 0 and "GPU is degraded" in r.stdout and "power clamp" in r.stdout
     r = kit("preflight", GPUWATCH_PREFLIGHT="off")
     assert r.returncode == 0 and "gpuwatch" not in r.stdout
+
+
+def test_preflight_warns_on_a_spinning_node(kit, fakes):
+    fakes.set("fake-worker", **SPIN_IDLE)                         # issue #10: no longer refused as a clamp
+    r = kit("preflight")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "warning: GPU state" in r.stdout and "not the clamp" in r.stdout and "GPU is degraded" not in r.stdout
 
 
 def test_gpucheck_is_strict_for_benchmarks(kit, fakes):
