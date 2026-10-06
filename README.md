@@ -311,7 +311,20 @@ scripts/serve.sh preflight   # checks both nodes; fix what it reports
 scripts/serve.sh start       # first start: 8+ min (compiles kernels, loads, writes prepared weights); later ~25-40 s
 ```
 
-`serve.sh` reads `config/prod.env` by default; no `CONFIG=` needed.
+`serve.sh` reads `config/prod.env` by default; no `CONFIG=` needed. To run under Podman (rootful) instead of Docker,
+set `CONTAINER_RT=podman` either in `config/prod.env` or on the command line: `CONTAINER_RT=podman scripts/serve.sh build`.
+The serving pod always needs host networking (NCCL/RoCE own the CX7 NIC), so this is never the rootless/pasta path.
+Podman exposes the GPU via CDI (`--device nvidia.com/gpu=all`): generate the spec once with the NVIDIA Container
+Toolkit, `sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml` (see AGENTS.md Docker + NVIDIA runtime row).
+Regenerate it after a driver or toolkit upgrade (the spec references the installed driver and can go stale).
+
+Podman differs from Docker in three small ways the rest of the flow already handles:
+- the container image ID has no `sha256:` prefix (`podman image inspect --format '{{.Id}}'`), so switching runtimes
+  re-runs calibration once (the cache is keyed on the image ID);
+- `--log-opt max-size` / `max-file` are honored but write `k8s-file` logs, not Docker's `json-file` (the `LOG_MAX_*`
+  knobs still apply; the log driver differs);
+- `docker compose` is `podman compose` plus the override file `-f docker/compose.yaml -f docker/compose.podman.yaml`,
+  which adds the CDI device path (the base compose file keeps the Docker `deploy.resources` GPU form only).
 
 **Verify:**
 
@@ -561,7 +574,9 @@ ones together wait for pages or spill idle sessions to the store.
 
 - Two DGX Sparks (GB10, 128 GB unified memory each) connected by a QSFP cable between their ConnectX-7 ports, with
   the link configured (an IP address on one CX7 netdev per node; the RDMA device visible in `ibv_devices`).
-- Docker with the NVIDIA Container Toolkit on both nodes (stock DGX OS has both).
+- Docker with the NVIDIA Container Toolkit on both nodes (stock DGX OS has both). Or Podman (rootful) with the
+  NVIDIA CDI / container-toolkit wrapper: set `CONTAINER_RT=podman` in the config (see below). Not rootless: the
+  serving pod needs `--network host` so NCCL / the RoCE proxy own the CX7 NIC.
 - Passwordless `ssh` from the head node to the worker, as a user that can run `docker` there. The production
   config's memory gate also drops page caches with `sudo -n` on both nodes.
 - The weights in each node's Hugging Face cache, same revision on both (the repo is gated: request access on its
@@ -675,7 +690,7 @@ Before publishing a fork: `scripts/check-public.sh` scans the tree for private I
 | --- | --- |
 | `vendor/TensorFold` | TensorFold, pinned submodule (`2f8e514`, 0.3.4), unmodified |
 | `patches/` | engine patches, applied in order at image build |
-| `docker/` | Dockerfile, entrypoint, compose file |
+| `docker/` | Dockerfile, entrypoint, compose files (`compose.yaml` + `compose.podman.yaml` override) |
 | `scripts/` | `serve.sh` (build / start / stop / status / logs / canary / watchdog / gpucheck; `PATCHES="..." serve.sh build` for a subset), `prepare.sh`, `gpuwatch.py` (GB10 clock / slow-state watch), `traffic-report.py` (request-log summary), `rigmark/` (turnkey RigMark runs, docs/RIGMARK.md), `tooleval/` (tool-calling benchmark runner, docs/TOOL-CALLING.md), systemd units, `check-public.sh` |
 | `config/` | `prod.env.example` (production, the default), earlier configs, `minimal.env.example` (32k debugging baseline) |
 | `AGENTS.md` | step-by-step setup for AI coding agents: checks, commands, expected logs, failures and fixes |

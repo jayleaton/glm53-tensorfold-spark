@@ -10,6 +10,11 @@
 #   head   (rank 0):        docker compose --env-file config/minimal.env -f docker/compose.yaml --profile rank0 up -d
 #   stop (each node):       docker compose --env-file config/minimal.env -f docker/compose.yaml --profile rank0 --profile rank1 down
 #
+# Podman: substitute `podman compose` (or podman-compose) for `docker compose` and add the podman override file
+# (`-f docker/compose.yaml -f docker/compose.podman.yaml`); it exposes the GPU via the CDI device path
+# `nvidia.com/gpu=all` (Docker ignores CDI device paths and uses the `deploy.resources` block, so the CDI entry must
+# stay in the podman-only override). Rootful only: the pod uses host networking so NCCL / the RoCE proxy own the CX7 NIC.
+#
 # Each node needs the image (docker compose ... build, or scripts/serve.sh build) and the weights in its own HF cache.
 # Container and volume names match serve.sh, so `scripts/serve.sh status|logs|stop` work on either path.
 
@@ -23,7 +28,7 @@ x-rank: &rank
   network_mode: host
   ipc: host
   devices:
-    - /dev/infiniband:/dev/infiniband
+    - /dev/infiniband
   ulimits:
     memlock: -1
   cap_add:

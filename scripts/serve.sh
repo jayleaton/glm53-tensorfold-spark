@@ -31,7 +31,7 @@ fi
 export CONFIG
 # A non-empty caller export wins over the same key in the config file:
 #   CONTEXT=32768 GLM53_TF_NONEXPERT=q4mse scripts/serve.sh start
-caller_env=$(env | grep -E '^(HEAD_PREPARED|WORKER_PREPARED|HEAD_SESSIONS|WORKER_SESSIONS|CONTEXT|MTP_DRAFTS|NO_DRAFTS|IMAGE|PORT|HOST|DRAFTER|MODEL_PATH|EXTRA_ARGS|SERVED_NAME|MAX_TOKENS|CPUSET|HEAD_CPUSET|WORKER_CPUSET|CANARY[A-Z_]*|MEM_GATE_[A-Z_]+|START_ATTEMPTS|READY_TIMEOUT|LOG_MAX_[A-Z]+|WATCH_[A-Z_]+|GPUWATCH_[A-Z_]+|WARMUP_LENGTHS|PREFLIGHT|NCCL_PASSTHROUGH|PATCHES|GLM53_TF_[A-Z0-9_]+)=.' || true)
+caller_env=$(env | grep -E '^(CONTAINER_RT|HEAD_PREPARED|WORKER_PREPARED|HEAD_SESSIONS|WORKER_SESSIONS|CONTEXT|MTP_DRAFTS|NO_DRAFTS|IMAGE|PORT|HOST|DRAFTER|MODEL_PATH|EXTRA_ARGS|SERVED_NAME|MAX_TOKENS|CPUSET|HEAD_CPUSET|WORKER_CPUSET|CANARY[A-Z_]*|MEM_GATE_[A-Z_]+|START_ATTEMPTS|READY_TIMEOUT|LOG_MAX_[A-Z]+|WATCH_[A-Z_]+|GPUWATCH_[A-Z_]+|WARMUP_LENGTHS|PREFLIGHT|NCCL_PASSTHROUGH|PATCHES|GLM53_TF_[A-Z0-9_]+)=.' || true)
 # shellcheck disable=SC1090
 set -a; source "$CONFIG"; set +a
 while IFS= read -r kv; do [[ -n "$kv" ]] && export "${kv?}"; done <<< "$caller_env"
@@ -44,6 +44,22 @@ NAME="${NAME:-glm53-tf}"
 IMAGE="${IMAGE:-glm53-tensorfold:dev}"
 PORT="${PORT:-8080}"
 BASE="http://127.0.0.1:$PORT"
+# Container runtime: docker (default, stock DGX OS) or podman (rootful). The serving pod
+# needs --network host so NCCL / the RoCE proxy own the CX7 NIC, so this is never pasta/rootless.
+# podman's GPU and device flags differ slightly; see run_args below.
+CONTAINER_RT="${CONTAINER_RT:-docker}"
+case "$CONTAINER_RT" in
+    docker|podman) ;;
+    *) echo "[glm53-tf] CONTAINER_RT=$CONTAINER_RT: expected docker or podman" >&2; exit 2 ;;
+esac
+rt() { printf '%s' "$CONTAINER_RT"; }
+# Runtime answers on the current node, and for podman that it is rootful (rootless has a separate image store, and
+# GPU / RDMA devices, --ulimit memlock=-1 and IPC_LOCK can fail). 0: ok; 1: not answering or (podman) rootless.
+rt_ok() {
+    $(rt) info >/dev/null 2>&1 || return 1
+    [[ "$CONTAINER_RT" == podman ]] || return 0
+    [[ "$($(rt) info --format '{{.Host.Security.Rootless}}' 2>/dev/null)" == false ]]
+}
 # Every ops feature below is off unless set (config or environment); `start` / `stop` / `status` behave as before.
 # post-load canary (scripts/canary.py): off | warn (log a failure, keep serving) | strict (stop both ranks, exit 1)
 CANARY="${CANARY:-off}"
@@ -66,7 +82,7 @@ START_ATTEMPTS="${START_ATTEMPTS:-1}"         # a failed start (a rank exited, n
 START_DROP_CACHES_GIB="${START_DROP_CACHES_GIB:-$([[ "$MEM_GATE_DROP_CACHES" == 1 ]] && echo 4 || echo 0)}"
 SLOT_RETRIES="${SLOT_RETRIES:-2}"
 READY_TIMEOUT="${READY_TIMEOUT:-0}"           # seconds to wait for /v1/models (0: no limit; first start compiles kernels)
-LOG_MAX_SIZE="${LOG_MAX_SIZE:-}"              # e.g. 200m: docker json-file log rotation per container (empty: docker's default)
+LOG_MAX_SIZE="${LOG_MAX_SIZE:-}"              # e.g. 200m: container log rotation per container (empty: the runtime's default)
 LOG_MAX_FILE="${LOG_MAX_FILE:-3}"
 PREFLIGHT="${PREFLIGHT:-off}"                 # before start: off | warn (log problems) | strict (refuse to start on one)
 NCCL_PASSTHROUGH="${NCCL_PASSTHROUGH:-0}"     # 1: every other NCCL_* variable set here reaches both ranks
@@ -127,7 +143,9 @@ run_args() { # $1 = rank, $2 = host HF cache dir
     if [[ "$rank" == 0 ]]; then prep="$HEAD_PREPARED"; else prep="$WORKER_PREPARED"; fi
     if [[ "$rank" == 0 ]]; then sess="$HEAD_SESSIONS"; else sess="$WORKER_SESSIONS"; fi   # patches/0250
     local cpuset="$HEAD_CPUSET"; [[ "$rank" == 0 ]] || cpuset="$WORKER_CPUSET"             # patches/0370
-    echo --name "$NAME-r$rank" -d --gpus all --ipc=host --network host \
+    # GPU access: docker --gpus all; podman --device nvidia.com/gpu=all (nvidia-container-toolkit wrapper).
+    local gpu=(--gpus all); [[ "$CONTAINER_RT" == podman ]] && gpu=(--device nvidia.com/gpu=all)
+    echo --name "$NAME-r$rank" -d "${gpu[@]}" --ipc=host --network host \
         ${cpuset:+--cpuset-cpus "$cpuset"} \
         -v "$prep:/prepared" -e GLM53_TF_PREPARED=/prepared -e GLM53_TF_PREPARED_WRITE="${GLM53_TF_PREPARED_WRITE:-1}" \
         -v "$sess:/sessions" \
@@ -159,9 +177,9 @@ gpu_busy() { # a foreign CUDA process on either node means the other stack is st
 running() { # $1 = rank: prints true | false | absent | unreachable (the worker's ssh failed)
     local out rc
     if [[ "$1" == 0 ]]; then
-        out=$(docker inspect -f '{{.State.Running}}' "$NAME-r0" 2>/dev/null) || out=absent
+        out=$($(rt) inspect -f '{{.State.Running}}' "$NAME-r0" 2>/dev/null) || out=absent
     else
-        out=$(wssh docker inspect -f "'{{.State.Running}}'" "$NAME-r1" 2>/dev/null) && rc=0 || rc=$?
+        out=$(wssh $(rt) inspect -f "'{{.State.Running}}'" "$NAME-r1" 2>/dev/null) && rc=0 || rc=$?
         if [[ $rc == 255 ]]; then out=unreachable; elif [[ $rc != 0 ]]; then out=absent; fi
     fi
     echo "${out:-absent}"
@@ -212,7 +230,7 @@ drop_caches_if_needed() { # $1 = force: drop on both nodes regardless of the thr
 }
 
 # rank 0's slot count from its boot line `context: ... N request slot(s)` (empty until it is printed)
-slots_r0() { docker logs "$NAME-r0" 2>&1 | grep -oE '[0-9]+ request slot\(s\)' | tail -1 | grep -oE '^[0-9]+' || true; }
+slots_r0() { $(rt) logs "$NAME-r0" 2>&1 | grep -oE '[0-9]+ request slot\(s\)' | tail -1 | grep -oE '^[0-9]+' || true; }
 
 check_slots() { # 0: rank 0 has >= GLM53_TF_BATCH slots (or no batching / no line within 60 s); 3: fewer
     local want=${GLM53_TF_BATCH:-1} n="" i
@@ -252,10 +270,15 @@ preflight() { # read-only checks (AGENTS.md lists them); non-zero on a problem a
     done
     [[ $bad == 0 ]] || return 1
     wssh true || { log "preflight: cannot ssh to $WORKER_SSH: passwordless ssh from the head is needed (ssh-copy-id $WORKER_SSH)"; return 1; }
-    docker info >/dev/null 2>&1 || { log "preflight: docker does not answer on the head (service running? user in the docker group?)"; bad=1; }
-    wssh docker info >/dev/null 2>&1 || { log "preflight: docker does not answer on the worker as $WORKER_SSH (service running? user in the docker group?)"; bad=1; }
-    docker image inspect "$IMAGE" >/dev/null 2>&1 || { log "preflight: no image $IMAGE here (scripts/serve.sh build)"; bad=1; }
-    wssh docker image inspect "$IMAGE" >/dev/null 2>&1 || { log "preflight: no image $IMAGE on the worker (scripts/serve.sh build ships it)"; bad=1; }
+    local rt_hint  # accurate "how to run the runtime" hint per runtime (podman has no podman group)
+    if [[ "$CONTAINER_RT" == podman ]]; then rt_hint="service running? run as root or via sudo on both nodes"; else rt_hint="service running? user in the docker group?"; fi
+    if ! rt_ok; then log "preflight: the container runtime does not answer (or is rootless) on the head ($rt_hint)"; bad=1; fi
+    # worker: same check, built from the concrete binary name so it runs on the worker (rt_ok is a local function)
+    local rtb="$CONTAINER_RT" w_cmd="$CONTAINER_RT info >/dev/null 2>&1"
+    [[ "$CONTAINER_RT" == podman ]] && w_cmd="$w_cmd && [[ \"\$($rtb info --format '{{.Host.Security.Rootless}}' 2>/dev/null)\" == false ]]"
+    if ! wssh "$w_cmd"; then log "preflight: the container runtime does not answer (or is rootless) on the worker as $WORKER_SSH ($rt_hint)"; bad=1; fi
+    $(rt) image inspect "$IMAGE" >/dev/null 2>&1 || { log "preflight: no image $IMAGE here (scripts/serve.sh build)"; bad=1; }
+    wssh $(rt) image inspect "$IMAGE" >/dev/null 2>&1 || { log "preflight: no image $IMAGE on the worker (scripts/serve.sh build ships it)"; bad=1; }
     [[ -n "$(ls -A vendor/TensorFold 2>/dev/null)" ]] \
         || log "preflight: warning: vendor/TensorFold is empty: git submodule update --init (serve.sh build needs it)"
     # the CX7 link: NCCL_SOCKET_IFNAME carries an address on both nodes, HEAD_IP is the head's
@@ -322,11 +345,11 @@ preflight() { # read-only checks (AGENTS.md lists them); non-zero on a problem a
     # a RoCE failure at run time leaves a marker in the cache volume; the next start then serves on NCCL
     mark="${GLM53_TF_ROCE_MARK:-}"
     if [[ "${GLM53_TF_COMM_BACKEND:-}" == roce && "$mark" == /cache/* ]]; then
-        local probe="docker run --rm --network none -v $NAME-cache:/cache --entrypoint test $IMAGE -e $mark"
+        local probe="$(rt) run --rm --network none -v $NAME-cache:/cache --entrypoint test $IMAGE -e $mark"
         for node in head worker; do
             if on_node "$node" "$probe" >/dev/null 2>&1; then
                 log "preflight: warning: RoCE failure marker $mark on the $node: the next start serves on NCCL (decode" \
-                    "~4-11% slower). After fixing the link, delete it on both nodes: docker run --rm -v $NAME-cache:/cache" \
+                    "~4-11% slower). After fixing the link, delete it on both nodes: $(rt) run --rm -v $NAME-cache:/cache" \
                     "--entrypoint rm $IMAGE -f $mark (docs/ROCE-FIX.md)"
             fi
         done
@@ -351,9 +374,9 @@ gpu_state() { # $1 = off | on | strict: the GB10 clock / power / slow-state chec
 }
 
 stop_both() { # both ranks at once
-    docker rm -f "$NAME-r0" >/dev/null 2>&1 &
+    $(rt) rm -f "$NAME-r0" >/dev/null 2>&1 &
     local p0=$!
-    wssh docker rm -f "$NAME-r1" >/dev/null 2>&1 &
+    wssh $(rt) rm -f "$NAME-r1" >/dev/null 2>&1 &
     local p1=$!
     wait "$p0" || true; wait "$p1" || true
 }
@@ -375,20 +398,20 @@ start_once() { # 0: ready; 1: failed (containers left for the caller to inspect 
     stop_both
     drop_caches_if_needed "${FORCE_DROP:-0}"
     mem_gate
-    IMAGE_ID=$(docker image inspect -f '{{.Id}}' "$IMAGE" 2>/dev/null || echo "$IMAGE")   # same id after save | load
+    IMAGE_ID=$($(rt) image inspect -f '{{.Id}}' "$IMAGE" 2>/dev/null || echo "$IMAGE")   # same id after save | load
     # both ranks at once (rank 1 waits for rank 0's TCP store either way); patches/0140
     # shellcheck disable=SC2046
-    wssh "mkdir -p '$WORKER_PREPARED' '$WORKER_SESSIONS' && docker run $(run_args 1 "$WORKER_HF")" >/dev/null &
+    wssh "mkdir -p '$WORKER_PREPARED' '$WORKER_SESSIONS' && $(rt) run $(run_args 1 "$WORKER_HF")" >/dev/null &
     local wpid=$!
     mkdir -p "$HEAD_PREPARED" "$HEAD_SESSIONS"
     # shellcheck disable=SC2046
-    docker run $(run_args 0 "$HEAD_HF") >/dev/null
+    $(rt) run $(run_args 0 "$HEAD_HF") >/dev/null
     wait "$wpid" || { log "rank 1 did not start"; return 1; }
     log "waiting for rank 0 on :$PORT (first start compiles the kernels)"
     local t0 w_fail=0 r1 tick=0
     t0=$(date +%s)
     until curl -sf -m 5 "$BASE/v1/models" >/dev/null; do
-        [[ "$(running 0)" == true ]] || { log "rank 0 exited"; docker logs --tail 40 "$NAME-r0" 2>&1; return 1; }
+        [[ "$(running 0)" == true ]] || { log "rank 0 exited"; $(rt) logs --tail 40 "$NAME-r0" 2>&1; return 1; }
         tick=$((tick + 1))
         # 1 s polling (patches/0140); the worker over ssh every 10th tick
         if (( tick % 10 )); then sleep 1; continue; fi
@@ -396,7 +419,7 @@ start_once() { # 0: ready; 1: failed (containers left for the caller to inspect 
         case "$r1" in
             true) w_fail=0 ;;
             unreachable) w_fail=$((w_fail + 1)); log "worker unreachable over ssh ($w_fail)" ;;
-            *) log "rank 1 exited"; wssh docker logs --tail 40 "$NAME-r1" 2>&1; return 1 ;;
+            *) log "rank 1 exited"; wssh $(rt) logs --tail 40 "$NAME-r1" 2>&1; return 1 ;;
         esac
         [[ $w_fail -lt 3 ]] || { log "worker unreachable 3 times in a row"; return 1; }
         (( READY_TIMEOUT <= 0 || $(date +%s) - t0 < READY_TIMEOUT )) || { log "not ready after ${READY_TIMEOUT}s"; return 1; }
@@ -453,8 +476,8 @@ cmd_start() {
         if (( attempt >= START_ATTEMPTS )); then
             if [[ $rc == 2 ]]; then     # a degenerate engine must not keep serving
                 log "stopping both ranks: they loaded but failed the canary (last logs in $STATE_DIR/canary-fail-r{0,1}.log)"
-                docker logs --tail 200 "$NAME-r0" > "$STATE_DIR/canary-fail-r0.log" 2>&1 || true
-                wssh docker logs --tail 200 "$NAME-r1" > "$STATE_DIR/canary-fail-r1.log" 2>&1 || true
+                $(rt) logs --tail 200 "$NAME-r0" > "$STATE_DIR/canary-fail-r0.log" 2>&1 || true
+                wssh $(rt) logs --tail 200 "$NAME-r1" > "$STATE_DIR/canary-fail-r1.log" 2>&1 || true
                 stop_both
             else
                 log "start failed (attempt $attempt of $START_ATTEMPTS); leaving the containers for 'logs', 'stop' removes them"
@@ -544,7 +567,9 @@ watch_tick() {
     elif [[ "$r1" == unreachable ]]; then log "watch: worker unreachable over ssh (not counted)"
     elif [[ "$r1" != true ]]; then bad="rank 1 $r1"
     else
-        age=$(( now - $(date -d "$(docker inspect -f '{{.State.StartedAt}}' "$NAME-r0")" +%s) ))
+        # podman's .State.StartedAt ends with a zone word ('... +0000 UTC' or '... +0200 CEST') that `date -d`
+        # rejects; strip it (docker returns a bare ISO UTC time, so the sed is a no-op there).
+        age=$(( now - $(date -d "$($(rt) inspect -f '{{.State.StartedAt}}' "$NAME-r0" | sed -E 's/ [A-Za-z]+$//')" +%s) ))
         body=$(curl -s -m 10 -w '\n%{http_code}' "$BASE/health" || true)
         code=${body##*$'\n'}; body=${body%$'\n'*}
         if [[ "$code" == 200 ]]; then :
@@ -570,9 +595,9 @@ watch_tick() {
 case "${1:-}" in
 build)
     # PATCHES="0001 0002 ...": only these patch number prefixes (docker/Dockerfile); unset = every patch in patches/
-    docker build -f docker/Dockerfile ${PATCHES:+--build-arg PATCHES="$PATCHES"} -t "$IMAGE" .
+    $(rt) build -f docker/Dockerfile ${PATCHES:+--build-arg PATCHES="$PATCHES"} -t "$IMAGE" .
     log "shipping $IMAGE to $WORKER_SSH"
-    docker save "$IMAGE" | wssh docker load
+    $(rt) save "$IMAGE" | wssh $(rt) load
     ;;
 start)
     cmd_start ;;
@@ -583,13 +608,13 @@ stop)
     log "stopped"
     ;;
 status)
-    docker ps -a --filter "name=$NAME" --format '{{.Names}} {{.Status}}'
-    wssh "docker ps -a --filter name=$NAME --format '{{.Names}} {{.Status}}'"   # one string: the remote shell re-splits args
+    $(rt) ps -a --filter "name=$NAME" --format '{{.Names}} {{.Status}}'
+    wssh "$(rt) ps -a --filter name=$NAME --format '{{.Names}} {{.Status}}'"   # one string: the remote shell re-splits args
     curl -s "$BASE/v1/models" || true; echo
     curl -s "$BASE/health" || true; echo
     ;;
 logs)
-    if [[ "${2:-0}" == 1 ]]; then wssh docker logs --tail "${TAIL:-80}" "$NAME-r1"; else docker logs --tail "${TAIL:-80}" "$NAME-r0"; fi
+    if [[ "${2:-0}" == 1 ]]; then wssh $(rt) logs --tail "${TAIL:-80}" "$NAME-r1"; else $(rt) logs --tail "${TAIL:-80}" "$NAME-r0"; fi
     ;;
 canary)
     CANARY=strict run_canary ;;

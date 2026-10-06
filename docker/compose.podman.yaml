@@ -1,0 +1,12 @@
+# Podman-only override for docker/compose.yaml. Merge it in with:
+#
+#   podman compose --env-file config/minimal.env -f docker/compose.yaml -f docker/compose.podman.yaml --profile rank1 up -d
+#
+# Docker 29 treats a `nvidia.com/gpu=all` entry under `devices` as a CDI device request and fails when no CDI spec
+# is present, so the CDI device path stays here instead of in the base file (which Docker uses). podman-compose reads
+# the CDI device path; the base file's `deploy.resources.reservations.devices` block (the Docker Compose form) is
+# ignored by podman-compose. One-time per node: `sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml`.
+x-rank: &rank
+  devices:
+    - /dev/infiniband
+    - nvidia.com/gpu=all
