@@ -1,0 +1,39 @@
+# GLM53_TF_CLEAR_THINKING=0: earlier turns keep their reasoning in the prompt (the template's clear_thinking=False),
+# unless the request sets chat_template_kwargs.clear_thinking. The default 1 renders exactly as before (no key is
+# passed, which the template treats as clearing). zai-org/GLM-5.3-Flash made clear_thinking=false its template
+# default on 2026-08-27 (commit 3f1971b7); the pinned checkpoint predates that. Applies to every render through
+# self.template, so /tokenize and the vision path count the same tokens as a completion. Semantics from
+# MiaAI-Lab/GLM-5.3-Flash-EXL3-2x-DGX-Sparks-TensorFold patch 0060-glm-keep-thinking (PR #23 by @kky42, Apache-2.0),
+# re-implemented for this tree. Applies after 0640 (same file).
+#
+--- a/src/tensorfold/families/glm5_next/cuda/app.py
++++ b/src/tensorfold/families/glm5_next/cuda/app.py
+@@ -134,10 +134,15 @@
+ class ThinkingOffTemplate:
+     """The checkpoint's chat template, rendered as GLM-5.3's thinking-off template renders it when thinking is off."""
+ 
+-    def __init__(self, inner) -> None:
++    def __init__(self, inner, clear_thinking: bool = True) -> None:
+         self.inner = inner
++        self.clear_thinking = clear_thinking
+ 
+     def render(self, messages, *, tools, enable_thinking, extra=None) -> str:
++        if not self.clear_thinking:
++            # earlier turns keep their reasoning (zai-org's template default since 2026-08-27); a request's own
++            # chat_template_kwargs.clear_thinking still wins
++            extra = {"clear_thinking": False, **(extra or {})}
+         text = self.inner.render(messages, tools=tools, enable_thinking=enable_thinking, extra=extra)
+         if not enable_thinking:
+             text = text.replace("<|system|>Reasoning Effort: Max", "", 1)
+@@ -203,7 +208,10 @@
+ 
+     def __init__(self, engine, model_dir, served: str, **kwargs: Any) -> None:
+         super().__init__(engine, model_dir, served, **kwargs)
+-        self.template = ThinkingOffTemplate(self.template)
++        clear = os.environ.get("GLM53_TF_CLEAR_THINKING", "1").strip() or "1"
++        if clear not in ("0", "1"):
++            raise ValueError(f"GLM53_TF_CLEAR_THINKING={clear!r}: expected 0 or 1")
++        self.template = ThinkingOffTemplate(self.template, clear_thinking=clear == "1")
+         self.vision = vision_prep.Host(model_dir) if vision_prep.enabled() else None      # patches/0500
+         if self.vision is not None:
+             self.template = VisionTemplate(self.template, self.vision, self._vis)

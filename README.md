@@ -612,6 +612,7 @@ Main groups:
 | Multi-slot prefill | 0560 | `GLM53_TF_MULTI_PREFILL=1` (a round's prefill pieces in one forward; W17) |
 | Decode expert loads / NCCL / memory (W19) | 0580, 0550, 0530 | `GLM53_TF_DEC_EXPERT_LOADS=1` + `_CFG=nc,8,1`, `GLM53_TF_SELECT_SCRATCH=grow`, `GLM53_TF_CPU_PIN=http`; NCCL on both CX7 functions with 4 channels (`NCCL_IB_HCA`, `NCCL_PASSTHROUGH=1`, `NCCL_MIN/MAX_NCHANNELS=4`) |
 | Structured output | 0610 | `GLM53_TF_GRAMMAR=1` (`response_format`, strict / required tool calls; exact under drafting and batching) |
+| Thinking switches | 0640, 0650 | `chat_template_kwargs.thinking` read as `enable_thinking` (always on); `GLM53_TF_CLEAR_THINKING=1` (default; `0` keeps earlier turns' reasoning in the prompt, zai-org's template default since 2026-08-27; opt-in until measured on agent traffic) |
 | Upstream ports | 0600 | on by default: `GLM53_TF_DISCONNECT=1` (a departed client frees its slot), request 400 hardening, image URL hardening (`GLM53_TF_VISION_FETCH_*`), `/health` token totals, USR1 stacks |
 | Measured, not adopted (off) | 0240 (bits 1-2), 0260, 0270, 0280, 0330, 0340, 0400, 0410, 0440, 0450, 0370's `GLM53_TF_CPU_PIN`, 0460's RoCE latency knobs, 0510 / 0520 (W16), 0550's trim and page-cache admission (`GLM53_TF_ALLOC_TRIM_GB=0`, `GLM53_TF_ADMIT_MEM=free`), 0570 and 0590 (W19) | see [Limits](#limits-and-negatives) |
 | Offline / tools, off | 0420 (draft vocabulary), 0430 (drafter-training records), 0470 (8-bit non-experts) | `docs/PATCHES.md` |
@@ -661,7 +662,7 @@ docker run --rm --gpus all -e PYTHONDONTWRITEBYTECODE=1 -v $PWD:/work --entrypoi
 
 Host-only (no GPU, no Docker): `python -m pytest -q tests/test_serve_ops.py tests/test_gpuwatch.py` (launcher, canary,
 Xid parser, GPU clock watch); the image-input front end (`tests/test_vision_prep.py`, `tests/test_vision_server.py`)
-and the API context checks (`tests/test_api_context.py`) against a patched tree; 0620's tool-calling fixes (`tests/test_tool_fixes.py`, `PYTHONPATH=<tree>/src`); the other `tests/test_*.py` run against a patched tree (`PYTHONPATH=<tree>/src`), several
+and the API context checks (`tests/test_api_context.py`) against a patched tree; 0620's tool-calling fixes and 0650's rendering (`tests/test_tool_fixes.py`, `PYTHONPATH=<tree>/src`); 0150's effort mapping and 0640 / 0650's switches (`tests/test_effort.py`); the other `tests/test_*.py` run against a patched tree (`PYTHONPATH=<tree>/src`), several
 of them in Triton's CPU interpreter. Against a
 running server: `python3 bench/glmbench.py --base http://127.0.0.1:8000 --model GLM-5.3-Flash-EXL3 --suites exact`
 checks drafted == serial on the real model. Known GPU-test failures are listed in `docs/RESULTS.md` (for example the
