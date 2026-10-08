@@ -26,10 +26,12 @@
  def apply_effort(body: dict[str, Any], *, field: bool, default: str | None, default_thinking: bool) -> str | None:
      """Fill ``body["chat_template_kwargs"]`` from ``reasoning_effort`` (with ``field``) and ``default``; keys the
      request set itself win. Idempotent (``check`` and ``run`` both call it). Returns an error message, or None."""
-@@ -95,6 +109,10 @@
+@@ -95,6 +109,12 @@
      if kwargs is not None and not isinstance(kwargs, dict):
          return None                                     # left for the template to reject as before
      kwargs = dict(kwargs or {})
++    # ``thinking`` itself stays in the kwargs and reaches the template as a variable; GLM-5.3's template does not
++    # read it, so only the ``enable_thinking`` it sets has an effect
 +    if "thinking" in kwargs and "enable_thinking" not in kwargs:
 +        switch = thinking_switch(kwargs["thinking"])
 +        if switch is not None:

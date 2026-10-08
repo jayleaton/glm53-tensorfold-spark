@@ -140,6 +140,32 @@ def test_empty_arguments_render_instead_of_a_400():
     assert "<tool_call>get_weather</tool_call>" in _render(body["messages"], False)
 
 
+TWO_TURNS = [
+    {"role": "user", "content": "Pick a number."},
+    {"role": "assistant", "content": "7", "reasoning_content": "Seven is a fine pick."},
+    {"role": "user", "content": "Why?"},
+]
+
+
+@real_template
+@pytest.mark.skipif("clear_thinking" not in app_mod.ThinkingOffTemplate.__init__.__code__.co_varnames,
+                    reason="patches/0650 not applied")
+def test_keep_thinking_across_user_turns():
+    # patches/0650: the turn before the last user message keeps its reasoning only with GLM53_TF_CLEAR_THINKING=0
+    def render(clear, extra):
+        tpl = app_mod.ThinkingOffTemplate(server.ChatTemplate(TOKDIR), clear_thinking=clear)
+        return tpl.render(copy.deepcopy(TWO_TURNS), tools=None, enable_thinking=True, extra=extra)
+
+    kept = "<|assistant|><think>Seven is a fine pick.</think>7"
+    plain = app_mod.ThinkingOffTemplate(server.ChatTemplate(TOKDIR)).render(
+        copy.deepcopy(TWO_TURNS), tools=None, enable_thinking=True, extra={})
+    assert kept not in plain                                    # the default: dropped, as before 0650
+    assert render(True, {}) == plain
+    assert kept in render(False, {})
+    assert kept not in render(False, {"clear_thinking": True})  # the request's own key wins
+    assert kept in render(True, {"clear_thinking": False})
+
+
 # -- a fake engine through the real App.run ---------------------------------------------------------------------------
 
 class Encoded:

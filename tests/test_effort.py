@@ -103,3 +103,82 @@ def test_rendered_effort_line():
     kw = dict(body["chat_template_kwargs"])
     thinking = kw.pop("enable_thinking")
     assert tpl.render([], tools=[], enable_thinking=thinking, extra=kw) == "<|user|>hi<|assistant|><think></think>"
+
+
+# -- patches/0640: chat_template_kwargs.thinking as enable_thinking ----------------------------------------------------
+
+needs_0640 = pytest.mark.skipif(not hasattr(app, "thinking_switch"), reason="patches/0640 not applied")
+
+
+@needs_0640
+@pytest.mark.parametrize("value,switch", [
+    (True, True),
+    (False, False),
+    ({"type": "enabled"}, True),
+    ({"type": "disabled"}, False),
+    ({"type": "adaptive"}, None),
+    ("false", None),
+    (None, None),
+])
+def test_thinking_switch(value, switch):
+    assert app.thinking_switch(value) is switch
+
+
+@needs_0640
+@pytest.mark.parametrize("thinking,kwargs", [
+    (False, {"thinking": False, "enable_thinking": False}),
+    ({"type": "disabled"}, {"thinking": {"type": "disabled"}, "enable_thinking": False}),
+    ({"type": "enabled"}, {"thinking": {"type": "enabled"}, "enable_thinking": True}),
+    ({"type": "adaptive"}, {"thinking": {"type": "adaptive"}}),            # unset: the server default applies
+])
+def test_thinking_alias(thinking, kwargs):
+    assert run({"chat_template_kwargs": {"thinking": thinking}}, field=False) == (None, kwargs)
+
+
+@needs_0640
+def test_explicit_enable_thinking_wins_and_idempotent():
+    body = {"chat_template_kwargs": {"thinking": False, "enable_thinking": True}}
+    assert run(body, field=False) == (None, {"thinking": False, "enable_thinking": True})
+    body = {"chat_template_kwargs": {"thinking": False}}
+    first = run(body, field=False)
+    assert run(body, field=False) == first
+
+
+@needs_0640
+def test_thinking_false_beats_reasoning_effort():
+    # keys the request set itself win: thinking off, as for an explicit enable_thinking: false
+    body = {"reasoning_effort": "high", "chat_template_kwargs": {"thinking": False}}
+    assert run(body) == (None, {"thinking": False, "enable_thinking": False, "reasoning_effort": "high"})
+    body = {"chat_template_kwargs": {"thinking": False}}
+    assert run(body, field=False, default="low") == (None, {"thinking": False, "enable_thinking": False})
+
+
+# -- patches/0650: GLM53_TF_CLEAR_THINKING ---------------------------------------------------------------------------
+
+class _Recorder:
+    def render(self, messages, *, tools, enable_thinking, extra=None):
+        self.extra = extra
+        return "<|assistant|><think>"
+
+
+needs_0650 = pytest.mark.skipif("clear_thinking" not in app.ThinkingOffTemplate.__init__.__code__.co_varnames,
+                                reason="patches/0650 not applied")
+
+
+@needs_0650
+def test_clear_thinking_default_passes_nothing():
+    inner = _Recorder()
+    app.ThinkingOffTemplate(inner).render([], tools=[], enable_thinking=True, extra=None)
+    assert inner.extra is None                                  # renders exactly as before 0650
+    app.ThinkingOffTemplate(inner).render([], tools=[], enable_thinking=True, extra={"x": 1})
+    assert inner.extra == {"x": 1}
+
+
+@needs_0650
+def test_keep_thinking_and_request_wins():
+    inner = _Recorder()
+    tpl = app.ThinkingOffTemplate(inner, clear_thinking=False)
+    tpl.render([], tools=[], enable_thinking=True, extra=None)
+    assert inner.extra == {"clear_thinking": False}
+    tpl.render([], tools=[], enable_thinking=True, extra={"clear_thinking": True})
+    assert inner.extra == {"clear_thinking": True}
