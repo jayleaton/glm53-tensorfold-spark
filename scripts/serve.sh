@@ -76,6 +76,10 @@ NCCL_PASSTHROUGH="${NCCL_PASSTHROUGH:-0}"     # 1: every other NCCL_* variable s
 CPUSET="${CPUSET:-}"
 HEAD_CPUSET="${HEAD_CPUSET:-$CPUSET}"
 WORKER_CPUSET="${WORKER_CPUSET:-$CPUSET}"
+# glibc malloc arenas in both containers. The default (8 a core: 160 on GB10) lets each HTTP / tokenizer / disk-tier
+# thread keep its own arena, and freed memory stays mapped in all of them: host RSS creeps up over days of traffic.
+# 4 bounds that (the DeepSeek kit's prod config sets the same); the GPU path does not allocate on the host
+MALLOC_ARENA_MAX="${MALLOC_ARENA_MAX:-4}"         # set in the config (or exported, when the config does not set it)
 # preflight's GPU state check (scripts/gpuwatch.py check, docs/OPS-GPUWATCH.md): off | on (a degraded node -- clock or
 # power clamp, a step-time regression past the transient window -- is a preflight problem; warnings are logged) |
 # strict (a warning is a problem too: a recent slow state, an idle clock asymmetry; use for benchmark windows)
@@ -132,7 +136,7 @@ run_args() { # $1 = rank, $2 = host HF cache dir
         -v "$prep:/prepared" -e GLM53_TF_PREPARED=/prepared -e GLM53_TF_PREPARED_WRITE="${GLM53_TF_PREPARED_WRITE:-1}" \
         -v "$sess:/sessions" \
         -e GLM53_TF_CALIB="${GLM53_TF_CALIB:-cached}" -e GLM53_TF_IMAGE_ID="$IMAGE_ID" \
-        -e GLM53_TF_LAUNCH_T0="$(date +%s.%N)" \
+        -e GLM53_TF_LAUNCH_T0="$(date +%s.%N)" -e MALLOC_ARENA_MAX="$MALLOC_ARENA_MAX" \
         --device /dev/infiniband --ulimit memlock=-1 --cap-add IPC_LOCK \
         ${LOG_MAX_SIZE:+--log-opt max-size="$LOG_MAX_SIZE" --log-opt max-file="$LOG_MAX_FILE"} \
         -v "$hf:/root/.cache/huggingface" -v "$NAME-cache:/cache" \
