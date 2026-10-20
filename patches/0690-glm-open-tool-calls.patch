@@ -1,0 +1,146 @@
+# Two more GLM53_TF_TOOL_FIXES names (0620's knob; both in `all`, so off when it is unset and on in prod.env's `all`):
+# - opencalls: when the model's end token (not a stop string, not the token limit) ended the answer inside a GLM
+#   <tool_call> with no </tool_call>, the call is returned (finish_reason tool_calls) only when it is complete but for
+#   that tag: no argument value open (the model wrote every </arg_value> itself; a value is never closed here), one
+#   whole call to an offered tool (a name, then only <arg_key>/<arg_value> pairs), and, after the optional argkeys
+#   repair, every parameter in the tool's `required` present (a bare name: only a tool that requires none). Only
+#   </tool_call> is ever added. Anything else stays the reply's text, as before, and nothing runs: fail-closed,
+#   because a value cut mid-string (a shell command, a path) executed as a call is the dangerous case. (This tree
+#   never dropped that markup: the non-streamed content and the streamed final delta carried it.) A call the token
+#   limit cut, and a reply a stop string ended, are unchanged. Streamed and non-streamed replies take the same
+#   result (App.run).
+# - argkeys: a GLM call whose <arg_key> the model left out (`read path</arg_key><arg_value>..`, or
+#   `</arg_value>\npath</arg_key>`) gets it back before parsing (repair_glm_keys); before, the whole block was
+#   not a call and came back as text.
+# Semantics from MiaAI-Lab/GLM-5.3-Flash-EXL3-2x-DGX-Sparks-TensorFold patch 0055-glm-open-tool-calls (issue #22,
+# Apache-2.0; repair_glm_keys copied as written), re-implemented for this tree's end parser and narrowed: 0055 also
+# closes an open value and does not check `required`. No streaming call parser here, so 0055's GlmCallStreamer part
+# has no counterpart.
+#
+diff --git a/src/tensorfold/cuda/server.py b/src/tensorfold/cuda/server.py
+index 78532e8..44e64bf 100644
+--- a/src/tensorfold/cuda/server.py
++++ b/src/tensorfold/cuda/server.py
+@@ -189,13 +189,14 @@ def _tool_name(tool: dict[str, Any]) -> str:
+ 
+ 
+ TOOL_FIXES_ENV = "GLM53_TF_TOOL_FIXES"
+-TOOL_FIXES = ("history", "reasoning", "choice", "args", "thinkcalls", "grammar")
+-TOOL_FIXES_ALL = ("history", "reasoning", "choice", "args", "thinkcalls")
++TOOL_FIXES = ("history", "reasoning", "choice", "args", "thinkcalls", "grammar", "opencalls", "argkeys")
++TOOL_FIXES_ALL = ("history", "reasoning", "choice", "args", "thinkcalls", "opencalls", "argkeys")   # 0690: +2
+ 
+ 
+ def tool_fixes(raw: str | None = None) -> frozenset[str]:
+     """patches/0620: GLM53_TF_TOOL_FIXES, a comma list of the tool-calling fixes to apply (docs/TOOL-CALLING.md):
+-    ``history``, ``reasoning``, ``choice``, ``args``, ``thinkcalls``, ``grammar``; ``all`` = every one but ``grammar``;
++    ``history``, ``reasoning``, ``choice``, ``args``, ``thinkcalls``, ``grammar``, and patches/0690's ``opencalls``,
++    ``argkeys``; ``all`` = every one but ``grammar``;
+     empty / ``0`` / ``off`` (default): none, every request as before. Raises ValueError for an unknown name."""
+ 
+     raw = os.environ.get(TOOL_FIXES_ENV, "") if raw is None else raw
+@@ -357,6 +358,75 @@ def _closed_value(raw: str, kind: Any) -> Any:
+     return raw
+ 
+ 
++_GLM_KEY, _GLM_KEY_END, _GLM_VALUE, _GLM_VALUE_END = "<arg_key>", "</arg_key>", "<arg_value>", "</arg_value>"
++_GLM_TAG = re.compile(r"</?arg_(?:key|value)>")
++_LAST_WORD = re.compile(r"(\S+)\s*$")
++
++
++def repair_glm_keys(block: str) -> str:
++    """patches/0690 (``GLM53_TF_TOOL_FIXES=argkeys``; MiaAI-Lab 0055, issue #22, Apache-2.0): a GLM call whose
++    ``<arg_key>`` the model left out, writing whitespace where that token belongs (``read path</arg_key><arg_value>..``,
++    or ``</arg_value>\npath</arg_key>``), with it put back: the word before an unopened ``</arg_key>`` is its key. A
++    block where nothing is missing comes back as it is."""
++
++    if block.count(_GLM_KEY_END) <= block.count(_GLM_KEY):
++        return block
++    out, at, prev, prev_end = [], 0, None, 0     # prev: the last tag seen (ending at prev_end); at: text copied
++    for tag in _GLM_TAG.finditer(block):
++        if tag.group(0) == _GLM_KEY_END and prev in (None, _GLM_VALUE_END):
++            seg_start = 0 if prev is None else prev_end
++            word = _LAST_WORD.search(block, seg_start, tag.start())
++            # the name's segment keeps a name before the key (``read path``): no word, or no name, is not repaired
++            if word is None or (prev is None and not block[seg_start:word.start()].strip()):
++                return block
++            out += [block[at:word.start()], _GLM_KEY]
++            at = word.start()
++        prev, prev_end = tag.group(0), tag.end()
++    return "".join(out) + block[at:]
++
++
++def _whole_glm_call(body: str, tools: list[dict[str, Any]]) -> bool:
++    """patches/0690: ``body`` (between ``<tool_call>`` and ``</tool_call>``) is one GLM call to an offered tool and
++    nothing else (a name, then only ``<arg_key>k</arg_key><arg_value>v</arg_value>`` pairs and whitespace), and it
++    has every parameter the tool's schema lists in ``required`` (a bare name: only a tool that requires none)."""
++
++    name, _ = _glm_call(body, tools)
++    if not name:
++        return False
++    fns = [t.get("function") if isinstance(t.get("function"), dict) else t
++           for t in tools if isinstance(t, dict) and _tool_name(t).lower() == name.lower()]
++    if not fns:
++        return False
++    cut = body.find(_GLM_KEY)
++    if cut >= 0 and _GLM_ARG_RE.sub("", body[cut:]).strip():
++        return False
++    params = fns[-1].get("parameters") if isinstance(fns[-1], dict) else None      # the schema ``_glm_call`` reads
++    required = params.get("required") if isinstance(params, dict) else None
++    keys = {m.group(1).strip() for m in _GLM_ARG_RE.finditer(body)}
++    return all(not isinstance(r, str) or r in keys for r in required) if isinstance(required, list) else True
++
++
++def close_glm_call(text: str, tools: list[dict[str, Any]]) -> str:
++    """patches/0690 (``GLM53_TF_TOOL_FIXES=opencalls``; MiaAI-Lab 0055, issue #22): ``</tool_call>`` when ``text`` (a
++    finished answer) ended inside a GLM call that is complete but for that tag: no argument value open (the model
++    wrote every ``</arg_value>`` itself; a value is never closed here) and, after ``argkeys``' repair, one whole call
++    to an offered tool with every ``required`` parameter (``_whole_glm_call``). "" otherwise: not inside a call, or
++    the call is not complete, and its markup stays the reply's text, as before. Fail-closed on purpose: a value cut
++    mid-string (a shell command, a path) must never run as a call. The caller decides that the model's end token, not
++    a stop string or the token limit, ended the reply."""
++
++    at = text.rfind(_CALL_OPEN)
++    if at < 0 or not tools:
++        return ""
++    block = text[at + len(_CALL_OPEN):]
++    if _CALL_CLOSE in block or _THINK_END in block:
++        return ""
++    if block.rfind(_GLM_VALUE) > block.rfind(_GLM_VALUE_END):          # a value still open: never closed
++        return ""
++    body = repair_glm_keys(block) if "argkeys" in tool_fixes() else block
++    return _CALL_CLOSE if _whole_glm_call(body.strip(), tools) else ""
++
++
+ def parse_tool_calls(text: str, tools: list[dict[str, Any]]) -> tuple[str, list[dict[str, Any]] | None]:
+     """Qwen ``<tool_call><function=name><parameter=k>v</parameter></function></tool_call>``, GLM
+     ``<tool_call>name<arg_key>k</arg_key><arg_value>v</arg_value></tool_call>``, or JSON bodies."""
+@@ -364,6 +434,7 @@ def parse_tool_calls(text: str, tools: list[dict[str, Any]]) -> tuple[str, list[
+     if not tools:
+         return text, None
+     known = {_tool_name(t).lower(): _tool_name(t) for t in tools}
++    repair = "argkeys" in tool_fixes()                      # patches/0690
+     calls: list[dict[str, Any]] = []
+     residue: list[str] = []
+     cursor = 0
+@@ -386,7 +457,7 @@ def parse_tool_calls(text: str, tools: list[dict[str, Any]]) -> tuple[str, list[
+                 name = m.group(1).strip()
+                 args = {p.group(1).strip(): p.group(2) for p in _TOOL_PARAMETER_BLOCK_RE.finditer(m.group(2))}
+             else:
+-                name, args = _glm_call(block, tools)
++                name, args = _glm_call(repair_glm_keys(block) if repair else block, tools)
+         if not name or str(name).lower() not in known:
+             residue.append(match.group(0))
+             continue
+@@ -856,6 +927,11 @@ class App:
+                 raw_answer = raw_answer[:_raw_index(spans, stopped_at)]
+                 cut = find_stop(answer, stops)
+                 answer = answer[:cut] if cut >= 0 else answer
++        # patches/0690 (GLM53_TF_TOOL_FIXES=opencalls): the model's end token (not a stop string, not the token limit)
++        # ended the answer inside a GLM call: only ``</tool_call>`` is added, and only to a call with no value open and
++        # every required parameter (``close_glm_call``); else its markup stays the reply's text, as before
++        if tools and stopped_at < 0 and not hit["stop"] and out and out[-1] in eos and "opencalls" in tool_fixes():
++            raw_answer += close_glm_call(raw_answer, tools)
+         content, calls = parse_tool_calls(raw_answer, tools) if tools else (answer, None)
+         if chat and tools:                          # patches/0620: a family's fixes to the finished reply
+             content, calls, reasoning = self.reply_hook(body, content=content, calls=calls, reasoning=reasoning,
