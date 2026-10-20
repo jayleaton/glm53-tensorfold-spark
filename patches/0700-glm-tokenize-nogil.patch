@@ -12,8 +12,8 @@
 # Idea from MiaAI-Lab/GLM-5.3-Flash-EXL3-2x-DGX-Sparks-TensorFold patch 0099-glm-tokenize-nogil (Apache-2.0; its
 # CHANGELOG credits BadAd84), re-implemented for this tree: 0099 does not apply here (0210's PromptTokens and 0490's
 # tokenize changed the lines it edits), and its GlmVision.prepare, forced-think-close and call-gate hunks have no
-# counterpart (this tree's vision reuses PromptTokens' ids; it has no call gate). DRAFT: not built into an image, not
-# run on a GPU; the same-ids claim rests on 0099's tools/tokenize_check.py, not re-run here.
+# counterpart (this tree's vision reuses PromptTokens' ids; it has no call gate). In production on two GB10s since
+# 2026-10-20 (long-prompt recall checks pass); the same-ids claim rests on 0099's tools/tokenize_check.py, not re-run here.
 #
 diff --git a/src/tensorfold/cuda/server.py b/src/tensorfold/cuda/server.py
 index 44e64bf..8972036 100644
