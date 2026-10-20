@@ -19,10 +19,25 @@ Run on the head; run the `ssh <worker>` lines to check the worker too.
 | Nothing else on the GPUs | `nvidia-smi --query-compute-apps=pid,name --format=csv,noheader` (both) | empty. Stop vLLM or any other stack first: only one fits |
 | Docker + NVIDIA runtime | `docker info --format '{{.Runtimes}}'` (both) | contains `nvidia`; runs without `sudo` |
 | Passwordless ssh | `ssh -o BatchMode=yes <worker> docker ps` | no password prompt; the worker user can run docker |
-| Passwordless sudo (memory gate) | `sudo -n true` (both) | exit 0. Without it `MEM_GATE_DROP_CACHES` cannot drop page caches and the 4th slot may not fit |
+| Passwordless sudo (memory gate) | `sudo -n true` (both) | exit 0. Without it `MEM_GATE_DROP_CACHES` cannot drop page caches and the 4th slot may not fit: someone then has to drop them by hand during the first start. Scoped sudoers entry below |
 | Free memory | `grep -E 'MemTotal\|MemFree' /proc/meminfo` (both) | MemFree >= 108 GiB when idle (`MEM_GATE_GIB=108`). Close desktop sessions, browsers, other containers |
 | Disk | `df -h ~/.cache` (both) | ~165 GB for the checkpoint + ~84 GB prepared weights + up to 64 GiB session tier |
 | Submodule | `ls vendor/TensorFold` | not empty; else `git submodule update --init` |
+
+**Scoped sudo for the page-cache drops.** `scripts/serve.sh` needs root for exactly three commands: `sudo -n true`
+(preflight) and `sudo -n sh -c 'echo 1 > /proc/sys/vm/drop_caches'` / `... echo 3 ...` (memory gate). Instead of
+blanket passwordless sudo, allow only those, on both nodes (ask the user first; this edits sudoers):
+
+```bash
+sudo visudo -f /etc/sudoers.d/glm53-tf
+# one line; replace <user> with the account that runs serve.sh (and the ssh user on the worker)
+<user> ALL=(root) NOPASSWD: /usr/bin/true, /usr/bin/sh -c echo 1 > /proc/sys/vm/drop_caches, /usr/bin/sh -c echo 3 > /proc/sys/vm/drop_caches
+```
+
+Check: `sudo -n true && sudo -n sh -c 'echo 1 > /proc/sys/vm/drop_caches' && echo ok` on each node (`sudo -l` lists
+the entry). sudo matches the arguments literally, so the line must stay exactly as written. If `command -v sh` is not
+`/usr/bin/sh` on your system, use that path. Without it, start the server and, while `logs 0` shows `waiting for
+memory`, run `sync; echo 3 | sudo tee /proc/sys/vm/drop_caches` on both nodes yourself.
 
 ## 2. Find the link settings
 
@@ -38,6 +53,12 @@ cat /sys/class/infiniband/<RDMA device>/ports/1/state    # "4: ACTIVE"
   Spark's CX7 port; `ibdev2netdev` lists both; if yours shows only one, set that one and drop `NCCL_PASSTHROUGH` /
   `NCCL_MIN_NCHANNELS` / `NCCL_MAX_NCHANNELS` from the config).
 - `NCCL_SOCKET_IFNAME` = its netdev (preset: `enp1s0f1np1`). Must be the same name on both nodes.
+- Netdev names follow the PCI slot, so a pair cabled through different ports, or a re-enumeration after a firmware or
+  kernel update, can name the link differently. Pin the address config to the hardware rather than to the name with a
+  NetworkManager profile matched by MAC (ask the user before changing networking):
+  `nmcli con add type ethernet con-name cx7-link ifname '*' 802-3-ethernet.mac-address <MAC of the cabled port>
+  ipv4.method manual ipv4.addresses <link address>/24 ipv6.method disabled` (MAC: `ip -br link`). This keeps the
+  address on the cabled port; `NCCL_SOCKET_IFNAME` / `NCCL_IB_HCA` must still name what `ibdev2netdev` shows.
 - `HEAD_IP` = the head's IPv4 address on that netdev (not its LAN address).
 - Check the link: `ping -c 3 -I <netdev> <worker link address>` from the head.
 - If the port is `DOWN` or has no address, the link is not configured. Do not reconfigure networking without the
