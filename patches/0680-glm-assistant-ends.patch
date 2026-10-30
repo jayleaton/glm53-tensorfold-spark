@@ -1,0 +1,117 @@
+# GLM's <|assistant|> role token ends a reply, like the checkpoint's end tokens <|endoftext|>, <|user|> and
+# <|observation|>. At high reasoning effort the model sometimes writes it inside its answer and starts a second answer,
+# and the raw token reached the client in the reply's text. GLM53_TF_ASSISTANT_ENDS=1 (default) reads the token's id
+# from the checkpoint's tokenizer.json (by content, special only) and appends it to Config.eos, which every decode
+# loop, the batcher and its device accept kernel, prompt-lookup drafts, 0610's grammar and the server's text and
+# finish_reason read, on both ranks; the engine checks at load that both ranks hold the same list (count, sum).
+# 0 keeps the checkpoint's list; anything but 0 / 1 is a ValueError at load. Replies without the token are unchanged.
+# Semantics from MiaAI-Lab/GLM-5.3-Flash-EXL3-2x-DGX-Sparks-TensorFold patch 0075-glm-assistant-ends (issue #60,
+# Apache-2.0), re-implemented for this tree: the lookup lives in a torch-free module (ends.py) so a host test reads it.
+#
+diff --git a/src/tensorfold/families/glm5_next/cuda/ends.py b/src/tensorfold/families/glm5_next/cuda/ends.py
+new file mode 100644
+index 0000000..98a7b54
+--- /dev/null
++++ b/src/tensorfold/families/glm5_next/cuda/ends.py
+@@ -0,0 +1,60 @@
++"""patches/0680: the token ids that end a GLM-5.3 reply (``Config.eos``), host only (no torch, so a host test reads it).
++
++The checkpoint's ``eos_token_id`` lists ``<|endoftext|>``, ``<|user|>`` and ``<|observation|>``. At high reasoning
++effort the model sometimes writes the ``<|assistant|>`` role token inside its answer and starts a second answer, and
++the token reached the client in the reply's text (MiaAI-Lab issue #60). GLM53_TF_ASSISTANT_ENDS=1 (default) adds that
++token to the end tokens: a new assistant turn inside an assistant turn ends the reply, as the other role tokens do.
++``0`` keeps the checkpoint's list. Every consumer reads ``Config.eos`` (the decode loops, the batcher and its device
++accept kernel, prompt-lookup drafts, 0610's grammar, the server's text and finish_reason), on both ranks; the engine
++checks at load that both ranks hold the same list.
++"""
++
++from __future__ import annotations
++
++import json
++import os
++from pathlib import Path
++from typing import Any
++
++ASSISTANT_ENDS_ENV = "GLM53_TF_ASSISTANT_ENDS"
++ASSISTANT = "<|assistant|>"
++
++
++def assistant_ends(raw: str | None = None) -> bool:
++    """GLM53_TF_ASSISTANT_ENDS: ``1`` (default, also when empty) or ``0``. Raises ValueError for anything else."""
++
++    raw = os.environ.get(ASSISTANT_ENDS_ENV, "") if raw is None else raw
++    value = raw.strip() or "1"
++    if value not in ("0", "1"):
++        raise ValueError(f"{ASSISTANT_ENDS_ENV}={raw!r}: expected 0 or 1")
++    return value == "1"
++
++
++def assistant_id(model_dir: str | Path) -> int | None:
++    """The id of the special ``<|assistant|>`` token in the checkpoint's tokenizer.json (read by content, not a fixed
++    number), or None when the file or the token is absent or unreadable."""
++
++    path = Path(model_dir) / "tokenizer.json"
++    if not path.is_file():
++        return None
++    try:
++        added = json.loads(path.read_text(encoding="utf-8")).get("added_tokens") or []
++    except (OSError, ValueError):
++        return None
++    for t in added:
++        if isinstance(t, dict) and t.get("content") == ASSISTANT and t.get("special"):
++            return int(t["id"])
++    return None
++
++
++def config_eos(text_config: dict[str, Any], raw: dict[str, Any], model_dir: str | Path) -> tuple[int, ...]:
++    """``Config.eos``: the checkpoint's ``eos_token_id`` (text config first, as before), plus ``<|assistant|>`` with
++    GLM53_TF_ASSISTANT_ENDS=1 when the tokenizer has it and the list does not."""
++
++    eos = text_config.get("eos_token_id", raw.get("eos_token_id"))
++    eos = tuple(int(e) for e in eos) if isinstance(eos, list) else (int(eos),)
++    if assistant_ends():
++        end = assistant_id(model_dir)
++        if end is not None and end not in eos:
++            eos += (end,)
++    return eos
+diff --git a/src/tensorfold/families/glm5_next/cuda/engine.py b/src/tensorfold/families/glm5_next/cuda/engine.py
+index 40a3e32..eae3db7 100644
+--- a/src/tensorfold/families/glm5_next/cuda/engine.py
++++ b/src/tensorfold/families/glm5_next/cuda/engine.py
+@@ -458,6 +458,13 @@ class GlmEngine:
+                   f"; MTP draft {c['mtp']:.2f} (+{c['mtp_step']:.2f} a chained draft, +{c['mtp_row']:.2f} a row); "
+                   f"DFlash2 block {c['block']:.2f} (+{c['taps_row']:.3f} a tap row)", flush=True)
+         self.eos = tuple(w.cfg.eos)
++        # patches/0680 (GLM53_TF_ASSISTANT_ENDS, read with each machine's tokenizer.json): every decode loop and the
++        # batcher stop on these ids, so both ranks must hold the same list
++        eos_both = self._gather_ints([len(self.eos), sum(self.eos)])
++        if eos_both[0] != eos_both[1]:
++            raise RuntimeError(f"the two ranks read different end tokens (count, sum): rank 0 {eos_both[0]}, rank 1 "
++                               f"{eos_both[1]}; give both the same GLM53_TF_ASSISTANT_ENDS and the same checkpoint "
++                               "(config.json, tokenizer.json)")
+         self.request = threading.local()    # the calling request's policy and stop-at-EOS (``app.GlmApp``)
+         self.cache: list = []               # decode.Snapshot entries, each a prefix of the next
+         # patches/0610 (GLM53_TF_GRAMMAR): structured output; both ranks agree, and build the compilers now
+diff --git a/src/tensorfold/families/glm5_next/cuda/weights.py b/src/tensorfold/families/glm5_next/cuda/weights.py
+index 52583f2..460cf87 100644
+--- a/src/tensorfold/families/glm5_next/cuda/weights.py
++++ b/src/tensorfold/families/glm5_next/cuda/weights.py
+@@ -26,6 +26,7 @@ from typing import Any
+ 
+ import torch
+ 
++from .ends import config_eos                  # patches/0680
+ from .exl3_mm import Exl3Experts, words as exl3_words
+ from .qmm import (B16, Experts, Q4, Q8, as_i32, make_b16, make_experts, make_q4, quantize4, quantize8, stack_b16,
+                   stack_q4)
+@@ -214,8 +215,8 @@ class Config:
+         t = dict(raw.get("text_config") or raw)
+         lin = dict(t.get("linear_attn_config") or {})
+         quant = raw.get("quantization") or raw.get("quantization_config") or {}
+-        eos = t.get("eos_token_id", raw.get("eos_token_id"))
+-        eos = tuple(int(e) for e in eos) if isinstance(eos, list) else (int(eos),)
++        # patches/0680: plus <|assistant|> with GLM53_TF_ASSISTANT_ENDS=1 (default; ``ends.py``)
++        eos = config_eos(t, raw, model_dir)
+         n = int(t["num_hidden_layers"])
+         kinds = ["kda" if k == "linear_attention" else "dsa" for k in t["layer_types"]]
+         dense = int(t.get("first_k_dense_replace", 3))
