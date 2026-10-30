@@ -313,5 +313,11 @@ request does not fit:
 | Open WebUI | Admin, Connections, OpenAI API: `http://127.0.0.1:8000/v1` | nothing required (its context options are for Ollama); set Max Tokens in the model's advanced params if you want a shorter reply budget | the chat shows the server's 400 error text |
 | Anything OpenAI-compatible | base URL, API key any string | context window 1,048,576; max output 32,768 or less | HTTP 400 with an `error.message` naming the requested and allowed tokens |
 
+**Clients that send neither effort nor `max_tokens`** get the server defaults: thinking at effort `high`
+(`GLM53_TF_DEFAULT_EFFORT=high` in production) and up to `MAX_TOKENS` (32,768) tokens a turn. On a hard prompt that
+can be one long reply that runs for minutes (issue #11). Set the client's max output tokens and, for agents,
+`reasoning_effort: "low"` (README: best agentic score, fastest runs; "Reasoning effort" above), or lower
+`GLM53_TF_DEFAULT_EFFORT` / `MAX_TOKENS` in the config for every client.
+
 The four requests of the production config share one 1,048,576-token pool: one request can use all of it; several
 long ones at once wait for pages or spill idle sessions to the store (they are not refused).

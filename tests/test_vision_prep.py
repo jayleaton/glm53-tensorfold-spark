@@ -265,6 +265,45 @@ def test_markup_splice_order(settings):
     assert vp.count_images(msgs) == 3 and vp.count_images("x") == 0
 
 
+# -- patches/0660: the image limit and GLM53_TF_VISION_OVERFLOW ----------------------------------------------------
+def _img(u):
+    return {"type": "image_url", "image_url": {"url": u}}
+
+
+def test_overflow_env(monkeypatch, tmp_path):
+    assert vp.Settings.read(tmp_path).overflow == "refuse"
+    monkeypatch.setenv("GLM53_TF_VISION_OVERFLOW", " Drop_Oldest ")
+    assert vp.Settings.read(tmp_path).overflow == "drop_oldest"
+    monkeypatch.setenv("GLM53_TF_VISION_OVERFLOW", "drop")
+    with pytest.raises(ValueError, match="GLM53_TF_VISION_OVERFLOW"):
+        vp.Settings.read(tmp_path)
+
+
+def test_drop_oldest_keeps_the_newest():
+    msgs = [{"role": "system", "content": "s"},
+            {"role": "user", "content": [_img("data:a"), {"type": "text", "text": "x"}, _img("data:b")]},
+            {"role": "assistant", "content": "ok"},
+            {"role": "user", "content": [{"type": "input_image", "image_url": "data:c"}, _img("data:d")]}]
+    out, n = vp.drop_oldest(msgs, 3)
+    assert n == 1 and [r.url for r in vp.markup(out, "z")[1]] == ["data:b", "data:c", "data:d"]
+    assert out[1]["content"][0] == {"type": "text", "text": vp.OMITTED} and out[1]["content"][1:] == msgs[1]["content"][1:]
+    assert msgs[1]["content"][0]["type"] == "image_url"              # the request is not modified
+    assert out[0] is msgs[0] and out[3] is msgs[3]
+    out, n = vp.drop_oldest(msgs, 1)
+    assert n == 3 and [r.url for r in vp.markup(out, "z")[1]] == ["data:d"] and vp.count_images(out) == 1
+    assert vp.drop_oldest(msgs, 4) == (msgs, 0) and vp.drop_oldest(msgs, 9) == (msgs, 0)
+    assert vp.last_images(msgs) == 2 and vp.last_images([]) == 0
+
+
+def test_too_many_says_the_history_counts():
+    s = vp.Settings(max_images=8)
+    msg = str(vp.too_many(9, s))
+    assert "9 images" in msg and "at most 8" in msg and "earlier turns" in msg
+    for knob in ("GLM53_TF_VISION_MAX_IMAGES", "GLM53_TF_VISION_OVERFLOW=drop_oldest"):
+        assert knob in msg
+    assert "10 images in the last message" in str(vp.too_many(12, s, 10))
+
+
 def _prep(n, digest=b"d"):
     return vp.Prepared(None, (1, 2, 2 * n), n, digest, (1, 1), vp.derive(digest, n))
 

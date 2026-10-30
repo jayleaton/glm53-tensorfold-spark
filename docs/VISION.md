@@ -33,7 +33,8 @@ is served as before, bit for bit.
 | Knob | Default | Meaning |
 | --- | --- | --- |
 | `GLM53_TF_VISION` | `0` | `1`: image input on. Rank 0 loads the tower. Rank 1 needs nothing: it follows the data, whatever its own setting. |
-| `GLM53_TF_VISION_MAX_IMAGES` | `8` | Most images a request may carry. |
+| `GLM53_TF_VISION_MAX_IMAGES` | `8` | Most images a request may carry, counted over the whole `messages` history (earlier turns included). |
+| `GLM53_TF_VISION_OVERFLOW` | `refuse` | patches/0660. `refuse`: more images than `_MAX_IMAGES` is a 400. `drop_oldest`: the oldest image parts become the text `[image omitted: over GLM53_TF_VISION_MAX_IMAGES]` and the newest `_MAX_IMAGES` are kept; a last message that alone holds more is still a 400. See "Long conversations with images" below. |
 | `GLM53_TF_VISION_MAX_TOKENS` | `0` (the processor's 8,000) | Caps the rows an image takes. Below 8,000 this departs from the reference processor for large images. |
 | `GLM53_TF_VISION_LOW_TOKENS` | `0` (ignored, as vLLM) | Rows for `detail: "low"` when set. |
 | `GLM53_TF_VISION_FETCH` | `1` | `0` refuses `http(s)` URLs (only `data:`). The server fetches URLs from rank 0's network, so this is SSRF-relevant. |
@@ -42,6 +43,25 @@ is served as before, bit for bit.
 | `GLM53_TF_VISION_MAX_PIXELS` | 64 M | Largest decoded image. Checked from the header, before decoding (decompression bombs). |
 | `GLM53_TF_VISION_CACHE_MB` | `256` | Rank 0's cache of encoded rows by image digest (host memory). A conversation's earlier images are not re-encoded every turn. |
 | `GLM53_TF_VISION_PREP_MB` | `256` | Rank 0's cache of preprocessed `data:` images (host memory). |
+
+### Long conversations with images (patches/0660, issue #15)
+
+The image limit counts every image part in the request, and an agent client resends its whole history each turn.
+Once the history holds more than `GLM53_TF_VISION_MAX_IMAGES` images, every later request carrying that history is
+refused the same way, including a client's compaction request. The 400 (`invalid_request_error`, `param:
+"messages"`, sent before anything streams, also for `stream: true`) says so and names the ways out:
+
+- **Raise the limit**, e.g. `GLM53_TF_VISION_MAX_IMAGES=32`. Each image takes up to 8,000 prompt tokens (cap it with
+  `GLM53_TF_VISION_MAX_TOKENS`, e.g. `2000`, for screenshot-heavy sessions); the context and KV-pool checks price the
+  rows, so a long history fails cleanly with `context_length_exceeded`.
+- **`GLM53_TF_VISION_OVERFLOW=drop_oldest`** (opt-in): the oldest image parts beyond the limit become the text
+  `[image omitted: over GLM53_TF_VISION_MAX_IMAGES]`, the newest `_MAX_IMAGES` are kept, and the request runs. The
+  images of the last message are never dropped: if it alone holds more than the limit, the request is still a 400.
+  Trade-offs: the model no longer sees the dropped images, and each new image moves the cut by one, so the prompt
+  changes at the oldest kept image and the prefix caches (snapshots, session store, NVMe tier) reuse only the text
+  before it. Rank 0 decides; rank 1 follows the data.
+
+The default (`refuse`) is the behaviour before patches/0660 apart from the message text.
 
 ## 2. Findings about the model
 
