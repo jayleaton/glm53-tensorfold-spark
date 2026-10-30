@@ -171,8 +171,12 @@ The trees:
   `_args.items()` then raises. The result is an HTTP 400 "the chat template rejected the request".
 - **Preserved thinking:** within one user turn (a tool loop), the template already keeps each step's reasoning,
   if it has it. This is GLM's interleaved thinking. `clear_thinking=false` extends that across user turns. It can be
-  passed per request in `chat_template_kwargs`, and our server forwards it. The benchmarks are single-user-turn
-  chains, so it doesn't matter for them; it is not recommended as a server default because it costs context.
+  passed per request in `chat_template_kwargs`, and our server forwards it. Since patch 0650,
+  `GLM53_TF_CLEAR_THINKING=0` makes it the server default (a request's own `clear_thinking` still wins). The
+  default stays `1`, today's rendering: zai-org/GLM-5.3-Flash switched its template to `clear_thinking=false` on
+  2026-08-27 (commit `3f1971b7`), and the pinned checkpoint predates that, but keeping every turn's reasoning makes
+  agent prompts longer, and that trade against prefix-cache reuse has not been measured on agent traffic. The
+  benchmarks are single-user-turn chains, so it doesn't matter for them.
 
 ### 3.2 Reasoning between tool calls
 
