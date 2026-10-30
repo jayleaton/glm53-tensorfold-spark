@@ -159,6 +159,9 @@ class Tok:
     def encode(self, text, add_special_tokens=False):
         return Encoded([self.id(c) for c in text])
 
+    def encode_batch_fast(self, texts, add_special_tokens=False):
+        return [self.encode(t, add_special_tokens) for t in texts]
+
     def decode(self, ids, skip_special_tokens=False):
         return "".join(self.vocab[i] for i in ids)
 
