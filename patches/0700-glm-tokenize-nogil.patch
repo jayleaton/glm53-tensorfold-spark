@@ -1,0 +1,66 @@
+# The prompt is tokenized with Python's GIL released. HF tokenizers' `encode` holds the GIL for the whole text (~1.2 us a
+# token), so while a long prompt is tokenized on its request thread, the glm-batch engine thread and every other stream
+# wait for the GIL; `encode_batch_fast` on the one text returns the same ids with the GIL released (the binding calls
+# `py.allow_threads`) and without the character offsets nothing here reads. Three call sites change:
+# - PromptTokens._full (patches/0210): the one tokenizer call a chat or completions request reaches (check() encodes,
+#   run() reuses the ids through Memo): a cold prompt in full, a cached prompt's tail after its last shared special token.
+# - App.tokenize (patches/0490): POST /tokenize, a string prompt or the rendered messages.
+# - App.prompt_ids (patches/0210): unreachable for GLM (GlmApp overrides it, and encodes through PromptTokens); routed
+#   through the same helper so no `encode` call is left in server.py.
+# Needs tokenizers >= 0.20 (Tokenizer.encode_batch_fast(input, is_pretokenized=False, add_special_tokens=True)); the
+# image's transformers 5.17.0 pins tokenizers >= 0.23.1. Host only: same ids, no engine, kernel or token change.
+# Idea from MiaAI-Lab/GLM-5.3-Flash-EXL3-2x-DGX-Sparks-TensorFold patch 0099-glm-tokenize-nogil (Apache-2.0; its
+# CHANGELOG credits BadAd84), re-implemented for this tree: 0099 does not apply here (0210's PromptTokens and 0490's
+# tokenize changed the lines it edits), and its GlmVision.prepare, forced-think-close and call-gate hunks have no
+# counterpart (this tree's vision reuses PromptTokens' ids; it has no call gate). In production on two GB10s since
+# 2026-10-20 (long-prompt recall checks pass); the same-ids claim rests on 0099's tools/tokenize_check.py, not re-run here.
+#
+diff --git a/src/tensorfold/cuda/server.py b/src/tensorfold/cuda/server.py
+index 44e64bf..8972036 100644
+--- a/src/tensorfold/cuda/server.py
++++ b/src/tensorfold/cuda/server.py
+@@ -738,7 +738,15 @@ class App:
+     def prompt_ids(self, text: str) -> list[int]:
+         """The rendered prompt's token ids (patches/0210: a family's app may reuse ones it already has)."""
+ 
+-        return self.tok.encode(text, add_special_tokens=False).ids
++        return self._encode_ids(text, False)
++
++    def _encode_ids(self, text: str, special: bool) -> list[int]:
++        """patches/0700: ``self.tok.encode(text, add_special_tokens=special).ids``, the same ids, through
++        ``encode_batch_fast`` on the one text: it tokenizes with Python's GIL released (``encode`` holds it, ~1.2 us a
++        token), so a long prompt no longer stops the batch thread and every other stream while it is tokenized, and it
++        skips the character offsets nothing here reads."""
++
++        return self.tok.encode_batch_fast([text], add_special_tokens=special)[0].ids
+ 
+     def given_ids(self, ids: list[int]) -> list[int]:
+         """patches/0490: a request's own token ids (``/v1/completions`` with a token-ID ``prompt``)."""
+@@ -768,11 +776,11 @@ class App:
+             thinking = bool(kwargs.pop("enable_thinking", self.default_thinking))
+             text = self.template.render(body["messages"], tools=body.get("tools") or [], enable_thinking=thinking,
+                                         extra=kwargs)
+-            return list(self.tok.encode(text, add_special_tokens=False).ids)
++            return list(self._encode_ids(text, False))
+         prompt = body.get("prompt")
+         if not isinstance(prompt, str):
+             raise ValueError("tokenize needs a string prompt or a list of messages")
+-        return list(self.tok.encode(prompt, add_special_tokens=bool(body.get("add_special_tokens", True))).ids)
++        return list(self._encode_ids(prompt, bool(body.get("add_special_tokens", True))))
+ 
+     def sampling_for(self, body: dict[str, Any], prompt: list[int]):
+         """Keyed sampling (the seed, else one drawn from the prompt), or None for greedy decoding."""
+diff --git a/src/tensorfold/families/glm5_next/cuda/prompt_tokens.py b/src/tensorfold/families/glm5_next/cuda/prompt_tokens.py
+index b7fff10..ffc607d 100644
+--- a/src/tensorfold/families/glm5_next/cuda/prompt_tokens.py
++++ b/src/tensorfold/families/glm5_next/cuda/prompt_tokens.py
+@@ -200,7 +200,8 @@ class PromptTokens:
+                 self.lru.popitem(last=False)
+ 
+     def _full(self, text: str) -> list[int]:
+-        return self.tok.encode(text, add_special_tokens=False).ids
++        # patches/0700: the batch call tokenizes with the GIL released (``encode`` holds it), the same ids
++        return self.tok.encode_batch_fast([text], add_special_tokens=False)[0].ids
+ 
+     def encode(self, text: str) -> list[int]:
+         if self.mode == "off":

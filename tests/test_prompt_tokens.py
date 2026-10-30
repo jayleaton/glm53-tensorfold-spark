@@ -239,6 +239,10 @@ def make_app(monkeypatch, limit, mode):
             calls["n"] += 1
             return real.encode(*a, **k)
 
+        def encode_batch_fast(self, *a, **k):  # 0700 tokenizes the prompt through this
+            calls["n"] += 1
+            return real.encode_batch_fast(*a, **k)
+
     app.tok = app.prompt_tokens.tok = Counting()
     return app, calls
 
